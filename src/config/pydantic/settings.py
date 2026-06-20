@@ -17,15 +17,20 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
 
     # vLLM (production GPU server — swap LLM_PROVIDER=vllm when ready)
-    vllm_base_url: str = "http://localhost:8000/v1"
-    vllm_api_key: str = "token-abc123"
+    vllm_base_url: str = "http://localhost:8888/v1"
+    vllm_api_key: str = "os.environ.get('OPENAI_API_KEY')"
 
     # Groq (cloud fallback for teammates without local GPU)
-    groq_api_key: str = ""
+    groq_api_key: str = "os.environ.get('GROQ_API_KEY')"
 
     # ── Agent behaviour ───────────────────────────────────────────────────────
     max_retries: int = 3
     min_confidence_threshold: float = 0.6
+
+    # Custom OpenAI-compatible endpoint (for production or alternative providers)
+    custom_openai_model: str = ""
+    custom_openai_base_url: str = "https://localhost:8888/v1"
+    custom_openai_api_key: str = "os.environ.get('OPENAI_API_KEY')"
 
 
 # Singleton — import this everywhere instead of re-instantiating

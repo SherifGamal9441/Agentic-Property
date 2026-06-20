@@ -47,7 +47,13 @@ def get_llm(streaming: bool = False) -> BaseChatModel:
                 api_key=settings.vllm_api_key,
                 streaming=streaming,
             )
-
+        case "custom_openai_compatible_endpoint":
+            return ChatOpenAI(
+                model=settings.custom_openai_model,
+                base_url=settings.custom_openai_base_url,
+                api_key=settings.custom_openai_api_key,
+                streaming=streaming,
+            )
         case "groq":
             return ChatGroq(
                 api_key=settings.groq_api_key,
@@ -57,5 +63,5 @@ def get_llm(streaming: bool = False) -> BaseChatModel:
         case _:
             raise ValueError(
                 f"Unknown LLM_PROVIDER: '{settings.llm_provider}'. "
-                "Valid options: ollama | vllm | groq"
+                "Valid options: ollama | vllm | groq | custom_openai_compatible_endpoint"
             )
