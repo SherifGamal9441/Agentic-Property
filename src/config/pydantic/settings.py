@@ -12,7 +12,8 @@ class Settings(BaseSettings):
     llm_provider: str = "ollama"  # ollama | vllm | groq
 
     # Ollama (local GGUF via Ollama daemon — used during dev/testing phase)
-    ollama_model: str = "llama3-property"
+    # Override via OLLAMA_MODEL in your .env — never edit this file for personal values
+    ollama_model: str = "llama3.1:8b"   # generic fallback; set your model in .env
     ollama_base_url: str = "http://localhost:11434"
 
     # vLLM (production GPU server — swap LLM_PROVIDER=vllm when ready)
