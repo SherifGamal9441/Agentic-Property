@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.nodes.reflection import reflection_node, route_after_reflection
+from src.agents.state import AgentState
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -79,7 +80,7 @@ def test_reflection_ok_no_retry(mock_get_llm):
     """Passes good comparison → ok=True, needs_retry=False."""
     mock_get_llm.return_value = _mock_llm(REFLECTION_OK)
 
-    result = reflection_node(BASE_STATE)
+    result = reflection_node(AgentState(**BASE_STATE))
 
     assert result["reflection_output"]["ok"] is True
     assert result["reflection_output"]["issues"] == []
@@ -93,7 +94,7 @@ def test_reflection_fail_triggers_retry(mock_get_llm):
     mock_get_llm.return_value = _mock_llm(REFLECTION_FAIL)
     state = {**BASE_STATE, "comparison_result": BAD_COMPARISON, "retry_count": 0}
 
-    result = reflection_node(state)
+    result = reflection_node(AgentState(**state))
 
     assert result["reflection_output"]["ok"] is False
     assert len(result["reflection_output"]["issues"]) == 2
@@ -108,7 +109,7 @@ def test_reflection_fail_at_max_retries_no_retry(mock_get_llm):
     # max_retries defaults to 3 in settings; set retry_count to 3 (at cap)
     state = {**BASE_STATE, "comparison_result": BAD_COMPARISON, "retry_count": 3}
 
-    result = reflection_node(state)
+    result = reflection_node(AgentState(**state))
 
     assert result["needs_retry"] is False
     assert result["retry_count"] == 3   # not incremented past cap
@@ -119,7 +120,7 @@ def test_reflection_unparseable_response(mock_get_llm):
     """Unparseable LLM output → safe fallback with ok=False."""
     mock_get_llm.return_value = _mock_llm("I cannot audit this.")
 
-    result = reflection_node(BASE_STATE)
+    result = reflection_node(AgentState(**BASE_STATE))
 
     assert result["reflection_output"]["ok"] is False
     assert result["reflection_output"]["confidence"] == 0.0
@@ -130,9 +131,9 @@ def test_reflection_unparseable_response(mock_get_llm):
 
 def test_route_needs_retry_goes_to_tool_router():
     state = {**BASE_STATE, "needs_retry": True}
-    assert route_after_reflection(state) == "tool_router"
+    assert route_after_reflection(AgentState(**state)) == "tool_router"
 
 
 def test_route_no_retry_goes_to_answer_generation():
     state = {**BASE_STATE, "needs_retry": False}
-    assert route_after_reflection(state) == "answer_generation"
+    assert route_after_reflection(AgentState(**state)) == "answer_generation"

@@ -78,7 +78,7 @@ def reflection_node(state: AgentState) -> dict:
     llm = get_llm(streaming=False)
 
     user_message = _USER_PROMPT_TEMPLATE.format(
-        comparison_result=json.dumps(state["comparison_result"], ensure_ascii=False, indent=2),
+        comparison_result=json.dumps(state.comparison_result, ensure_ascii=False, indent=2),
     )
 
     messages = [
@@ -105,7 +105,7 @@ def reflection_node(state: AgentState) -> dict:
             }
 
     ok: bool = reflection_output.get("ok", False)
-    current_retry_count: int = state.get("retry_count", 0)
+    current_retry_count: int = state.retry_count
     needs_retry = not ok and current_retry_count < settings.max_retries
 
     if needs_retry:
@@ -140,6 +140,6 @@ def route_after_reflection(state: AgentState) -> str:
         "answer_generation" — comparison passed, proceed to final answer
         "tool_router"       — comparison failed, signal upstream to retry
     """
-    if state.get("needs_retry", False):
+    if state.needs_retry:
         return "tool_router"
     return "answer_generation"

@@ -75,13 +75,13 @@ def comparison_engine_node(state: AgentState) -> dict:
     Returns:
         Partial state dict with `comparison_result` populated.
     """
-    logger.info("comparison_engine: evaluating %d properties", len(state["retrieved_properties"]))
+    logger.info("comparison_engine: evaluating %d properties", len(state.retrieved_properties))
 
     llm = get_llm(streaming=False)
 
     user_message = _USER_PROMPT_TEMPLATE.format(
-        parsed_query=json.dumps(state["parsed_query"], ensure_ascii=False, indent=2),
-        retrieved_properties=json.dumps(state["retrieved_properties"], ensure_ascii=False, indent=2),
+        parsed_query=json.dumps(state.parsed_query, ensure_ascii=False, indent=2),
+        retrieved_properties=json.dumps(state.retrieved_properties, ensure_ascii=False, indent=2),
     )
 
     messages = [

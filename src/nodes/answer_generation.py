@@ -73,14 +73,14 @@ def answer_generation_node(state: AgentState) -> dict:
     llm = get_llm(streaming=True)
 
     reflection_issues = (
-        state["reflection_output"].get("issues", [])
-        if state.get("reflection_output")
+        state.reflection_output.get("issues", [])
+        if state.reflection_output
         else []
     )
 
     user_message = _USER_PROMPT_TEMPLATE.format(
-        query=state["query"],
-        comparison_result=_format_comparison_for_prompt(state["comparison_result"]),
+        query=state.query,
+        comparison_result=_format_comparison_for_prompt(state.comparison_result),
         reflection_issues="\n".join(f"- {issue}" for issue in reflection_issues) or "None",
     )
 

@@ -9,24 +9,26 @@ Ownership map:
   final_answer                                → set by answer_generation node (this team)
 """
 
-from typing import TypedDict
+from pydantic import BaseModel, ConfigDict
 
 
-class AgentState(TypedDict):
+class AgentState(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     # ── Set by upstream nodes ─────────────────────────────────────────────────
-    query: str
+    query: str = ""
     """Raw user input exactly as received."""
 
-    parsed_query: dict
+    parsed_query: dict = {}
     """Structured intent extracted by the query_understanding node.
     Expected keys: location, budget, property_type, bedrooms, amenities, etc."""
 
-    retrieved_properties: list[dict]
+    retrieved_properties: list[dict] = []
     """List of property records returned by whichever tool the router chose.
     Each dict should contain at minimum: id, title, price, area_sqm, location."""
 
     # ── Set by comparison_engine ──────────────────────────────────────────────
-    comparison_result: dict | None
+    comparison_result: dict | None = None
     """LLM comparison output.
     Shape: {
         properties: [
@@ -42,7 +44,7 @@ class AgentState(TypedDict):
     }"""
 
     # ── Set by reflection ─────────────────────────────────────────────────────
-    reflection_output: dict | None
+    reflection_output: dict | None = None
     """Audit of the comparison engine's output.
     Shape: {
         ok: bool,               # True if comparison is complete and consistent
@@ -50,16 +52,15 @@ class AgentState(TypedDict):
         confidence: float,      # 0.0 – 1.0 overall confidence in the comparison
     }"""
 
-    # Retry control — reflection writes, tool_router reads
-    needs_retry: bool
+    needs_retry: bool = False
     """True when reflection finds the comparison insufficient and retry is warranted."""
 
-    retry_tool: str | None
+    retry_tool: str | None = None
     """Which tool to try next: "vector" | "sql" | "bayut" | None."""
 
-    retry_count: int
+    retry_count: int = 0
     """Number of retries already consumed. Caps at settings.max_retries."""
 
     # ── Set by answer_generation ──────────────────────────────────────────────
-    final_answer: str | None
+    final_answer: str | None = None
     """Streamed final answer delivered to the user."""

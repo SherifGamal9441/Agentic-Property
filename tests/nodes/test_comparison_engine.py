@@ -15,6 +15,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.nodes.comparison_engine import comparison_engine_node
+from src.agents.state import AgentState
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -97,7 +98,7 @@ def test_comparison_engine_clean_json(mock_get_llm):
     """Node correctly parses a clean JSON response from the LLM."""
     mock_get_llm.return_value = _mock_llm(json.dumps(EXPECTED_COMPARISON))
 
-    result = comparison_engine_node(BASE_STATE)
+    result = comparison_engine_node(AgentState(**BASE_STATE))
 
     assert "comparison_result" in result
     props = result["comparison_result"]["properties"]
@@ -113,7 +114,7 @@ def test_comparison_engine_markdown_fenced_json(mock_get_llm):
     fenced = f"```json\n{json.dumps(EXPECTED_COMPARISON)}\n```"
     mock_get_llm.return_value = _mock_llm(fenced)
 
-    result = comparison_engine_node(BASE_STATE)
+    result = comparison_engine_node(AgentState(**BASE_STATE))
 
     assert "comparison_result" in result
     assert len(result["comparison_result"]["properties"]) == 2
@@ -124,7 +125,7 @@ def test_comparison_engine_unparseable_response(mock_get_llm):
     """Node returns a safe fallback when LLM output is completely unparseable."""
     mock_get_llm.return_value = _mock_llm("I cannot compare these properties.")
 
-    result = comparison_engine_node(BASE_STATE)
+    result = comparison_engine_node(AgentState(**BASE_STATE))
 
     assert "comparison_result" in result
     assert result["comparison_result"]["properties"] == []
@@ -136,6 +137,6 @@ def test_comparison_engine_returns_only_comparison_result(mock_get_llm):
     """Node only mutates comparison_result — not other state fields."""
     mock_get_llm.return_value = _mock_llm(json.dumps(EXPECTED_COMPARISON))
 
-    result = comparison_engine_node(BASE_STATE)
+    result = comparison_engine_node(AgentState(**BASE_STATE))
 
     assert set(result.keys()) == {"comparison_result"}

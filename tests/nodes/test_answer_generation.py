@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from src.nodes.answer_generation import answer_generation_node, _format_comparison_for_prompt
+from src.agents.state import AgentState
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -72,7 +73,7 @@ def test_answer_generation_populates_final_answer(mock_get_llm):
     """Node assembles streamed tokens into final_answer."""
     mock_get_llm.return_value = _mock_streaming_llm(STREAMED_TOKENS)
 
-    result = answer_generation_node(BASE_STATE)
+    result = answer_generation_node(AgentState(**BASE_STATE))
 
     assert "final_answer" in result
     assert result["final_answer"] == "Marina Crest is your best match."
@@ -83,7 +84,7 @@ def test_answer_generation_only_mutates_final_answer(mock_get_llm):
     """Node returns only final_answer — does not overwrite other state fields."""
     mock_get_llm.return_value = _mock_streaming_llm(STREAMED_TOKENS)
 
-    result = answer_generation_node(BASE_STATE)
+    result = answer_generation_node(AgentState(**BASE_STATE))
 
     assert set(result.keys()) == {"final_answer"}
 
@@ -94,7 +95,7 @@ def test_answer_generation_handles_missing_reflection(mock_get_llm):
     mock_get_llm.return_value = _mock_streaming_llm(STREAMED_TOKENS)
     state = {**BASE_STATE, "reflection_output": None}
 
-    result = answer_generation_node(state)
+    result = answer_generation_node(AgentState(**state))
 
     assert result["final_answer"] == "Marina Crest is your best match."
 
