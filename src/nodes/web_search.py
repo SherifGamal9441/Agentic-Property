@@ -8,26 +8,44 @@ from src.agents.state import AgentState
 from ddgs import DDGS
 from src.llm.factory import get_llm
 import logging
+import re
 from langgraph.graph import END,StateGraph
 
 
 logger = logging.getLogger(__name__)
 
 #lets define the llm
-LLM = get_llm()
+LLM = get_llm(streaming=True)
+
+# thinking stripper
+# falls back to full content for non-thinking models
+
+_THINK_PATTERNS = [
+    r"</?think>$",
+    r"\*\*\s*\n?"
+]
+
+def _strip_think(content: str) -> str:
+    """Strip model thinking tokens, returning the substantive answer."""
+    for pattern in _THINK_PATTERNS:
+        parts = re.split(pattern, content, maxsplit=1)
+        if len(parts) > 1:
+            return parts[-1].strip()
+    return content.strip()
 
 
-
+#lets create the user query to web search query rewriter node
 #lets create the user query to web search query rewriter node
 def rewrite_to_search_query(state: AgentState) -> AgentState:
     """Rewrite the user query to a more specific web search query."""
     logger.info(f"Original query: {state.query}")
     logger.info("Rewriting user query to web search query")
     query = state.query
-    rewritten_query = LLM.invoke([
-        {"role": "system", "content": "You are a query to web search professional rewriter. Convert the user's query into a concise, web-search-optimized query."},
+    rewritten_query = _strip_think(LLM.invoke([
+        {"role": "system", "content": """You are a professional query rewriter. Convert the user's query into a web-search-optimized query 
+        for better search results about property listings in Dubai. Focus on extracting key entities and intent. Output ONLY the rewritten query. No explanation, no analysis."""},
         {"role": "user", "content": f"Rewrite this query for web search: {query}"}
-    ]).content.split("</think>")[1].strip()
+    ]).content)
     state.web_search_query = rewritten_query
     logger.info(f"Rewritten web search query: {state.web_search_query}")
     return state
@@ -54,25 +72,40 @@ def web_search(state: AgentState) -> AgentState:
 
 # now the node to summerise the web search results given the user question context too
 def summarize_web_search_results(state: AgentState) -> AgentState:
-    """Summarize the web search results given the user question context."""
     logger.info("Summarizing web search results")
-    summary = LLM.invoke([
-        {"role": "system", "content": "You are a web search result summarizer. Summarize the web search results given the user question context."},
-        {"role": "user", "content": f"Summarize the following web search results: {state.web_search_results}\n\nThe user's question is: {state.web_search_query}"}
-    ]).content.split("</think>")[1].strip()
+
+    prompt = f"""
+    User Question:
+    {state.query}
+    
+    Web Search Results:
+    {state.web_search_results}
+    
+    Summarize the search results relevant to answering the user's question.
+    Focus on:
+    - Property listings
+    - Prices
+    - Locations
+    - Property features
+    - Any market insights
+
+    Ignore irrelevant information.
+    Keep the summary concise and factual.
+    """
+    summary = _strip_think(
+        LLM.invoke([
+            {"role": "system", "content": "You summarize real estate search results for downstream reasoning."},
+            {"role": "user", "content": prompt}]).content)
     state.web_search_summary = summary
-    logger.info(f"Web search summary: {state.web_search_summary}")
+    logger.info(f"Web search summary: {summary}")
     return state
+
 
 
 # lets create a node to check if the web search was successful
 def check_web_search_success(state: AgentState) -> AgentState:
     """Check if the web search was successful."""
-    logger.info("Checking web search success")
-    if state.web_search_summary:
-        state.web_search_success = True
-    else:
-        state.web_search_success = False
+    state.web_search_success = bool(state.web_search_summary)
     logger.info(f"Web search success: {state.web_search_success}")
     return state
 
@@ -98,13 +131,3 @@ def create_web_search_agent():
     
     # Compile
     return web_search_agent.compile()
-
-
-#lets test the web search agent
-if __name__ == "__main__":
-    web_search_agent = create_web_search_agent()
-    result = web_search_agent.invoke(AgentState(query="france vs iraq world cup last night"))
-    print(type(result))
-
-
-

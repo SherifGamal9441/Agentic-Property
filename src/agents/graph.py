@@ -23,12 +23,13 @@ Entry point: "comparison_engine"
 Compile once at module level so the graph is reused across calls.
 """
 
-from langgraph.graph import END, StateGraph
+from langgraph.graph import END, StateGraph, START
 
 from src.agents.state import AgentState
 from src.nodes.answer_generation import answer_generation_node
 from src.nodes.comparison_engine import comparison_engine_node
 from src.nodes.reflection import reflection_node, route_after_reflection
+from src.nodes.web_search import create_web_search_agent
 
 
 def build_graph() -> StateGraph:
@@ -44,9 +45,10 @@ def build_graph() -> StateGraph:
     graph.add_node("comparison_engine", comparison_engine_node)
     graph.add_node("reflection", reflection_node)
     graph.add_node("answer_generation", answer_generation_node)
+    graph.add_node("web_search", create_web_search_agent())
 
     # ── Define edges ──────────────────────────────────────────────────────────
-    graph.set_entry_point("comparison_engine")
+    graph.add_edge(START, "comparison_engine")
     graph.add_edge("comparison_engine", "reflection")
 
     # Conditional: reflection decides whether to pass or signal a retry
@@ -61,7 +63,6 @@ def build_graph() -> StateGraph:
             "tool_router": END,
         },
     )
-
     graph.add_edge("answer_generation", END)
 
     return graph.compile()
