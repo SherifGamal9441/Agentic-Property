@@ -24,6 +24,9 @@ dependencies = [
     "langchain-ollama>=0.3",
     "langchain-community>=0.3",
     "pydantic-settings>=2.0",
+    "ddgs>=9.14.4",
+    "duckduckgo-search>=8.1.1",
+    "pydantic>=2.13.4",
 ]
 
 [dependency-groups]

@@ -17,7 +17,7 @@ from langchain_openai import ChatOpenAI
 from src.config.pydantic.settings import settings
 
 
-def get_llm(streaming: bool = False) -> BaseChatModel:
+def get_llm(streaming: bool = True) -> BaseChatModel:
     """
     Return a configured LangChain chat model for the current LLM_PROVIDER.
 
