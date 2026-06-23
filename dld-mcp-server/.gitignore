@@ -1,5 +1,4 @@
 .env
-data/
 logs/
 last_run.json
 __pycache__/
