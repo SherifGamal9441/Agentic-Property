@@ -1,17 +1,30 @@
 """
-Integration test for the full P2 LangGraph pipeline.
+Integration tests for the full LangGraph pipeline.
 
-Runs the compiled graph end-to-end with all LLM calls mocked,
-verifying that state flows correctly through:
-    comparison_engine → reflection → answer_generation
+Three fake-state tests, one per graph path:
+
+  Path A — Recommendation (query_routing → comparison_engine → reflection → answer_generation)
+      Seeds state as if query_routing returned cached properties.
+      Runs from comparison_engine onward (query_relevancy + understanding already ran).
+
+  Path B — Web search (web_search → answer_generation)
+      Seeds state as if web_search ran and produced a summary.
+      Runs answer_generation directly.
+
+  Path C — Rejection (query_relevancy already rejected)
+      State has is_relevant=False and final_answer already set.
+      Verifies graph does NOT call any downstream LLM when already rejected.
+
+All LLM calls are mocked — no Ollama daemon needed.
 """
 
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
+from src.agents.graph import build_graph
+from src.agents.state import AgentState
 
-# ── Shared mock helpers ───────────────────────────────────────────────────────
+# ── Shared helpers ────────────────────────────────────────────────────────────
 
 COMPARISON_RESULT = {
     "properties": [
@@ -27,36 +40,7 @@ COMPARISON_RESULT = {
 }
 
 REFLECTION_OK = {"ok": True, "issues": [], "confidence": 0.9}
-
 FINAL_ANSWER_TOKENS = ["Marina ", "Crest ", "is ", "your ", "best ", "match."]
-
-INITIAL_STATE = {
-    "query": "2BR in Dubai Marina, AED 1.8M, sea view",
-    "parsed_query": {
-        "location": "Dubai Marina",
-        "property_type": "apartment",
-        "bedrooms": 2,
-        "budget_aed": 1_800_000,
-        "amenities": ["sea view"],
-    },
-    "retrieved_properties": [
-        {
-            "id": "prop-001",
-            "title": "Marina Crest 2BR",
-            "price": 1_750_000,
-            "area_sqm": 110,
-            "location": "Dubai Marina",
-            "bedrooms": 2,
-            "amenities": ["sea view", "gym"],
-        }
-    ],
-    "comparison_result": None,
-    "reflection_output": None,
-    "needs_retry": False,
-    "retry_tool": None,
-    "retry_count": 0,
-    "final_answer": None,
-}
 
 
 def _make_invoke_mock(content: str):
@@ -74,48 +58,113 @@ def _make_stream_mock(tokens: list[str]):
     return llm
 
 
-# ── Tests ─────────────────────────────────────────────────────────────────────
+# ── Path A — Recommendation path ──────────────────────────────────────────────
 
 @patch("src.nodes.answer_generation.get_llm")
 @patch("src.nodes.reflection.get_llm")
 @patch("src.nodes.comparison_engine.get_llm")
-def test_full_pipeline_happy_path(mock_comp_llm, mock_refl_llm, mock_ans_llm):
+@patch("src.nodes.query_routing._call_cached_tool")
+@patch("src.nodes.query_understanding.get_llm")
+@patch("src.nodes.query_relevancy.get_llm")
+def test_recommendation_path(
+    mock_rel_llm, mock_und_llm, mock_cached_tool,
+    mock_comp_llm, mock_refl_llm, mock_ans_llm
+):
     """
-    Happy path: good comparison → reflection passes → final answer generated.
-    Verifies state has comparison_result, reflection_output, and final_answer.
+    Full recommendation path with fake cached properties.
+    query_relevancy → query_understanding → query_routing → comparison → reflection → answer.
     """
+    # Relevancy: accept
+    mock_rel_llm.return_value = _make_invoke_mock(
+        json.dumps({"relevant": True, "failed_rule": None, "reason": "valid Dubai query"})
+    )
+    # Understanding: route to query_routing
+    mock_und_llm.return_value = _make_invoke_mock(json.dumps({
+        "parsed_query": {"location": "Dubai Marina", "bedrooms": 2},
+        "route": "query_routing",
+        "route_reason": "property recommendation",
+    }))
+    # Cached tool: return one fake property
+    mock_cached_tool.return_value = [
+        {"id": "prop-001", "title": "Marina Crest 2BR", "price": 1_750_000,
+         "area_sqm": 110, "location": "Dubai Marina", "bedrooms": 2, "amenities": ["sea view"]}
+    ]
+    # Comparison engine
     mock_comp_llm.return_value = _make_invoke_mock(json.dumps(COMPARISON_RESULT))
+    # Reflection
     mock_refl_llm.return_value = _make_invoke_mock(json.dumps(REFLECTION_OK))
+    # Answer generation
     mock_ans_llm.return_value = _make_stream_mock(FINAL_ANSWER_TOKENS)
 
-    # Import after patching to ensure mocks are active
-    from src.agents.graph import build_graph
     graph = build_graph()
-    final_state = graph.invoke(INITIAL_STATE)
+    final_state = graph.invoke({"query": "2BR in Dubai Marina, sea view, AED 1.8M"})
 
+    assert final_state["route"] == "query_routing"
+    assert final_state["data_source"] == "cached"
+    assert final_state["data_intent"] == "recommend"
     assert final_state["comparison_result"] is not None
     assert final_state["reflection_output"]["ok"] is True
     assert final_state["final_answer"] == "Marina Crest is your best match."
-    assert final_state["needs_retry"] is False
+    assert final_state["is_relevant"] is True
 
 
-@patch("src.nodes.reflection.get_llm")
-@patch("src.nodes.comparison_engine.get_llm")
-def test_full_pipeline_retry_path(mock_comp_llm, mock_refl_llm):
+# ── Path B — Web search path ──────────────────────────────────────────────────
+
+@patch("src.nodes.answer_generation.get_llm")
+@patch("src.nodes.query_understanding.get_llm")
+@patch("src.nodes.query_relevancy.get_llm")
+def test_web_search_path(mock_rel_llm, mock_und_llm, mock_ans_llm):
     """
-    Retry path: reflection fails → needs_retry=True → graph ends (signals upstream).
-    final_answer must be None since answer_generation was never reached.
+    Web search path: query_relevancy → query_understanding → web_search → answer_generation.
+    We seed web_search_summary directly to bypass the real web_search sub-graph.
     """
-    bad_comparison = {"properties": []}
-    reflection_fail = {"ok": False, "issues": ["no properties compared"], "confidence": 0.1}
+    mock_rel_llm.return_value = _make_invoke_mock(
+        json.dumps({"relevant": True, "failed_rule": None, "reason": "valid general question"})
+    )
+    mock_und_llm.return_value = _make_invoke_mock(json.dumps({
+        "parsed_query": {"location": "Downtown Dubai"},
+        "route": "web_search",
+        "route_reason": "general trend question",
+    }))
+    mock_ans_llm.return_value = _make_stream_mock(["Rents ", "are ", "rising."])
 
-    mock_comp_llm.return_value = _make_invoke_mock(json.dumps(bad_comparison))
-    mock_refl_llm.return_value = _make_invoke_mock(json.dumps(reflection_fail))
+    # Inject web_search_summary to simulate web_search sub-graph having already run
+    with patch("src.nodes.web_search.create_web_search_agent") as mock_ws:
+        def fake_web_search_agent():
+            def _run(state):
+                return {"web_search_summary": "Rental prices in Downtown Dubai increased 12% in 2025."}
+            mock_compiled = MagicMock()
+            mock_compiled.invoke = _run
+            return mock_compiled
+        mock_ws.return_value = fake_web_search_agent()
 
-    from src.agents.graph import build_graph
+        graph = build_graph()
+        final_state = graph.invoke({"query": "What are rental trends in Downtown Dubai?"})
+
+    assert final_state["route"] == "web_search"
+    # comparison_result is never written on the web_search path (comparison_engine skipped)
+    assert final_state.get("comparison_result") is None
+    assert final_state["final_answer"] == "Rents are rising."
+
+
+# ── Path C — Rejection path ───────────────────────────────────────────────────
+
+@patch("src.nodes.query_understanding.get_llm")  # should NOT be called
+@patch("src.nodes.query_relevancy.get_llm")
+def test_rejection_path(mock_rel_llm, mock_und_llm):
+    """
+    Rejection path: query_relevancy rejects → END immediately.
+    query_understanding must NOT be called.
+    """
+    mock_rel_llm.return_value = _make_invoke_mock(
+        json.dumps({"relevant": False, "failed_rule": "topic", "reason": "not real estate"})
+    )
+
     graph = build_graph()
-    final_state = graph.invoke(INITIAL_STATE)
+    final_state = graph.invoke({"query": "What is the best pasta recipe?"})
 
-    assert final_state["needs_retry"] is True
-    assert final_state["final_answer"] is None
-    assert final_state["retry_count"] == 1
+    assert final_state["is_relevant"] is False
+    assert final_state["final_answer"] is not None
+    assert "Dubai" in final_state["final_answer"] or "property" in final_state["final_answer"].lower()
+    # query_understanding must NOT have been invoked
+    mock_und_llm.assert_not_called()
