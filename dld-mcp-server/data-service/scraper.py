@@ -28,7 +28,7 @@ class Settings:
     def rapidapi_headers(self) -> dict[str, str]:
         return {
             "x-rapidapi-host": "uae-real-estate2.p.rapidapi.com",
-            "x-rapidapi-key": os.getenv("RAPIDAPI_KEY"),
+            "x-rapidapi-key": os.getenv('RAPIDAPI_KEY'),
         }
 
 settings = Settings()
@@ -164,7 +164,7 @@ async def _collect_ids(
     url = "https://uae-real-estate2.p.rapidapi.com/properties_search"
     ids: list[int] = []
     page = 0
-    page_size = os.getenv("SEARCH_PAGE_SIZE")
+    page_size = os.getenv('SEARCH_PAGE_SIZE')
 
     while len(ids) < n:
         payload = {
@@ -198,7 +198,7 @@ async def _collect_ids(
             break
 
         page += 1
-        await asyncio.sleep(os.getenv("SCRAPER_REQUEST_DELAY"))
+        await asyncio.sleep(os.getenv('SCRAPER_REQUEST_DELAY'))
 
     return ids[:n]
 
@@ -310,7 +310,7 @@ def _print_json(listings: list[ApartmentListing]) -> None:
 
 def _write_last_run(count: int) -> None:
     """Record a successful scrape timestamp to last_run.json."""
-    p = os.getenv("LAST_RUN_PATH") 
+    p = os.getenv('LAST_RUN_PATH') 
     payload = {
         "last_run": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "count": count,
@@ -336,7 +336,7 @@ async def scrape(n: int, output_path: str = "") -> list[ApartmentListing]:
     t0 = time.monotonic()
 
     # Determine output mode from env var (default: db)
-    output_mode = os.getenv("SCRAPER_OUTPUT", "db").lower()
+    output_mode = os.getenv('SCRAPER_OUTPUT', "db").lower()
     log.info("Output mode: %s", output_mode)
 
     async with httpx.AsyncClient(
@@ -351,7 +351,7 @@ async def scrape(n: int, output_path: str = "") -> list[ApartmentListing]:
             log.error("No IDs found — check your API key and quota.")
             return []
 
-        sem = asyncio.Semaphore(os.getenv("SCRAPER_CONCURRENCY"))
+        sem = asyncio.Semaphore(os.getenv('SCRAPER_CONCURRENCY'))
         tasks = [
             _fetch_detail(client, pid, sem, i + 1, len(ids))
             for i, pid in enumerate(ids)
@@ -366,7 +366,7 @@ async def scrape(n: int, output_path: str = "") -> list[ApartmentListing]:
     if output_mode == "csv":
         # Fallback: write CSV
         if not output_path:
-            output_path = str(os.getenv("OUTPUT_CSV_PATH"))
+            output_path = str(os.getenv('OUTPUT_CSV_PATH'))
         _write_csv(listings, output_path)
         written_count = len(listings)
     else:
@@ -411,7 +411,7 @@ if __name__ == "__main__":
         sys.exit(1)
     if n > os.getenv("SCRAPER_MAX_LISTINGS"):
         print(
-            f"Error: n={n} exceeds SCRAPER_MAX_LISTINGS={os.getenv("SCRAPER_MAX_LISTINGS")}. "
+            f"Error: n={n} exceeds SCRAPER_MAX_LISTINGS={os.getenv('SCRAPER_MAX_LISTINGS')}. "
             "Raise the limit in .env if intentional.",
             file=sys.stderr,
         )
