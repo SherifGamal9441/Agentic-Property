@@ -1,16 +1,26 @@
 """
 Answer Generation Node
 
-Takes the comparison engine's result and the reflection audit, then produces
-a final, user-facing recommendation — streamed token by token.
+Single node for ALL graph paths. Inspects state and generates the right
+user-facing response depending on what data is available:
 
-Reads from state:
-    query               — original user question
-    comparison_result   — scored properties from comparison_engine_node
-    reflection_output   — audit notes from reflection_node
+  Path A — query_routing → comparison_engine → reflection → HERE
+      Reads: comparison_result, reflection_output, data_intent
+      data_intent="recommend"     → recommends best match with reasons
+      data_intent="insights_only" → derives market insights only;
+                                    explicitly states properties may be unavailable
+
+  Path B — query_understanding → web_search → HERE
+      Reads: web_search_summary
+      Answers the general question concisely
+
+  Path C — query_relevancy (out-of-scope) → END (never reaches here)
+      final_answer is already set by query_relevancy_node directly
+
+The API layer always reads state.final_answer — one field, all paths.
 
 Writes to state:
-    final_answer: str   — the complete streamed response
+    final_answer: str
 """
 
 import logging
@@ -22,36 +32,77 @@ from src.llm.factory import get_llm
 
 logger = logging.getLogger(__name__)
 
-# ── Prompt templates ──────────────────────────────────────────────────────────
+# ── System prompt (shared across all paths) ───────────────────────────────────
 
 _SYSTEM_PROMPT = """\
-You are a knowledgeable and trustworthy UAE real estate advisor.
-Your job is to take a property comparison report and give the user a clear,
-honest recommendation they can act on.
+You are a knowledgeable and trustworthy Dubai real estate advisor.
+Your job is to generate a clear, honest, useful response for the user.
 
 Guidelines:
-- Lead with the best match and explain WHY using specific data (fit_score, criteria, price assessment).
-- If there is a close runner-up, mention it briefly with its key differentiator.
-- If the reflection audit flagged any issues or caveats, include them transparently at the end.
-- Be concise. No filler phrases ("Great question!", "Certainly!", etc.).
-- Write in plain English — avoid technical JSON terms like "fit_score" in the final output.
+- Be direct and specific. No filler phrases ("Great question!", "Certainly!", etc.).
+- Write in plain English. Do not expose internal data formats like fit_score or JSON keys.
+- Cite data points where available (price ranges, area names, features).
+- Be transparent about limitations or data gaps.
 """
 
-_USER_PROMPT_TEMPLATE = """\
-User's original request:
+# ── Path-specific prompt templates ────────────────────────────────────────────
+
+_RECOMMEND_TEMPLATE = """\
+User's request:
 {query}
 
 Property comparison report:
 {comparison_result}
 
-Quality review notes (use these as caveats if relevant):
+Quality review notes (mention as caveats only if relevant):
 {reflection_issues}
 
-Write the final recommendation for the user.
-Structure:
+Write the final recommendation. Structure:
 1. Best match — name it and give 2–3 specific reasons why it fits best.
-2. Runner-up (if any) — name it and its one key advantage over the best match.
+2. Runner-up (if any) — name it and its one key advantage.
 3. Caveats — any important limitations or data gaps the user should know about.
+"""
+
+_INSIGHTS_TEMPLATE = """\
+User's request:
+{query}
+
+Historical market data (these properties may no longer be available — do NOT recommend them):
+{comparison_result}
+
+Quality review notes:
+{reflection_issues}
+
+Based on this historical data, provide market insights only:
+1. Price range and trends for this type of property in this area.
+2. Key characteristics of the market segment (popular features, typical sizes, etc.).
+3. What the user should expect if they search for current listings.
+
+Do NOT recommend any specific property. Clearly state that this is based on historical data.
+"""
+
+_WEB_SEARCH_TEMPLATE = """\
+User's question:
+{query}
+
+Information gathered from web sources:
+{web_search_summary}
+
+Answer the user's question clearly and concisely using the information above.
+If the information is incomplete, say so honestly.
+"""
+
+_NO_RESULTS_TEMPLATE = """\
+User's request:
+{query}
+
+Unfortunately, no properties were found matching your criteria at this time.
+
+Write a helpful response that:
+1. Acknowledges that no results were found.
+2. Suggests what the user could adjust (broader location, higher budget, fewer criteria).
+3. Invites them to refine their search.
+Keep it concise and constructive.
 """
 
 
@@ -59,58 +110,84 @@ Structure:
 
 def answer_generation_node(state: AgentState) -> dict:
     """
-    LangGraph node: generate the final user-facing answer with streaming.
+    LangGraph node: generate the final user-facing response.
+
+    Detects which path ran by inspecting state, then builds the appropriate
+    prompt and streams the LLM response.
 
     Args:
-        state: Current AgentState. Reads `query`, `comparison_result`,
-               and `reflection_output`.
+        state: Current AgentState.
 
     Returns:
         Partial state dict with `final_answer` populated.
     """
-    logger.info("answer_generation: building final recommendation")
-
     llm = get_llm(streaming=True)
+    messages = _build_messages(state)
 
-    reflection_issues = (
-        state.reflection_output.get("issues", [])
-        if state.reflection_output
-        else []
-    )
+    logger.info("answer_generation: streaming response")
 
-    user_message = _USER_PROMPT_TEMPLATE.format(
-        query=state.query,
-        comparison_result=_format_comparison_for_prompt(state.comparison_result),
-        reflection_issues="\n".join(f"- {issue}" for issue in reflection_issues) or "None",
-    )
-
-    messages = [
-        SystemMessage(content=_SYSTEM_PROMPT),
-        HumanMessage(content=user_message),
-    ]
-
-    # Stream tokens — collect into full string for state storage
-    final_answer_chunks: list[str] = []
+    chunks: list[str] = []
     for chunk in llm.stream(messages):
         token = chunk.content
-        final_answer_chunks.append(token)
-        print(token, end="", flush=True)   # live streaming to stdout / API layer
+        chunks.append(token)
+        print(token, end="", flush=True)
 
-    print()  # newline after stream ends
-    final_answer = "".join(final_answer_chunks)
+    print()
+    final_answer = "".join(chunks)
 
     logger.info("answer_generation: response complete (%d chars)", len(final_answer))
-
     return {"final_answer": final_answer}
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ── Internal helpers ──────────────────────────────────────────────────────────
+
+def _build_messages(state: AgentState) -> list:
+    """Choose the right prompt template based on what data is in state."""
+
+    # ── web_search path ───────────────────────────────────────────────────────
+    if state.web_search_summary:
+        logger.info("answer_generation: web_search path")
+        user_content = _WEB_SEARCH_TEMPLATE.format(
+            query=state.query,
+            web_search_summary=state.web_search_summary,
+        )
+        return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+
+    # ── query_routing path ────────────────────────────────────────────────────
+    reflection_issues = (
+        state.reflection_output.get("issues", []) if state.reflection_output else []
+    )
+    reflection_text = "\n".join(f"- {i}" for i in reflection_issues) or "None"
+    comparison_text = _format_comparison_for_prompt(state.comparison_result)
+
+    # No properties found at all
+    if not state.retrieved_properties and not state.comparison_result:
+        logger.info("answer_generation: no-results path")
+        user_content = _NO_RESULTS_TEMPLATE.format(query=state.query)
+        return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+
+    # Historical data — insights only
+    if state.data_intent == "insights_only":
+        logger.info("answer_generation: insights_only path (historical data)")
+        user_content = _INSIGHTS_TEMPLATE.format(
+            query=state.query,
+            comparison_result=comparison_text,
+            reflection_issues=reflection_text,
+        )
+        return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+
+    # Recommend — current cached data
+    logger.info("answer_generation: recommend path (cached data)")
+    user_content = _RECOMMEND_TEMPLATE.format(
+        query=state.query,
+        comparison_result=comparison_text,
+        reflection_issues=reflection_text,
+    )
+    return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+
 
 def _format_comparison_for_prompt(comparison_result: dict | None) -> str:
-    """
-    Convert the structured comparison_result into a readable text block
-    so the LLM doesn't have to parse raw JSON in its prompt.
-    """
+    """Convert comparison_result JSON into a readable text block for the prompt."""
     if not comparison_result:
         return "No comparison data available."
 
