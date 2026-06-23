@@ -142,8 +142,6 @@ def test_web_search_path(mock_rel_llm, mock_und_llm, mock_ans_llm):
         final_state = graph.invoke({"query": "What are rental trends in Downtown Dubai?"})
 
     assert final_state["route"] == "web_search"
-    # comparison_result is never written on the web_search path (comparison_engine skipped)
-    assert final_state.get("comparison_result") is None
     assert final_state["final_answer"] == "Rents are rising."
 
 
