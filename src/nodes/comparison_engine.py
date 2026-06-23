@@ -30,9 +30,21 @@ logger = logging.getLogger(__name__)
 
 # ── Prompt templates ──────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """\
+_SYSTEM_PROMPT_RECOMMEND = """\
 You are an expert real estate comparison assistant specialising in UAE property.
 Your job is to evaluate how well each retrieved property matches the user's requirements.
+
+Rules:
+- Be objective and data-driven. Only reference criteria explicitly stated in the requirements.
+- fit_score: 0.0 = no match at all, 1.0 = perfect match on every criterion.
+- price_assessment: compare the property's price to typical market rates for its type/location.
+- Return ONLY valid JSON — no prose, no markdown fences, no extra keys.
+"""
+
+_SYSTEM_PROMPT_INSIGHTS = """\
+You are an expert real estate comparison assistant specialising in UAE property.
+You are evaluating HISTORICAL data. These properties may already be sold.
+Your job is to evaluate them to derive market insights, not to recommend them as active listings.
 
 Rules:
 - Be objective and data-driven. Only reference criteria explicitly stated in the requirements.
@@ -84,8 +96,10 @@ def comparison_engine_node(state: AgentState) -> dict:
         retrieved_properties=json.dumps(state.retrieved_properties, ensure_ascii=False, indent=2),
     )
 
+    sys_prompt = _SYSTEM_PROMPT_INSIGHTS if state.data_intent == "insights_only" else _SYSTEM_PROMPT_RECOMMEND
+
     messages = [
-        SystemMessage(content=_SYSTEM_PROMPT),
+        SystemMessage(content=sys_prompt),
         HumanMessage(content=user_message),
     ]
 
