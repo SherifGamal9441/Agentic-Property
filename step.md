@@ -12,7 +12,7 @@ EXCHANGERATE_API_KEY=your_key_here
 ## 2. Build and start all services
 
 ```powershell
-docker compose --env-file ..\.env -f dld-mcp-server\docker-compose.yml up --build -d
+docker compose --env-file .env -f dld-mcp-server\docker-compose.yml up --build -d
 ```
 
 Wait ~30s for data-service to seed 28K historical records.
