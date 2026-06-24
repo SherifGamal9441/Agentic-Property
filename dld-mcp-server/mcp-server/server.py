@@ -11,6 +11,12 @@ logger = logging.getLogger(__name__)
 # Create FastMCP server instance
 mcp = FastMCP(name="DLD_MCP_Server")
 
+# ---- Create tool instances ONCE at module level ----
+historical_tool = HistoricalSearchTool()
+active_tool = ActiveSearchTool()
+currency_tool = CurrencyTool()
+compare_tool = CompareTool(historical_tool, active_tool)  # reuses the same instances
+
 # ---------------------------------------------------------------------------
 # Tool 1: Search Historical Listings
 # ---------------------------------------------------------------------------
@@ -77,8 +83,7 @@ async def search_historical(
             - returned_count: number of listings returned.
             - listings: list of property objects.
     """
-    tool = HistoricalSearchTool()
-    result = await tool.search(
+    return await historical_tool.search(  # ← fixed: use historical_tool
         area_name=area_name,
         address=address,
         building_name=building_name,
@@ -103,7 +108,6 @@ async def search_historical(
         post_date_max=post_date_max,
         limit=limit
     )
-    return result
 
 
 # ---------------------------------------------------------------------------
@@ -138,38 +142,8 @@ async def search_active(
 ):
     """
     Search active listings. All filters are optional. Date filters are NOT available.
-
-    Args:
-        area_name: Exact area name (e.g., "Dubai Marina", "Downtown Dubai").
-        address: Partial address string to match (case‑insensitive).
-        building_name: Name of the building (partial match).
-        type: Property type (e.g., "Apartment", "Villa", "Townhouse").
-        furnishing: Furnishing status: "Furnished" or "Unfurnished".
-        completion_status: "completed" or "under-construction".
-        price_min: Minimum price in AED.
-        price_max: Maximum price in AED.
-        beds_min: Minimum number of bedrooms.
-        beds_max: Maximum number of bedrooms.
-        baths_min: Minimum number of bathrooms.
-        baths_max: Maximum number of bathrooms.
-        year_of_completion_min: Earliest year of completion.
-        year_of_completion_max: Latest year of completion.
-        total_parking_spaces_min: Minimum parking spaces.
-        total_parking_spaces_max: Maximum parking spaces.
-        total_floors_min: Minimum number of floors in building.
-        total_floors_max: Maximum number of floors in building.
-        total_building_area_sqft_min: Minimum building area in sqft.
-        total_building_area_sqft_max: Maximum building area in sqft.
-        limit: Maximum number of results to return (default 20, max 100).
-
-    Returns:
-        A dictionary with:
-            - total_matches: total number of matching records.
-            - returned_count: number of listings returned.
-            - listings: list of property objects.
     """
-    tool = ActiveSearchTool()
-    result = await tool.search(
+    return await active_tool.search(  # ← fixed: use active_tool
         area_name=area_name,
         address=address,
         building_name=building_name,
@@ -192,7 +166,6 @@ async def search_active(
         total_building_area_sqft_max=total_building_area_sqft_max,
         limit=limit
     )
-    return result
 
 
 # ---------------------------------------------------------------------------
@@ -214,27 +187,8 @@ async def compare_listings(
 ):
     """
     Compare historical and active data for a given area and filters.
-
-    Args:
-        area_name: Exact area name to filter (e.g., "Dubai Marina").
-        type: Property type (e.g., "Apartment", "Villa").
-        furnishing: Furnishing status: "Furnished" or "Unfurnished".
-        beds_min: Minimum number of bedrooms.
-        beds_max: Maximum number of bedrooms.
-        price_min: Minimum price in AED.
-        price_max: Maximum price in AED.
-        limit: Maximum number of recent properties to analyse from each dataset (default 20).
-
-    Returns:
-        A dictionary with:
-            - historical_data: total_matches, listings, and stats (avg, median, min, max price).
-            - active_data: total_matches, listings, and stats.
-            - comparison: price_change_pct (percentage change from historical avg to active avg) and a summary message.
     """
-    historical_tool = HistoricalSearchTool()
-    active_tool = ActiveSearchTool()
-    compare_tool = CompareTool(historical_tool, active_tool)
-    result = await compare_tool.compare(
+    return await compare_tool.compare(  # ← correct as you had
         area_name=area_name,
         type=type,
         furnishing=furnishing,
@@ -244,7 +198,6 @@ async def compare_listings(
         price_max=price_max,
         limit=limit
     )
-    return result
 
 
 # ---------------------------------------------------------------------------
@@ -257,18 +210,10 @@ async def compare_listings(
 async def convert_currency_tool(from_currency: str, to_currency: str, amount: float) -> str:
     """
     Convert a monetary amount between two currencies.
-
-    Args:
-        from_currency: The source currency code (e.g., "USD", "EUR", "AED").
-        to_currency: The target currency code (e.g., "USD", "EUR", "AED").
-        amount: The amount of money to convert (must be a positive number).
-
-    Returns:
-        A formatted string with the conversion result, e.g.:
-        "100.0 USD = 367.25 AED"
     """
-    tool = CurrencyTool()
-    result = await tool.convert(from_currency, to_currency, amount)
+    result = await currency_tool.convert(  # ← fixed: use currency_tool
+        from_currency, to_currency, amount
+    )
 
     if result.get("error"):
         return f"❌ Error: {result.get('message')}"
