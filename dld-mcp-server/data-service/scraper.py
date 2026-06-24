@@ -164,7 +164,7 @@ async def _collect_ids(
     url = "https://uae-real-estate2.p.rapidapi.com/properties_search"
     ids: list[int] = []
     page = 0
-    page_size = os.getenv('SEARCH_PAGE_SIZE')
+    page_size = int(os.getenv('SEARCH_PAGE_SIZE'))
 
     while len(ids) < n:
         payload = {
@@ -198,7 +198,7 @@ async def _collect_ids(
             break
 
         page += 1
-        await asyncio.sleep(os.getenv('SCRAPER_REQUEST_DELAY'))
+        await asyncio.sleep(int(os.getenv('SCRAPER_REQUEST_DELAY')))
 
     return ids[:n]
 
@@ -351,7 +351,7 @@ async def scrape(n: int, output_path: str = "") -> list[ApartmentListing]:
             log.error("No IDs found — check your API key and quota.")
             return []
 
-        sem = asyncio.Semaphore(os.getenv('SCRAPER_CONCURRENCY'))
+        sem = asyncio.Semaphore(int(os.getenv('SCRAPER_CONCURRENCY')))
         tasks = [
             _fetch_detail(client, pid, sem, i + 1, len(ids))
             for i, pid in enumerate(ids)
@@ -409,7 +409,7 @@ if __name__ == "__main__":
     if n < 1:
         print("Error: n must be ≥ 1", file=sys.stderr)
         sys.exit(1)
-    if n > os.getenv("SCRAPER_MAX_LISTINGS"):
+    if n > int(os.getenv('SCRAPER_MAX_LISTINGS')):
         print(
             f"Error: n={n} exceeds SCRAPER_MAX_LISTINGS={os.getenv('SCRAPER_MAX_LISTINGS')}. "
             "Raise the limit in .env if intentional.",
