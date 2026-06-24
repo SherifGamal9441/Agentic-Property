@@ -39,7 +39,8 @@ def run_test(label: str, query: str) -> None:
     print(f"Data source : {final_state.get('data_source', 'n/a')}")
     print(f"Data intent : {final_state.get('data_intent', 'n/a')}")
     print(f"Relevant    : {final_state.get('is_relevant', True)}")
-
+    # lets visualise the graph
+    agent_graph.get_graph().draw_mermaid_png(output_file_path="current_full_graph.png")
 
 def main() -> None:
     # Path A — recommendation query (query_routing path, stub tools → no-results response)

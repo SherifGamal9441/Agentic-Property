@@ -13,10 +13,11 @@ from langchain_core.language_models import BaseChatModel
 from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
-
+from functools import lru_cache
 from src.config.pydantic.settings import settings
 
 
+@lru_cache(maxsize=1)
 def get_llm(streaming: bool = True) -> BaseChatModel:
     """
     Return a configured LangChain chat model for the current LLM_PROVIDER.
