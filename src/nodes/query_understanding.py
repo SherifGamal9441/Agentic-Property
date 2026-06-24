@@ -19,14 +19,13 @@ Writes to state:
     route: "query_routing" | "web_search"
 """
 
-import json
 import logging
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
 from src.llm.factory import get_llm
+from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -92,16 +91,11 @@ def query_understanding_node(state: AgentState) -> dict:
     response = llm.invoke(messages)
     raw = response.content.strip()
 
-    try:
-        result = json.loads(raw)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            result = json.loads(match.group())
-        else:
-            logger.error("query_understanding: could not parse LLM response:\n%s", raw)
-            # Fail safe: treat as a web_search query (less risky default)
-            result = {"parsed_query": {}, "route": "web_search", "route_reason": "parse failure fallback"}
+    result = parse_llm_json(raw)
+    if result is None:
+        logger.error("query_understanding: could not parse LLM response:\n%s", raw)
+        # Fail safe: treat as a web_search query (less risky default)
+        result = {"parsed_query": {}, "route": "web_search", "route_reason": "parse failure fallback"}
 
     parsed_query: dict = result.get("parsed_query", {})
     route: str = result.get("route", "web_search")

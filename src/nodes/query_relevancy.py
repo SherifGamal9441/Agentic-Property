@@ -14,14 +14,13 @@ Writes to state:
     final_answer: str | None   — set only when is_relevant=False
 """
 
-import json
 import logging
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
 from src.llm.factory import get_llm
+from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -50,39 +49,30 @@ _USER_PROMPT_TEMPLATE = "Classify this query: {query}"
 
 # ── Rejection message builder ─────────────────────────────────────────────────
 
-_REJECTION_TEMPLATES = {
+_HELP_BLOCK = (
+    "Here's what I *can* help you with:\n"
+    "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
+    "• Comparing properties across different Dubai neighbourhoods\n"
+    "• Market insights and price trends for Dubai real estate\n"
+    "• Advice on buying, renting, or investing in Dubai property\n\n"
+    "Feel free to ask about any of the above!"
+)
+
+_REJECTION_INTROS = {
     "geography": (
         "I can only help with property searches and real estate questions "
         "specifically in Dubai.\n\n"
         "Your question seems to be about a location outside Dubai — "
-        "I'm not able to assist with that.\n\n"
-        "Here's what I *can* help you with:\n"
-        "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
-        "• Comparing properties across different Dubai neighbourhoods\n"
-        "• Market insights and price trends for Dubai real estate\n"
-        "• Advice on buying, renting, or investing in Dubai property\n\n"
-        "Feel free to ask about any of the above!"
+        "I'm not able to assist with that."
     ),
     "topic": (
         "I'm a specialised Dubai real estate assistant — I can only help with "
         "property-related questions.\n\n"
-        "Your question appears to be about something outside my area of expertise.\n\n"
-        "Here's what I *can* help you with:\n"
-        "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
-        "• Comparing properties across different Dubai neighbourhoods\n"
-        "• Market insights and price trends for Dubai real estate\n"
-        "• Advice on buying, renting, or investing in Dubai property\n\n"
-        "Feel free to ask about any of the above!"
+        "Your question appears to be about something outside my area of expertise."
     ),
     "both": (
         "I'm a specialised Dubai real estate assistant. Your question is outside "
-        "what I can help with — it's neither about Dubai nor about property topics.\n\n"
-        "Here's what I *can* help you with:\n"
-        "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
-        "• Comparing properties across different Dubai neighbourhoods\n"
-        "• Market insights and price trends for Dubai real estate\n"
-        "• Advice on buying, renting, or investing in Dubai property\n\n"
-        "Feel free to ask about any of the above!"
+        "what I can help with — it's neither about Dubai nor about property topics."
     ),
 }
 
@@ -113,16 +103,11 @@ def query_relevancy_node(state: AgentState) -> dict:
     response = llm.invoke(messages)
     raw = response.content.strip()
 
-    try:
-        result = json.loads(raw)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            result = json.loads(match.group())
-        else:
-            # Cannot parse — fail safe: let the query through rather than block valid users
-            logger.warning("query_relevancy: could not parse LLM response, defaulting to relevant")
-            return {"is_relevant": True}
+    result = parse_llm_json(raw)
+    if result is None:
+        # Cannot parse — fail safe: let the query through rather than block valid users
+        logger.warning("query_relevancy: could not parse LLM response, defaulting to relevant")
+        return {"is_relevant": True}
 
     is_relevant: bool = result.get("relevant", True)
     failed_rule: str = result.get("failed_rule") or "both"
@@ -131,7 +116,8 @@ def query_relevancy_node(state: AgentState) -> dict:
         logger.info("query_relevancy: query accepted")
         return {"is_relevant": True}
 
-    rejection = _REJECTION_TEMPLATES.get(failed_rule, _REJECTION_TEMPLATES["both"])
+    intro = _REJECTION_INTROS.get(failed_rule, _REJECTION_INTROS["both"])
+    rejection = f"{intro}\n\n{_HELP_BLOCK}"
     logger.info("query_relevancy: query rejected (rule=%s, reason=%s)", failed_rule, result.get("reason"))
 
     return {

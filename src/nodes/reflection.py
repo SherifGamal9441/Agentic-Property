@@ -14,19 +14,18 @@ Writes to state:
         confidence: float,      # 0.0–1.0 overall confidence in the comparison
     }
     needs_retry: bool           # True when ok=False and retries remain
-    retry_tool: str | None      # Suggested tool to retry with (set by upstream router)
     retry_count: int            # Incremented on each retry
 """
 
 import json
 import logging
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
-from src.config.pydantic.settings import settings
+from src.config.settings import settings
 from src.llm.factory import get_llm
+from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +70,7 @@ def reflection_node(state: AgentState) -> dict:
 
     Returns:
         Partial state dict updating `reflection_output`, `needs_retry`,
-        `retry_tool`, and `retry_count`.
+        and `retry_count`.
     """
     logger.info("reflection: auditing comparison result")
 
@@ -89,20 +88,15 @@ def reflection_node(state: AgentState) -> dict:
     response = llm.invoke(messages)
     raw = response.content.strip()
 
-    try:
-        reflection_output = json.loads(raw)
-    except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            reflection_output = json.loads(match.group())
-        else:
-            logger.error("reflection: LLM returned non-JSON output:\n%s", raw)
-            # Fail safe: treat as failed quality check so we can retry or escalate
-            reflection_output = {
-                "ok": False,
-                "issues": ["reflection node could not parse LLM response"],
-                "confidence": 0.0,
-            }
+    reflection_output = parse_llm_json(raw)
+    if reflection_output is None:
+        logger.error("reflection: LLM returned non-JSON output:\n%s", raw)
+        # Fail safe: treat as failed quality check so we can retry or escalate
+        reflection_output = {
+            "ok": False,
+            "issues": ["reflection node could not parse LLM response"],
+            "confidence": 0.0,
+        }
 
     ok: bool = reflection_output.get("ok", False)
     current_retry_count: int = state.retry_count
@@ -125,7 +119,6 @@ def reflection_node(state: AgentState) -> dict:
     return {
         "reflection_output": reflection_output,
         "needs_retry": needs_retry,
-        "retry_tool": None,          # tool_router (upstream) decides which tool to retry
         "retry_count": current_retry_count + (1 if needs_retry else 0),
     }
 

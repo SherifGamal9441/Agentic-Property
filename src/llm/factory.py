@@ -14,7 +14,9 @@ from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from functools import lru_cache
-from src.config.pydantic.settings import settings
+from src.config.settings import settings
+
+#caching the model to avoid reloading
 
 
 @lru_cache(maxsize=1)
@@ -52,7 +54,7 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
             return ChatOpenAI(
                 model=settings.custom_openai_model,
                 base_url=settings.custom_openai_base_url,
-                api_key=settings.custom_openai_api_key,
+                api_key=settings.openai_api_key,
                 streaming=streaming,
                 extra_body={"enable_thinking":False}
             )
