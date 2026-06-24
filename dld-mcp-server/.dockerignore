@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+.git
+.gitignore
+*.log
+last_run.json
+data/*.csv

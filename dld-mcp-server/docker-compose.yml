@@ -35,12 +35,13 @@ services:
     build: ./mcp-server
     depends_on:
       - data-service
+    ports:
+      - "8001:8001"
     environment:
       DATA_SERVICE_URL: http://data-service:8000
       EXCHANGERATE_API_KEY: ${EXCHANGERATE_API_KEY}
     networks:
       - dld-net
-    stdin_open: true
 
 volumes:
   dld-pgdata:

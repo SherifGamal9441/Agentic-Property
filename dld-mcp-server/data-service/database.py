@@ -29,7 +29,3 @@ def get_db() -> Session:
         yield db
     finally:
         db.close()
-
-
-def create_tables():
-    Base.metadata.create_all(bind=engine)

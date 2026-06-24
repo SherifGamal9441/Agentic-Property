@@ -1,1 +1,1 @@
-0 2 * * 1 cd /app && python scraper.py 90 >> /var/log/scraper.log 2>&1
+0 2 * * 1 cd /app && python scraper.py 90 2>&1 | logger -t scraper

@@ -6,6 +6,7 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import OperationalError
+from sqlalchemy import UniqueConstraint
 from database import SessionLocal, engine
 from models import HistoricalListing, ActiveListing, Base
 
@@ -42,18 +43,25 @@ def clean_row(row):
                     data[k] = dt.date() if pd.notna(dt) else None
                 else:
                     data[k] = v
-            except:
+            except Exception:
                 data[k] = None
         elif k == "property_id":
             data[k] = str(v) if v is not None else None
     return data
 
-def seed_table(csv_path: str, model_class):
+def seed_table(csv_path: str, model_class, truncate_first: bool = False):
     if not os.path.exists(csv_path):
         logger.warning(f"CSV file not found: {csv_path}, skipping.")
         return 0, 0
 
     logger.info(f"Seeding {model_class.__tablename__} from {csv_path}...")
+
+    if truncate_first:
+        with SessionLocal() as session:
+            session.query(model_class).delete()
+            session.commit()
+            logger.info(f"Truncated {model_class.__tablename__} before seeding.")
+
     df = pd.read_csv(csv_path)
 
     # 🔧 Normalise column names: lowercase, spaces → underscores
@@ -76,19 +84,17 @@ def seed_table(csv_path: str, model_class):
 
     with SessionLocal() as session:
         try:
-            # Check if there is a UniqueConstraint on property_id
-            has_unique = False
-            for constraint in model_class.__table__.constraints:
-                if hasattr(constraint, 'columns') and 'property_id' in constraint.columns:
-                    has_unique = True
-                    break
+            has_unique = any(
+                isinstance(c, UniqueConstraint) and 'property_id' in c.columns
+                for c in model_class.__table__.constraints
+            )
 
             if has_unique:
-                # Use ON CONFLICT DO NOTHING
                 stmt = insert(model_class).values(records).on_conflict_do_nothing(index_elements=["property_id"])
-                result = session.execute(stmt)
-                inserted = result.rowcount
-                skipped = len(records) - inserted
+                session.execute(stmt)
+                session.commit()
+                inserted = len(records)
+                skipped = 0
             else:
                 # Plain insert – all rows inserted
                 session.add_all([model_class(**rec) for rec in records])
@@ -110,7 +116,7 @@ def seed_all():
         sys.exit(1)
     Base.metadata.create_all(bind=engine)
 
-    hist_ins, hist_skp = seed_table(HISTORICAL_CSV, HistoricalListing)
+    hist_ins, hist_skp = seed_table(HISTORICAL_CSV, HistoricalListing, truncate_first=True)
     act_ins, act_skp = seed_table(ACTIVE_CSV, ActiveListing)
 
     total_ins = hist_ins + act_ins

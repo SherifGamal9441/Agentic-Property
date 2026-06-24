@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from datetime import date, datetime
 from typing import Optional, List, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ConfigDict, validator
 
 from database import get_db
 from models import HistoricalListing, ActiveListing
@@ -58,6 +58,8 @@ class ActiveSearchRequest(BaseSearchRequest):
 # ---------------------------------------------------------------------------
 
 class ListingResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     property_id: Optional[str]
     price: Optional[float]
@@ -92,15 +94,20 @@ def apply_filters(query, model, filters: BaseSearchRequest):
     """
     Apply all non-null filters from the request to the SQLAlchemy query.
     """
-    # Equality filters (string fields)
+    # Equality filters (string fields) — exact match
     eq_fields = [
         'area_name', 'type', 'furnishing', 'completion_status',
-        'building_name', 'address'
     ]
     for field in eq_fields:
         value = getattr(filters, field, None)
         if value is not None:
             query = query.filter(getattr(model, field) == value)
+
+    # Partial case-insensitive match for address and building name
+    for field in ('address', 'building_name'):
+        value = getattr(filters, field, None)
+        if value is not None:
+            query = query.filter(getattr(model, field).ilike(f'%{value}%'))
 
     # Range filters (numeric)
     range_fields = [
@@ -150,7 +157,7 @@ def search_historical(req: HistoricalSearchRequest, db: Session = Depends(get_db
     total = query.count()
 
     # Apply sorting and limit
-    query = query.order_by(desc(HistoricalListing.post_date)).limit(req.limit)
+    query = query.order_by(desc(HistoricalListing.post_date).nulls_last()).limit(req.limit)
 
     listings = query.all()
 
@@ -173,7 +180,7 @@ def search_active(req: ActiveSearchRequest, db: Session = Depends(get_db)):
 
     total = query.count()
 
-    query = query.order_by(desc(ActiveListing.post_date)).limit(req.limit)
+    query = query.order_by(desc(ActiveListing.post_date).nulls_last()).limit(req.limit)
 
     listings = query.all()
 

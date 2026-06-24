@@ -6,9 +6,7 @@ import csv
 import dataclasses
 import json
 import logging
-import os
-import sys
-import time
+from logging.handlers import RotatingFileHandler
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -47,7 +45,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("scraper.log", encoding="utf-8"),
+        RotatingFileHandler("scraper.log", maxBytes=10*1024*1024, backupCount=3, encoding="utf-8"),
     ],
 )
 log = logging.getLogger(__name__)
@@ -89,6 +87,7 @@ def _parse_year(raw: Optional[str]) -> Optional[int]:
         normalised = raw.replace("T", " ").replace("Z", "").strip()
         return datetime.strptime(normalised[:10], "%Y-%m-%d").year
     except (ValueError, TypeError):
+        log.warning("Failed to parse year from '%s'", raw)
         return None
 
 def _parse_date(raw: Optional[str]) -> Optional[date]:
@@ -98,6 +97,7 @@ def _parse_date(raw: Optional[str]) -> Optional[date]:
         normalised = raw.replace("T", " ").replace("Z", "").strip()
         return datetime.strptime(normalised[:10], "%Y-%m-%d").date()
     except (ValueError, TypeError):
+        log.warning("Failed to parse date from '%s'", raw)
         return None
 
 def _build_address(location: dict[str, Any]) -> Optional[str]:
@@ -165,9 +165,11 @@ async def _collect_ids(
     page_size = int(os.getenv("SEARCH_PAGE_SIZE", "25"))
 
     while len(ids) < n:
+        categories_raw = os.getenv("SCRAPER_CATEGORIES", "apartments")
+        categories = [c.strip() for c in categories_raw.split(",") if c.strip()]
         payload = {
             "purpose": "for-sale",
-            "categories": ["apartments"],
+            "categories": categories,
             "locations_ids": [2],
             "index": "latest",
         }
@@ -213,25 +215,49 @@ async def _fetch_detail(
 ) -> Optional[ApartmentListing]:
     url = f"https://uae-real-estate2.p.rapidapi.com/property/{property_id}"
     async with sem:
-        try:
-            resp = await client.get(url)
-            resp.raise_for_status()
-            data = resp.json()
-
-            if data.get("purpose") != "for-sale":
-                log.debug("Skipping %d — purpose=%s", property_id, data.get("purpose"))
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                resp = await client.get(url)
+                if resp.status_code == 429 and attempt < max_retries - 1:
+                    wait = 2 ** attempt
+                    log.warning("Rate limited on ID %d, retrying in %ds (attempt %d/%d)", property_id, wait, attempt + 1, max_retries)
+                    await asyncio.sleep(wait)
+                    continue
+                resp.raise_for_status()
+                break
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code in (502, 503, 504) and attempt < max_retries - 1:
+                    wait = 2 ** attempt
+                    log.warning("HTTP %d for property %d, retrying in %ds", exc.response.status_code, property_id, wait)
+                    await asyncio.sleep(wait)
+                    continue
+                log.warning("HTTP %s for property %d — skipping", exc.response.status_code, property_id)
                 return None
-
-            listing = _parse_detail(data)
-            log.info("[%d/%d] ✓ ID %d — %s", index, total, property_id, listing.area_name or "?")
-            return listing
-
-        except httpx.HTTPStatusError as exc:
-            log.warning("HTTP %s for property %d — skipping", exc.response.status_code, property_id)
+            except (httpx.TimeoutException, httpx.ConnectError) as exc:
+                if attempt < max_retries - 1:
+                    wait = 2 ** attempt
+                    log.warning("Connection error on ID %d, retrying in %ds", property_id, wait)
+                    await asyncio.sleep(wait)
+                    continue
+                log.warning("Failed to fetch property %d after %d attempts: %s", property_id, max_retries, exc)
+                return None
+        else:
             return None
-        except Exception as exc:
-            log.warning("Error fetching property %d: %s — skipping", property_id, exc)
+
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            log.warning("Invalid JSON for property %d: %s", property_id, exc)
             return None
+
+        if data.get("purpose") != "for-sale":
+            log.debug("Skipping %d — purpose=%s", property_id, data.get("purpose"))
+            return None
+
+        listing = _parse_detail(data)
+        log.info("[%d/%d] ✓ ID %d — %s", index, total, property_id, listing.area_name or "?")
+        return listing
 
 # ---------------------------------------------------------------------------
 # Database upsert

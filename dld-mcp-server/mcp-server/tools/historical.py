@@ -39,13 +39,34 @@ class HistoricalSearchTool:
         """
         # Build request payload with only non-None values
         payload = {}
-        for key, value in locals().items():
-            if key != 'self' and value is not None:
+        params = {
+            'area_name': area_name,
+            'address': address,
+            'building_name': building_name,
+            'type': type,
+            'furnishing': furnishing,
+            'completion_status': completion_status,
+            'price_min': price_min,
+            'price_max': price_max,
+            'beds_min': beds_min,
+            'beds_max': beds_max,
+            'baths_min': baths_min,
+            'baths_max': baths_max,
+            'year_of_completion_min': year_of_completion_min,
+            'year_of_completion_max': year_of_completion_max,
+            'total_parking_spaces_min': total_parking_spaces_min,
+            'total_parking_spaces_max': total_parking_spaces_max,
+            'total_floors_min': total_floors_min,
+            'total_floors_max': total_floors_max,
+            'total_building_area_sqft_min': total_building_area_sqft_min,
+            'total_building_area_sqft_max': total_building_area_sqft_max,
+            'post_date_min': post_date_min,
+            'post_date_max': post_date_max,
+            'limit': limit
+        }
+        for key, value in params.items():
+            if value is not None:
                 payload[key] = value
-
-        # If limit is set, include it (default 20 but if omitted we don't send, API uses its default)
-        if limit is not None:
-            payload['limit'] = limit
 
         url = f"{DATA_SERVICE_URL}/search/historical"
 

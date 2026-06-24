@@ -42,11 +42,12 @@ class CurrencyTool:
                 "message": f"Currency API returned invalid JSON: {exc}"
             }
 
-        # always handle API errors safely (MCP style)
         if not data.get("success", False):
+            err = data.get("error", {})
+            msg = err.get("info", str(err)) if isinstance(err, dict) else str(err)
             return {
                 "error": True,
-                "message": data.get("error", {})
+                "message": msg
             }
 
         return {
