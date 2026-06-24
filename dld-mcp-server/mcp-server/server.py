@@ -15,8 +15,7 @@ mcp = FastMCP(name="DLD_MCP_Server")
 historical_tool = HistoricalSearchTool()
 active_tool = ActiveSearchTool()
 currency_tool = CurrencyTool()
-compare_tool = CompareTool(historical_tool, active_tool)  # reuses the same instances
-
+compare_tool = CompareTool(historical_tool, active_tool)  
 # ---------------------------------------------------------------------------
 # Tool 1: Search Historical Listings
 # ---------------------------------------------------------------------------
@@ -83,7 +82,7 @@ async def search_historical(
             - returned_count: number of listings returned.
             - listings: list of property objects.
     """
-    return await historical_tool.search(  # ← fixed: use historical_tool
+    return await historical_tool.search( 
         area_name=area_name,
         address=address,
         building_name=building_name,
@@ -143,7 +142,7 @@ async def search_active(
     """
     Search active listings. All filters are optional. Date filters are NOT available.
     """
-    return await active_tool.search(  # ← fixed: use active_tool
+    return await active_tool.search(  
         area_name=area_name,
         address=address,
         building_name=building_name,
@@ -188,7 +187,7 @@ async def compare_listings(
     """
     Compare historical and active data for a given area and filters.
     """
-    return await compare_tool.compare(  # ← correct as you had
+    return await compare_tool.compare(  
         area_name=area_name,
         type=type,
         furnishing=furnishing,
@@ -211,7 +210,7 @@ async def convert_currency_tool(from_currency: str, to_currency: str, amount: fl
     """
     Convert a monetary amount between two currencies.
     """
-    result = await currency_tool.convert(  # ← fixed: use currency_tool
+    result = await currency_tool.convert(  
         from_currency, to_currency, amount
     )
 
