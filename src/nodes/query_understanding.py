@@ -40,6 +40,12 @@ Your job is to do two things from the user's query:
 1. PARSE: Extract structured intent into a JSON object.
    Only include keys that are explicitly or strongly implied by the query.
    Never invent values. Use null for anything not mentioned.
+   Fix any typos or misspellings in the user's query before extracting.
+   For area_name, building_name, and address, correct typos to the most
+   likely real Dubai location/building name (e.g "Dubai Mrina" → "Dubai Marina",
+   "Jumeriah" → "Jumeirah", "buisness bay" → "Business Bay").
+   For type, furnishing, and completion_status, correct to the exact enum
+   values listed below.
 
    Possible keys:
     area_name: Optional[str] = None - e.g "Dubai Marina"
@@ -126,6 +132,38 @@ def query_understanding_node(state: AgentState) -> dict:
     parsed_query: dict = result.get("parsed_query", {})
     route: str = result.get("route", "web_search")
 
+    # ── Vague query guard: if user wants properties but gave < 3 filters,
+    #    ask for more info instead of running a useless search.
+    _SEARCH_FILTERS = {
+        "area_name", "type", "beds_min", "beds_max", "price_min",
+        "price_max", "furnishing", "completion_status",
+        "baths_min", "baths_max", "building_name", "address",
+        "year_of_completion_min", "year_of_completion_max",
+        "total_parking_spaces_min", "total_parking_spaces_max",
+        "total_floors_min", "total_floors_max",
+        "total_building_area_sqft_min", "total_building_area_sqft_max",
+    }
+    _filter_count = sum(1 for k in _SEARCH_FILTERS if parsed_query.get(k) is not None)
+
+    if _filter_count < 3 and route == "query_routing":
+        logger.info(
+            "query_understanding: too vague (%d filters) — asking for more info",
+            _filter_count,
+        )
+        return {
+            "parsed_query": parsed_query,
+            "route": "end",
+            "final_answer": (
+                "I can help you find property in Dubai! "
+                "To narrow down the search, tell me a bit more:\n"
+                "  - Which area? (e.g. Dubai Marina, Downtown, JVC, Palm Jumeirah)\n"
+                "  - How many bedrooms?\n"
+                "  - What's your budget?\n"
+                "  - Property type? (apartment, villa, townhouse, studio)\n"
+                "  - Furnishing? (furnished, unfurnished)"
+            ),
+        }
+
     logger.info(
         "query_understanding: route=%s | parsed=%s | reason=%s",
         route,
@@ -149,5 +187,6 @@ def route_after_understanding(state: AgentState) -> str:
     Returns:
         "query_routing" — fetch properties and compare
         "web_search"    — answer a general question via web search
+        "end"           — too vague, ask user for more info
     """
     return state.route or "web_search"
