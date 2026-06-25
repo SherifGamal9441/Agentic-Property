@@ -15,11 +15,14 @@ Usage:
 import os
 import json
 import asyncio
+import logging
 from pathlib import Path
 
 import yaml
 from mcp.client.session import ClientSession
 from mcp.client.stdio import stdio_client, StdioServerParameters
+
+logger = logging.getLogger(__name__)
 
 # ── Load MCP config from YAML ──────────────────────────────────────────────────
 
@@ -64,8 +67,23 @@ async def _call_raw(tool_name: str, arguments: dict) -> str:
     async with _build_client() as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            result = await session.call_tool(tool_name, arguments)
-            return result.content[0].text
+            call_result = await session.call_tool(tool_name, arguments)
+
+    # Check result AFTER exiting the async-with blocks — raising inside
+    # them causes anyio ExceptionGroup wrapping that hides the real error.
+    if call_result.isError:
+        error_text = (
+            call_result.content[0].text if call_result.content
+            else "Unknown error (no content)"
+        )
+        raise RuntimeError(
+            f"MCP tool '{tool_name}' returned error: {error_text}"
+        )
+    if not call_result.content:
+        raise RuntimeError(
+            f"MCP tool '{tool_name}' returned empty content"
+        )
+    return call_result.content[0].text
 
 
 async def _call_tool(tool_name: str, arguments: dict) -> list[dict]:
@@ -75,8 +93,12 @@ async def _call_tool(tool_name: str, arguments: dict) -> list[dict]:
         if key in arguments and arguments[key] is not None:
             arguments[key] = arguments[key].strip().title()
     # ponytail: title-case normalization. Revisit if DB gets mixed-case values.
-    text = await _call_raw(tool_name, arguments)
-    return json.loads(text).get("listings", [])
+    try:
+        text = await _call_raw(tool_name, arguments)
+        return json.loads(text).get("listings", [])
+    except (json.JSONDecodeError, RuntimeError) as e:
+        logger.error("_call_tool: %s failed: %s", tool_name, e)
+        return []
 
 
 async def search_historical(**filters) -> list[dict]:
@@ -103,8 +125,12 @@ async def compare(area_name: str = None, type: str = None, **filters) -> dict:
         for k, v in {**filters, "area_name": area_name, "type": type}.items()
         if v is not None
     }
-    text = await _call_raw("compare_listings", args)
-    return json.loads(text)
+    try:
+        text = await _call_raw("compare_listings", args)
+        return json.loads(text)
+    except (json.JSONDecodeError, RuntimeError) as e:
+        logger.error("compare: failed: %s", e)
+        return {"error": str(e)}
 
 
 async def convert_currency(from_currency: str, to_currency: str, amount: float) -> dict:
@@ -112,11 +138,14 @@ async def convert_currency(from_currency: str, to_currency: str, amount: float) 
 
     Returns {"rate": float} on success, {"error": True, "message": str} on failure.
     """
-    text = await _call_raw("convert_currency", {
-        "from_currency": from_currency,
-        "to_currency": to_currency,
-        "amount": amount,
-    })
+    try:
+        text = await _call_raw("convert_currency", {
+            "from_currency": from_currency,
+            "to_currency": to_currency,
+            "amount": amount,
+        })
+    except RuntimeError as e:
+        return {"error": True, "message": str(e)}
     if text.startswith("Error:"):
         return {"error": True, "message": text}
     # Parse "1.0 USD = 3.67 AED"
