@@ -22,8 +22,11 @@ Writes to state:
 import logging
 
 from src.agents.state import AgentState
-from src.tools.dld_mcp import search_active_sync, search_historical_sync, convert_currency_sync
-from langgraph.types import Command
+from src.tools.dld_mcp import (
+    search_active_sync,
+    search_historical_sync,
+    convert_currency_sync,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +49,16 @@ def _convert_prices_to_aed(parsed_query: dict) -> tuple[dict, str, float | None]
     # Get a single rate (convert 1 unit of user currency → AED)
     rate_result = convert_currency_sync(currency, "AED", 1.0)
     if "error" in rate_result:
-        logger.warning("query_routing: currency conversion failed: %s — using raw values", rate_result.get("message"))
+        logger.warning(
+            "query_routing: currency conversion failed: %s — using raw values",
+            rate_result.get("message"),
+        )
         return parsed_query, currency, None
 
     rate = rate_result["rate"]
-    logger.info("query_routing: converting prices from %s to AED (rate=%s)", currency, rate)
+    logger.info(
+        "query_routing: converting prices from %s to AED (rate=%s)", currency, rate
+    )
 
     query = dict(parsed_query)
     for key in ("price_min", "price_max"):
@@ -91,12 +99,12 @@ def query_routing_node(state: AgentState) -> dict:
         "exchange_rate": exchange_rate,
     }
 
-    logger.info("query_routing: trying active tool")
+    logger.info("query_routing: trying active data")
     active_results = _call_active_tool(parsed_query)
 
     if active_results:
         logger.info(
-            "query_routing: active tool returned %d properties -> route=recommend",
+            "query_routing: active data returned %d properties -> route=recommend",
             len(active_results),
         )
         return {
@@ -106,12 +114,12 @@ def query_routing_node(state: AgentState) -> dict:
             "data_intent": "recommend",
         }
 
-    logger.info("query_routing: active tool returned nothing, trying historical tool")
+    logger.info("query_routing: active data returned nothing, trying historical data")
     historical_results = _call_historical_tool(parsed_query)
 
     if historical_results:
         logger.info(
-            "query_routing: historical tool returned %d properties -> route=insights_only",
+            "query_routing: historical data returned %d properties -> route=insights_only",
             len(historical_results),
         )
         return {
@@ -124,4 +132,20 @@ def query_routing_node(state: AgentState) -> dict:
         logger.warning(
             "query_routing: both tools returned nothing -- proceeding with web search"
         )
-        return Command(update={**base_result, "retrieved_properties": []}, goto="web_search")
+        return {
+            **base_result,
+            "retrieved_properties": [],
+            "data_source": "historical",
+            "data_intent": "insights_only",
+        }
+
+
+# ── Conditional edge router ───────────────────────────────────────────────────
+
+
+def route_after_routing(state: AgentState) -> str:
+    """After query_routing: go to comparison_engine if we have properties,
+    otherwise fall back to web_search."""
+    if not state.retrieved_properties:
+        return "web_search"
+    return "comparison_engine"

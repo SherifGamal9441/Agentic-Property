@@ -1,64 +1,56 @@
 """
-Agentic Property — entry point / smoke test.
+Agentic Property — interactive CLI.
 
-Tests all three graph paths with fake data:
-  Path A — query_routing → comparison (recommendation)
-  Path B — web_search (general question)
-  Path C — irrelevant query (rejection)
+Run the agent pipeline and get answers in real time.
 
 Usage:
     uv run python main.py
 """
 
 import logging
+import sys
 
 from src.agents.graph import agent_graph
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    stream=sys.stderr,
 )
 
 _DIVIDER = "=" * 60
 
 
-def run_test(label: str, query: str) -> None:
-    print(f"\n{_DIVIDER}")
-    print(f"TEST: {label}")
-    print(f"QUERY: {query}")
-    print(_DIVIDER)
-
-    initial_state = {"query": query}
-    final_state = agent_graph.invoke(initial_state)
-
-    print(f"\n{_DIVIDER}")
-    print("FINAL ANSWER")
-    print(_DIVIDER)
-    print(final_state.get("final_answer") or "(no answer)")
-    print(f"\nRoute taken : {final_state.get('route', 'n/a (rejected before routing)')}")
-    print(f"Data source : {final_state.get('data_source', 'n/a')}")
-    print(f"Data intent : {final_state.get('data_intent', 'n/a')}")
-    print(f"Relevant    : {final_state.get('is_relevant', True)}")
-
-
 def main() -> None:
-    # Path A — recommendation query (query_routing path, stub tools → no-results response)
-    run_test(
-        label="Path A — Property recommendation (stub tools active)",
-        query="I'm looking for a 2-bedroom apartment in Dubai Marina with a sea view, budget AED 1.8M.",
-    )
+    print("Agentic Property — Dubai real estate assistant")
+    print("Type your question, or 'quit' / 'exit' to stop.\n")
 
-    # Path B — general question (web_search path)
-    run_test(
-        label="Path B — General question (web_search path)",
-        query="What are the current rental trends in Downtown Dubai?",
-    )
+    while True:
+        try:
+            query = input("You > ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\nBye!")
+            break
 
-    # Path C — irrelevant query (rejection path)
-    run_test(
-        label="Path C — Irrelevant query (rejection)",
-        query="What's the best recipe for pasta carbonara?",
-    )
+        if not query:
+            continue
+        if query.lower() in ("quit", "exit"):
+            print("Bye!")
+            break
+
+        print(f"\n{_DIVIDER}")
+        result = agent_graph.invoke({"query": query})
+
+        print(f"\n{_DIVIDER}")
+        print("Assistant >")
+        print(result.get("final_answer") or "(no answer)")
+
+        route = result.get("route", "n/a (rejected before routing)")
+        source = result.get("data_source", "n/a")
+        intent = result.get("data_intent", "n/a")
+        currency = result.get("currency", "AED")
+        print(f"\n[route={route} | source={source} | intent={intent} | currency={currency}]")
+        print()
 
 
 if __name__ == "__main__":

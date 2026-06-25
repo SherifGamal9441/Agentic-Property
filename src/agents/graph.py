@@ -34,7 +34,7 @@ from src.agents.state import AgentState
 from src.nodes.answer_generation import answer_generation_node
 from src.nodes.comparison_engine import comparison_engine_node
 from src.nodes.query_relevancy import query_relevancy_node, route_after_relevancy
-from src.nodes.query_routing import query_routing_node
+from src.nodes.query_routing import query_routing_node, route_after_routing
 from src.nodes.query_understanding import query_understanding_node, route_after_understanding
 from src.nodes.reflection import reflection_node, route_after_reflection
 from src.nodes.web_search import create_web_search_agent
@@ -82,7 +82,14 @@ def build_graph() -> StateGraph:
     )
 
     # ── query_routing path ────────────────────────────────────────────────────
-    graph.add_edge("query_routing", "comparison_engine")
+    graph.add_conditional_edges(
+        "query_routing",
+        route_after_routing,
+        {
+            "comparison_engine": "comparison_engine",
+            "web_search": "web_search",
+        },
+    )
     graph.add_edge("comparison_engine", "reflection")
 
     graph.add_conditional_edges(
