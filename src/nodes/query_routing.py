@@ -1,134 +1,127 @@
 """
 Query Routing Node
 
-Two-tier tool strategy to fetch relevant properties:
+Two-tier tool strategy to fetch relevant properties via the DLD MCP server:
 
-  Tier 1 — Cached tool (teammates will implement):
-      Fast, current listings. If it returns ≥ 1 property the pipeline proceeds
-      with data_intent="recommend" — properties are live and can be recommended.
+  Tier 1 — Active tool:
+      Current live listings. If it returns >= 1 property the pipeline proceeds
+      with data_intent="recommend" -- properties are live and can be recommended.
 
-  Tier 2 — Historical tool (teammates will implement):
-      Slower, older dataset. Used only when cached returns nothing.
-      Sets data_intent="insights_only" — the comparison engine and answer
+  Tier 2 — Historical tool:
+      Older DLD transactions. Used only when active returns nothing.
+      Sets data_intent="insights_only" -- the comparison engine and answer
       generation nodes MUST NOT recommend these properties (may be sold/leased).
       They should derive market insights only: price ranges, area trends, etc.
 
-Tool stubs:
-    Both tool functions are stubs that return [] until teammates wire in the
-    real implementations. The pipeline runs end-to-end with empty results —
-    answer_generation will produce a "no properties found" response gracefully.
-
 Writes to state:
     retrieved_properties: list[dict]
-    data_source: "cached" | "historical"
+    data_source: "active" | "historical"
     data_intent: "recommend" | "insights_only"
 """
 
 import logging
 
 from src.agents.state import AgentState
+from src.tools.dld_mcp import search_active_sync, search_historical_sync, convert_currency_sync
+from langgraph.types import Command
 
 logger = logging.getLogger(__name__)
 
 
-# ── Tool stubs (teammates: replace these bodies) ──────────────────────────────
+# parsed_query keys match the MCP tool parameter names 1:1 (set by
+# query_understanding LLM), so we pass them straight through — except
+# price_min/price_max which may need currency conversion to AED.
 
-def _call_cached_tool(parsed_query: dict) -> list[dict]:
+
+def _convert_prices_to_aed(parsed_query: dict) -> tuple[dict, str, float | None]:
+    """If user specified a non-AED currency, convert price_min/price_max to AED.
+
+    Returns (updated_query, currency, exchange_rate).
+    exchange_rate is None when no conversion was needed.
     """
-    STUB — Cached property search tool.
+    currency = parsed_query.pop("currency", None) or "AED"
+    if currency.upper() == "AED":
+        return parsed_query, "AED", None
 
-    This function will be replaced by the teammate responsible for the
-    data ingestion / search layer (P1). It should query the live property
-    cache (e.g. Bayut cache, vector DB, or SQL filter) and return a list
-    of property dicts matching the parsed_query criteria.
+    # Get a single rate (convert 1 unit of user currency → AED)
+    rate_result = convert_currency_sync(currency, "AED", 1.0)
+    if "error" in rate_result:
+        logger.warning("query_routing: currency conversion failed: %s — using raw values", rate_result.get("message"))
+        return parsed_query, currency, None
 
-    Expected return format per property:
-        {
-            "id": str,
-            "title": str,
-            "price": int,          # in AED
-            "area_sqm": float,
-            "location": str,
-            "bedrooms": int,
-            "amenities": list[str],
-        }
+    rate = rate_result["rate"]
+    logger.info("query_routing: converting prices from %s to AED (rate=%s)", currency, rate)
 
-    Returns:
-        list[dict] — matching properties, or [] if none found.
-    """
-    # TODO: wire in real cached search tool
-    logger.debug("_call_cached_tool: stub called with query=%s", parsed_query)
-    return []
+    query = dict(parsed_query)
+    for key in ("price_min", "price_max"):
+        if key in query and query[key] is not None:
+            query[key] = round(query[key] * rate, 2)
+
+    return query, currency, rate
+
+
+def _call_active_tool(parsed_query: dict) -> list[dict]:
+    """Search active DLD listings via MCP server."""
+    logger.info("_call_active_tool: searching active listings with %s", parsed_query)
+    return search_active_sync(**parsed_query)
 
 
 def _call_historical_tool(parsed_query: dict) -> list[dict]:
-    """
-    STUB — Historical property dataset tool.
-
-    This function will be replaced by the teammate responsible for the
-    data ingestion layer (P1). It should query the historical dataset
-    (e.g. DLD CSV, sales/rentals CSV) and return older property records
-    matching the parsed_query criteria.
-
-    ⚠️  Properties returned here may already be sold or leased.
-        The data_intent field will be set to "insights_only" so that
-        downstream nodes know NOT to recommend these specific properties.
-
-    Expected return format: same as _call_cached_tool.
-
-    Returns:
-        list[dict] — historical records, or [] if none found.
-    """
-    # TODO: wire in real historical dataset tool
-    logger.debug("_call_historical_tool: stub called with query=%s", parsed_query)
-    return []
+    """Search historical DLD transactions via MCP server."""
+    logger.info("_call_historical_tool: searching historical with %s", parsed_query)
+    return search_historical_sync(**parsed_query)
 
 
-# ── Node function ─────────────────────────────────────────────────────────────
-
+##node itself
 def query_routing_node(state: AgentState) -> dict:
     """
-    LangGraph node: fetch properties via cached or historical tool.
+    LangGraph node: fetch properties via active or historical tool.
 
     Strategy:
-      1. Try cached tool → if results: data_source="cached", data_intent="recommend"
-      2. If cached empty → try historical tool → data_source="historical", data_intent="insights_only"
-      3. If both empty → empty list, data_intent="insights_only" (nothing to work with)
-
-    The comparison_engine node reads data_intent to adjust its prompt:
-      - "recommend"     → score and rank, identify best match
-      - "insights_only" → derive market trends only, do NOT recommend specific properties
-
-    Args:
-        state: Current AgentState. Reads `parsed_query`.
-
-    Returns:
-        Partial state dict with `retrieved_properties`, `data_source`, `data_intent`.
+      1. Convert prices to AED if user specified a non-AED currency.
+      2. Try active tool -> if results: data_source="active", data_intent="recommend"
+      3. If active empty -> try historical tool -> data_source="historical", data_intent="insights_only"
+      4. If both empty -> empty list, data_intent="insights_only" (nothing to work with)
     """
-    logger.info("query_routing: trying cached tool")
-    cached_results = _call_cached_tool(state.parsed_query)
+    parsed_query = dict(state.parsed_query)
+    parsed_query, currency, exchange_rate = _convert_prices_to_aed(parsed_query)
 
-    if cached_results:
-        logger.info("query_routing: cached tool returned %d properties → route=recommend", len(cached_results))
+    base_result = {
+        "currency": currency,
+        "exchange_rate": exchange_rate,
+    }
+
+    logger.info("query_routing: trying active tool")
+    active_results = _call_active_tool(parsed_query)
+
+    if active_results:
+        logger.info(
+            "query_routing: active tool returned %d properties -> route=recommend",
+            len(active_results),
+        )
         return {
-            "retrieved_properties": cached_results,
-            "data_source": "cached",
+            **base_result,
+            "retrieved_properties": active_results,
+            "data_source": "active",
             "data_intent": "recommend",
         }
 
-    logger.info("query_routing: cached tool returned nothing, trying historical tool")
-    historical_results = _call_historical_tool(state.parsed_query)
+    logger.info("query_routing: active tool returned nothing, trying historical tool")
+    historical_results = _call_historical_tool(parsed_query)
 
     if historical_results:
         logger.info(
-            "query_routing: historical tool returned %d properties → route=insights_only",
+            "query_routing: historical tool returned %d properties -> route=insights_only",
             len(historical_results),
         )
+        return {
+            **base_result,
+            "retrieved_properties": historical_results,
+            "data_source": "historical",
+            "data_intent": "insights_only",
+        }
     else:
-        logger.warning("query_routing: both tools returned nothing — proceeding with empty results")
-
-    return {
-        "retrieved_properties": historical_results,
-        "data_source": "historical",
-        "data_intent": "insights_only",
-    }
+        logger.warning(
+            "query_routing: both tools returned nothing -- proceeding with web search"
+        )
+        return Command(update={**base_result, "retrieved_properties": []}, goto="web_search")

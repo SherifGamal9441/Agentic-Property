@@ -39,7 +39,17 @@ class AgentState(BaseModel):
 
     parsed_query: dict = {}
     """Structured intent extracted by query_understanding.
-    Expected keys: location, budget, property_type, bedrooms, amenities, etc."""
+    Expected keys: location, budget, property_type, bedrooms, amenities, currency, etc."""
+
+    # ── Currency conversion (set by query_routing) ─────────────────────────────
+    currency: str = "AED"
+    """Currency code the user mentioned (default AED). Used by query_routing
+    to convert price filters to AED before searching, and by answer_generation
+    to show dual-currency prices."""
+
+    exchange_rate: float | None = None
+    """Exchange rate from user currency to AED (1 user_currency = X AED).
+    Set by query_routing when currency != AED. None when no conversion needed."""
 
     # ── Set by query_routing ──────────────────────────────────────────────────
     data_source: str | None = None

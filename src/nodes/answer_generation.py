@@ -159,6 +159,7 @@ def _build_messages(state: AgentState) -> list:
     )
     reflection_text = "\n".join(f"- {i}" for i in reflection_issues) or "None"
     comparison_text = _format_comparison_for_prompt(state.comparison_result)
+    currency_note = _build_currency_note(state)
 
     # No properties found at all
     if not state.retrieved_properties and not state.comparison_result:
@@ -174,6 +175,8 @@ def _build_messages(state: AgentState) -> list:
             comparison_result=comparison_text,
             reflection_issues=reflection_text,
         )
+        if currency_note:
+            user_content += f"\n\n{currency_note}"
         return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
 
     # Recommend — current cached data
@@ -183,7 +186,21 @@ def _build_messages(state: AgentState) -> list:
         comparison_result=comparison_text,
         reflection_issues=reflection_text,
     )
+    if currency_note:
+        user_content += f"\n\n{currency_note}"
     return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+
+
+def _build_currency_note(state: AgentState) -> str:
+    """Build a note for the LLM to show dual-currency prices when applicable."""
+    if not state.exchange_rate or state.currency == "AED":
+        return ""
+    return (
+        f"Currency note: The user expressed their budget in {state.currency}. "
+        f"Exchange rate used: 1 {state.currency} = {state.exchange_rate:.2f} AED. "
+        f"When mentioning prices, show them in AED followed by the equivalent "
+        f"in {state.currency} (divide AED by {state.exchange_rate:.2f})."
+    )
 
 
 def _format_comparison_for_prompt(comparison_result: dict | None) -> str:

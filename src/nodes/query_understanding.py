@@ -42,15 +42,30 @@ Your job is to do two things from the user's query:
    Never invent values. Use null for anything not mentioned.
 
    Possible keys:
-     location        (string)   — specific area, district, or community in Dubai
-     property_type   (string)   — apartment | villa | townhouse | studio | penthouse | office | retail
-     bedrooms        (integer)  — number of bedrooms
-     bathrooms       (integer)  — number of bathrooms
-     budget_aed      (integer)  — maximum budget in AED
-     purpose         (string)   — buy | rent
-     amenities       (list)     — requested features (sea view, gym, pool, parking, etc.)
-     developer       (string)   — specific developer name if mentioned
-     move_in_date    (string)   — if the user mentions a timeline
+    area_name: Optional[str] = None - e.g "Dubai Marina"
+    address: Optional[str] = None - e.g "123 Main St"
+    building_name: Optional[str] = None - e.g "Burj Khalifa"
+    type: Optional[str] = None - e.g "apartment" | "villa" | "townhouse" | "studio" | "penthouse" | "office" | "retail"
+    furnishing: Optional[str] = None - e.g "furnished" | "unfurnished"
+    completion_status: Optional[str] = None - e.g "off-plan" | "ready"
+    price_min: Optional[float] = None - minimum price in the user's currency
+    price_max: Optional[float] = None - maximum price in the user's currency
+    currency: Optional[str] = None - currency code the user mentioned (e.g "USD", "EUR", "GBP"). Omit or null if user says AED or doesn't specify.
+    beds_min: Optional[int] = None - minimum number of bedrooms
+    beds_max: Optional[int] = None - maximum number of bedrooms
+    baths_min: Optional[int] = None - minimum number of bathrooms
+    baths_max: Optional[int] = None - maximum number of bathrooms
+    year_of_completion_min: Optional[int] = None - minimum year of completion
+    year_of_completion_max: Optional[int] = None - maximum year of completion
+    total_parking_spaces_min: Optional[int] = None - minimum number of parking spaces
+    total_parking_spaces_max: Optional[int] = None - maximum number of parking spaces
+    total_floors_min: Optional[int] = None - minimum number of floors
+    total_floors_max: Optional[int] = None - maximum number of floors
+    total_building_area_sqft_min: Optional[float] = None - minimum total building area in sqft
+    total_building_area_sqft_max: Optional[float] = None - maximum total building area in sqft
+    post_date_min: Optional[str] = None - minimum post date
+    post_date_max: Optional[str] = None - maximum post date
+
 
 2. ROUTE: Decide which path to take.
      "query_routing"  → user wants specific property results, recommendations, or comparisons
@@ -69,6 +84,7 @@ _USER_PROMPT_TEMPLATE = "Parse and route this query: {query}"
 
 
 # ── Node function ─────────────────────────────────────────────────────────────
+
 
 def query_understanding_node(state: AgentState) -> dict:
     """
@@ -101,7 +117,11 @@ def query_understanding_node(state: AgentState) -> dict:
         else:
             logger.error("query_understanding: could not parse LLM response:\n%s", raw)
             # Fail safe: treat as a web_search query (less risky default)
-            result = {"parsed_query": {}, "route": "web_search", "route_reason": "parse failure fallback"}
+            result = {
+                "parsed_query": {},
+                "route": "web_search",
+                "route_reason": "parse failure fallback",
+            }
 
     parsed_query: dict = result.get("parsed_query", {})
     route: str = result.get("route", "web_search")
@@ -120,6 +140,7 @@ def query_understanding_node(state: AgentState) -> dict:
 
 
 # ── Conditional edge router ───────────────────────────────────────────────────
+
 
 def route_after_understanding(state: AgentState) -> str:
     """

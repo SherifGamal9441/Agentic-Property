@@ -2,7 +2,6 @@ import os
 import sys
 import inspect
 import logging
-from typing import Optional
 from mcp.server.fastmcp import FastMCP
 from tools.historical import HistoricalSearchTool
 from tools.active import ActiveSearchTool
@@ -32,15 +31,17 @@ def build_tool_fn(
     name: str,
     description: str,
 ):
-    sig = inspect.Signature([
-        inspect.Parameter(
-            name=fname,
-            kind=inspect.Parameter.KEYWORD_ONLY,
-            default=field.default,
-            annotation=field.annotation,
-        )
-        for fname, field in model_class.model_fields.items()
-    ])
+    sig = inspect.Signature(
+        [
+            inspect.Parameter(
+                name=fname,
+                kind=inspect.Parameter.KEYWORD_ONLY,
+                default=field.default,
+                annotation=field.annotation,
+            )
+            for fname, field in model_class.model_fields.items()
+        ]
+    )
 
     async def wrapper(**kwargs) -> dict | str:
         p = model_class(**kwargs)
@@ -77,7 +78,9 @@ mcp.add_tool(
 mcp.add_tool(
     fn=build_tool_fn(
         CompareListingsParams,
-        lambda p: CompareTool(HistoricalSearchTool(), ActiveSearchTool()).compare(**p.model_dump(exclude_none=True)),
+        lambda p: CompareTool(HistoricalSearchTool(), ActiveSearchTool()).compare(
+            **p.model_dump(exclude_none=True)
+        ),
         name="compare_listings",
         description="Compare historical and active listings for an area to see price trends and statistics.",
     ),
@@ -108,5 +111,7 @@ if __name__ == "__main__":
     transport = os.getenv("MCP_TRANSPORT", "stdio")
     if len(sys.argv) > 1:
         transport = sys.argv[1]
-    logger.info("Starting DLD MCP Server (%s mode on %s:%s)...", transport, MCP_HOST, MCP_PORT)
+    logger.info(
+        "Starting DLD MCP Server (%s mode on %s:%s)...", transport, MCP_HOST, MCP_PORT
+    )
     mcp.run(transport=transport)
