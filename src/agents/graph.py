@@ -78,7 +78,6 @@ def build_graph() -> StateGraph:
         {
             "query_routing": "query_routing",
             "web_search": "web_search",
-            "end": END,
         },
     )
 
