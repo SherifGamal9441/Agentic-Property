@@ -1,36 +1,73 @@
 """
-DLD MCP client — exposes search_historical and search_active as plain functions.
+DLD MCP client — exposes search_historical, search_active, compare, and
+convert_currency as plain async + sync functions.
+
+Transport is picked from config/mcp.yaml (active: stdio | sse | streamable_http).
+Each teammate sets their preference there — zero code changes.
 
 Usage:
     from src.tools.dld_mcp import search_historical, search_active
 
     listings = await search_historical(area_name="Dubai Marina", limit=5)
     listings = await search_active(type="Apartment", beds_min=2)
-
-Each call spins up a fresh MCP stdio session (lazy, no persistent server needed).
 """
 
+import os
 import json
 import asyncio
-from mcp.client.stdio import stdio_client, StdioServerParameters
-from mcp.client.session import ClientSession
+from pathlib import Path
 
-_SERVER_PARAMS = StdioServerParameters(
-    command="uv",
-    args=["run", "--with", "mcp", "mcp", "run", "dld-mcp-server/mcp-server/server.py"],
-    env={"DATA_SERVICE_URL": "http://localhost:8000"},
-)
+import yaml
+from mcp.client.session import ClientSession
+from mcp.client.stdio import stdio_client, StdioServerParameters
+
+# ── Load MCP config from YAML ──────────────────────────────────────────────────
+
+_CONFIG_PATH = Path(__file__).resolve().parent.parent.parent / "config" / "mcp.yaml"
+_PROJECT_ROOT = _CONFIG_PATH.parent.parent  # repo root (config/ → root)
+
+with open(_CONFIG_PATH) as f:
+    _CFG = yaml.safe_load(f)
+
+_ACTIVE = _CFG.get("active", "stdio")
+_YAML_ENV = _CFG.get("env", {})
+
+
+def _build_client():
+    """Return an async context manager yielding (read, write) based on active transport."""
+    if _ACTIVE == "stdio":
+        s = _CFG["stdio"]
+        cwd = s.get("cwd")
+        if cwd:
+            cwd = str((_PROJECT_ROOT / cwd).resolve())
+        # Merge: os.environ (secrets from .env via load_dotenv in settings.py)
+        #         + YAML env block (connection params like DATA_SERVICE_URL).
+        # YAML wins on conflict — it's the config source of truth.
+        params = StdioServerParameters(
+            command=s["command"],
+            args=s["args"],
+            env={**os.environ, **_YAML_ENV},
+            cwd=cwd,
+        )
+        return stdio_client(params)
+
+    if _ACTIVE in ("sse", "streamable_http"):
+        from mcp.client.sse import sse_client
+        url = _CFG[_ACTIVE]["url"]
+        return sse_client(url)
+
+    raise ValueError(f"Unknown MCP transport: {_ACTIVE!r}. Expected stdio | sse | streamable_http")
 
 
 async def _call_tool(tool_name: str, arguments: dict) -> list[dict]:
-    """Open a stdio session, call one tool, return parsed listings."""
+    """Open a session, call one tool, return parsed listings."""
     # Normalize string enum fields — data-service does exact match
     for key in ("type", "furnishing", "completion_status", "area_name"):
         if key in arguments and arguments[key] is not None:
             arguments[key] = arguments[key].strip().title()
     # ponytail: title-case normalization. Revisit if DB gets mixed-case values.
 
-    async with stdio_client(_SERVER_PARAMS) as (read, write):
+    async with _build_client() as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool(tool_name, arguments)
@@ -63,7 +100,7 @@ async def compare(area_name: str = None, type: str = None, **filters) -> dict:
         for k, v in {**filters, "area_name": area_name, "type": type}.items()
         if v is not None
     }
-    async with stdio_client(_SERVER_PARAMS) as (read, write):
+    async with _build_client() as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool("compare_listings", args)
@@ -75,7 +112,7 @@ async def convert_currency(from_currency: str, to_currency: str, amount: float) 
 
     Returns {"rate": float} on success, {"error": True, "message": str} on failure.
     """
-    async with stdio_client(_SERVER_PARAMS) as (read, write):
+    async with _build_client() as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
             result = await session.call_tool("convert_currency", {

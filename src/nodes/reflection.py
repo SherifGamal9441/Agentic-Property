@@ -25,7 +25,7 @@ import re
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
-from src.config.pydantic.settings import settings
+from config.pydantic.settings import settings
 from src.llm.factory import get_llm
 
 logger = logging.getLogger(__name__)

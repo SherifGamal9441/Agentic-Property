@@ -1,0 +1,46 @@
+# MCP connection config — single source of truth for all MCP settings.
+# Secrets (API keys) stay in .env; they're passed through via os.environ.
+
+# ── Env injected into stdio subprocess + set by server.py for hosted mode ──────
+# Non-secret connection params. Secrets like EXCHANGERATE_API_KEY come from
+# .env via os.environ — don't put them here.
+env:
+  DATA_SERVICE_URL: http://localhost:8000
+
+# ── Server-side settings (used when hosting the MCP server) ───────────────────
+# Override per-teammate if you host on a different port/host.
+# Env vars (MCP_HOST, MCP_PORT, MCP_TRANSPORT) override these if set —
+# useful for Docker where this file may not be available.
+server:
+  host: 127.0.0.1
+  port: 8001
+  transport: streamable-http # stdio | sse | streamable-http
+
+# ── Transport 1: stdio (local dev, no server needed) ──────────────────────────
+# Spawns the MCP server as a subprocess. Best for local development.
+stdio:
+  command: uv
+  args:
+    - run
+    - --with
+    - mcp
+    - mcp
+    - run
+    - server.py
+  cwd: dld-mcp-server/mcp-server
+
+# ── Transport 2: SSE (hosted server) ───────────────────────────────────────────
+# Connect to a running MCP server via Server-Sent Events.
+# Start the server: python dld-mcp-server/mcp-server/server.py
+# (host/port/transport come from the `server:` section above)
+sse:
+  url: http://localhost:8001/sse
+
+# ── Transport 3: streamable HTTP ───────────────────────────────────────────────
+# Connect to a running MCP server via HTTP streaming.
+# Start the server: MCP_TRANSPORT=streamable-http python dld-mcp-server/mcp-server/server.py
+streamable_http:
+  url: http://localhost:8001/mcp
+
+# ── Active transport (change this to: stdio | sse | streamable_http) ──────────
+active: stdio

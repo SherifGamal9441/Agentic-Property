@@ -14,7 +14,7 @@ from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-from src.config.pydantic.settings import settings
+from config.pydantic.settings import settings
 
 
 def get_llm(streaming: bool = True) -> BaseChatModel:
