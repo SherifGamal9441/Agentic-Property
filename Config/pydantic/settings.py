@@ -35,7 +35,6 @@ class Settings(BaseSettings):
 
     # ── Agent behaviour ───────────────────────────────────────────────────────
     max_retries: int = 3
-    min_confidence_threshold: float = 0.6
 
 
 # Singleton — import this everywhere instead of re-instantiating

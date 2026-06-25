@@ -125,7 +125,6 @@ def reflection_node(state: AgentState) -> dict:
     return {
         "reflection_output": reflection_output,
         "needs_retry": needs_retry,
-        "retry_tool": None,          # tool_router (upstream) decides which tool to retry
         "retry_count": current_retry_count + (1 if needs_retry else 0),
     }
 

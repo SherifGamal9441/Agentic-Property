@@ -50,41 +50,37 @@ _USER_PROMPT_TEMPLATE = "Classify this query: {query}"
 
 # ── Rejection message builder ─────────────────────────────────────────────────
 
-_REJECTION_TEMPLATES = {
+_SCOPE_LIST = (
+    "Here's what I *can* help you with:\n"
+    "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
+    "• Comparing properties across different Dubai neighbourhoods\n"
+    "• Market insights and price trends for Dubai real estate\n"
+    "• Advice on buying, renting, or investing in Dubai property\n\n"
+    "Feel free to ask about any of the above!"
+)
+
+_OPENINGS = {
     "geography": (
         "I can only help with property searches and real estate questions "
         "specifically in Dubai.\n\n"
         "Your question seems to be about a location outside Dubai — "
-        "I'm not able to assist with that.\n\n"
-        "Here's what I *can* help you with:\n"
-        "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
-        "• Comparing properties across different Dubai neighbourhoods\n"
-        "• Market insights and price trends for Dubai real estate\n"
-        "• Advice on buying, renting, or investing in Dubai property\n\n"
-        "Feel free to ask about any of the above!"
+        "I'm not able to assist with that."
     ),
     "topic": (
         "I'm a specialised Dubai real estate assistant — I can only help with "
         "property-related questions.\n\n"
-        "Your question appears to be about something outside my area of expertise.\n\n"
-        "Here's what I *can* help you with:\n"
-        "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
-        "• Comparing properties across different Dubai neighbourhoods\n"
-        "• Market insights and price trends for Dubai real estate\n"
-        "• Advice on buying, renting, or investing in Dubai property\n\n"
-        "Feel free to ask about any of the above!"
+        "Your question appears to be about something outside my area of expertise."
     ),
     "both": (
         "I'm a specialised Dubai real estate assistant. Your question is outside "
-        "what I can help with — it's neither about Dubai nor about property topics.\n\n"
-        "Here's what I *can* help you with:\n"
-        "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
-        "• Comparing properties across different Dubai neighbourhoods\n"
-        "• Market insights and price trends for Dubai real estate\n"
-        "• Advice on buying, renting, or investing in Dubai property\n\n"
-        "Feel free to ask about any of the above!"
+        "what I can help with — it's neither about Dubai nor about property topics."
     ),
 }
+
+
+def _rejection_msg(failed_rule: str) -> str:
+    opening = _OPENINGS.get(failed_rule, _OPENINGS["both"])
+    return f"{opening}\n\n{_SCOPE_LIST}"
 
 
 # ── Node function ─────────────────────────────────────────────────────────────
@@ -131,7 +127,7 @@ def query_relevancy_node(state: AgentState) -> dict:
         logger.info("query_relevancy: query accepted")
         return {"is_relevant": True}
 
-    rejection = _REJECTION_TEMPLATES.get(failed_rule, _REJECTION_TEMPLATES["both"])
+    rejection = _rejection_msg(failed_rule)
     logger.info("query_relevancy: query rejected (rule=%s, reason=%s)", failed_rule, result.get("reason"))
 
     return {

@@ -20,6 +20,7 @@ Output written to state:
 
 import json
 import logging
+import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -115,7 +116,6 @@ def comparison_engine_node(state: AgentState) -> dict:
         comparison_result = json.loads(raw)
     except json.JSONDecodeError:
         # Attempt to extract JSON block if the model wrapped it despite instructions
-        import re
         match = re.search(r"\{.*\}", raw, re.DOTALL)
         if match:
             comparison_result = json.loads(match.group())

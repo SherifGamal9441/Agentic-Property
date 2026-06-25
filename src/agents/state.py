@@ -53,7 +53,7 @@ class AgentState(BaseModel):
 
     # ── Set by query_routing ──────────────────────────────────────────────────
     data_source: str | None = None
-    """Which tool tier was used: "cached" | "historical" """
+    """Which tool tier was used: "active" | "historical" """
 
     data_intent: str | None = None
     """How downstream nodes must treat the data:
@@ -74,9 +74,6 @@ class AgentState(BaseModel):
 
     web_search_summary: str = ""
     """LLM-generated summary of web search results."""
-
-    web_search_success: bool = False
-    """True when web_search_summary is non-empty."""
 
     # ── Set by comparison_engine ──────────────────────────────────────────────
     comparison_result: dict | None = None
@@ -105,9 +102,6 @@ class AgentState(BaseModel):
 
     needs_retry: bool = False
     """True when reflection finds the comparison insufficient and retry is warranted."""
-
-    retry_tool: str | None = None
-    """Which tool to retry: "cached" | "historical" | None."""
 
     retry_count: int = 0
     """Number of retries consumed. Caps at settings.max_retries."""
