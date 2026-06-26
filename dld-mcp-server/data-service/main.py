@@ -162,7 +162,7 @@ def search_historical(req: HistoricalSearchRequest, db: Session = Depends(get_db
     listings = query.all()
 
     # Convert to response model
-    result_listings = [ListingResponse.from_orm(l) for l in listings]
+    result_listings = [ListingResponse.model_validate(l) for l in listings]
 
     return SearchResponse(
         total_matches=total,
@@ -184,7 +184,7 @@ def search_active(req: ActiveSearchRequest, db: Session = Depends(get_db)):
 
     listings = query.all()
 
-    result_listings = [ListingResponse.from_orm(l) for l in listings]
+    result_listings = [ListingResponse.model_validate(l) for l in listings]
 
     return SearchResponse(
         total_matches=total,

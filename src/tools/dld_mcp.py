@@ -1,5 +1,5 @@
 """
-DLD MCP client — exposes search_historical, search_active, compare, and
+DLD MCP client — exposes search_historical, search_active, and
 convert_currency as plain async + sync functions.
 
 Transport is picked from config/mcp.yaml (active: stdio | sse | streamable_http).
@@ -116,21 +116,6 @@ async def search_active(**filters) -> list[dict]:
     Kwargs: same as search_historical (no date filters).
     """
     return await _call_tool("search_active_listings", filters)
-
-
-async def compare(area_name: str = None, type: str = None, **filters) -> dict:
-    """Compare historical vs active listings for an area. Returns stats dict."""
-    args = {
-        k: v
-        for k, v in {**filters, "area_name": area_name, "type": type}.items()
-        if v is not None
-    }
-    try:
-        text = await _call_raw("compare_listings", args)
-        return json.loads(text)
-    except (json.JSONDecodeError, RuntimeError) as e:
-        logger.error("compare: failed: %s", e)
-        return {"error": str(e)}
 
 
 async def convert_currency(from_currency: str, to_currency: str, amount: float) -> dict:

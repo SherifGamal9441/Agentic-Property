@@ -18,6 +18,7 @@ dependencies = [
     "pydantic>=2.13.4",
     # ── MCP client (src/tools/dld_mcp.py) ─────────────────────────────────────
     "mcp[cli]>=1.27",
+    "streamlit>=1.58.0",
 ]
 
 [dependency-groups]
