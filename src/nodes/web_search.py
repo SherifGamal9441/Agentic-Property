@@ -11,6 +11,7 @@ import logging
 import re
 from langgraph.graph import END, StateGraph
 
+from src.prompts.loader import load_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -35,13 +36,10 @@ def _strip_think(content: str) -> str:
 def rewrite_to_search_query(state: AgentState) -> dict:
     """Rewrite the user query to a more specific web search query."""
     logger.info("Original query: %s", state.query)
+    _PROMPTS = load_prompt("web_search.yaml")
     rewritten = _strip_think(LLM.invoke([
-        {"role": "system", "content": (
-            "You are a professional query rewriter. Convert the user's query "
-            "into a web-search-optimized query about Dubai real estate. "
-            "Output ONLY the rewritten query. No explanation."
-        )},
-        {"role": "user", "content": f"Rewrite: {state.query}"},
+        {"role": "system", "content": _PROMPTS["rewrite_system"]},
+        {"role": "user", "content": _PROMPTS["rewrite_user"].format(query=state.query)},
     ]).content)
     logger.info("Rewritten web search query: %s", rewritten)
     return {"web_search_query": rewritten}
@@ -63,16 +61,13 @@ def web_search(state: AgentState) -> dict:
 def summarize_web_search_results(state: AgentState) -> dict:
     """Summarize web search results given the user question."""
     logger.info("Summarizing web search results")
-    prompt = (
-        f"User Question:\n{state.query}\n\n"
-        f"Web Search Results:\n{state.web_search_results}\n\n"
-        "Summarize the search results relevant to answering the user's question. "
-        "Focus on: property listings, prices, locations, features, market insights. "
-        "Ignore irrelevant information. Keep it concise."
-    )
+    _PROMPTS = load_prompt("web_search.yaml")
     summary = _strip_think(LLM.invoke([
-        {"role": "system", "content": "You summarize real estate search results for downstream reasoning."},
-        {"role": "user", "content": prompt},
+        {"role": "system", "content": _PROMPTS["summarize_system"]},
+        {"role": "user", "content": _PROMPTS["summarize_user"].format(
+            query=state.query,
+            web_search_results=state.web_search_results
+        )},
     ]).content)
     logger.info("Web search summary: %s", summary)
     return {"web_search_summary": summary}

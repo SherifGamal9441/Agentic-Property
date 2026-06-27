@@ -32,78 +32,16 @@ from src.llm.factory import get_llm
 
 logger = logging.getLogger(__name__)
 
-# ── System prompt (shared across all paths) ───────────────────────────────────
+# ── Prompts (shared across all paths) ───────────────────────────────────────────
 
-_SYSTEM_PROMPT = """\
-You are a knowledgeable and trustworthy Dubai real estate advisor.
-Your job is to generate a clear, honest, useful response for the user.
+from src.prompts.loader import load_prompt
 
-Guidelines:
-- Be direct and specific. No filler phrases ("Great question!", "Certainly!", etc.).
-- Write in plain English. Do not expose internal data formats like fit_score or JSON keys.
-- Cite data points where available (price ranges, area names, features).
-- Be transparent about limitations or data gaps.
-"""
-
-# ── Path-specific prompt templates ────────────────────────────────────────────
-
-_RECOMMEND_TEMPLATE = """\
-User's request:
-{query}
-
-Property comparison report:
-{comparison_result}
-
-Quality review notes (mention as caveats only if relevant):
-{reflection_issues}
-
-Write the final recommendation. Structure:
-1. Best match — name it and give 2–3 specific reasons why it fits best.
-2. Runner-up (if any) — name it and its one key advantage.
-3. Caveats — any important limitations or data gaps the user should know about.
-"""
-
-_INSIGHTS_TEMPLATE = """\
-User's request:
-{query}
-
-Historical market data (these properties may no longer be available — do NOT recommend them):
-{comparison_result}
-
-Quality review notes:
-{reflection_issues}
-
-Based on this historical data, provide market insights only:
-1. Price range and trends for this type of property in this area.
-2. Key characteristics of the market segment (popular features, typical sizes, etc.).
-3. What the user should expect if they search for current listings.
-
-Do NOT recommend any specific property. Clearly state that this is based on historical data.
-"""
-
-_WEB_SEARCH_TEMPLATE = """\
-User's question:
-{query}
-
-Information gathered from web sources:
-{web_search_summary}
-
-Answer the user's question clearly and concisely using the information above.
-If the information is incomplete, say so honestly.
-"""
-
-_NO_RESULTS_TEMPLATE = """\
-User's request:
-{query}
-
-Unfortunately, no properties were found matching your criteria at this time.
-
-Write a helpful response that:
-1. Acknowledges that no results were found.
-2. Suggests what the user could adjust (broader location, higher budget, fewer criteria).
-3. Invites them to refine their search.
-Keep it concise and constructive.
-"""
+_PROMPTS = load_prompt("answer_generation.yaml")
+_SYSTEM_PROMPT = _PROMPTS["system_prompt"]
+_RECOMMEND_TEMPLATE = _PROMPTS["recommend_template"]
+_INSIGHTS_TEMPLATE = _PROMPTS["insights_template"]
+_WEB_SEARCH_TEMPLATE = _PROMPTS["web_search_template"]
+_NO_RESULTS_TEMPLATE = _PROMPTS["no_results_template"]
 
 
 # ── Node function ─────────────────────────────────────────────────────────────

@@ -30,34 +30,13 @@ from src.llm.factory import get_llm
 
 logger = logging.getLogger(__name__)
 
-# ── Prompt templates ──────────────────────────────────────────────────────────
+# ── Prompts ───────────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """\
-You are a quality-control agent reviewing a real estate property comparison report.
-Your sole job is to audit the comparison report itself — not the original user query,
-not the underlying property data.
+from src.prompts.loader import load_prompt
 
-Check for these problems:
-1. Missing or null required fields (id, title, fit_score, matched_criteria, unmatched_criteria, price_assessment)
-2. Inconsistent fit_score — e.g. all criteria matched but score < 0.5, or major gaps but score > 0.8
-3. Empty matched_criteria AND empty unmatched_criteria (the LLM did not do its job)
-4. Invalid price_assessment value (must be "below_market", "fair", or "above_market")
-5. Zero properties in the comparison (nothing was compared)
-
-Return ONLY valid JSON — no prose, no markdown fences.
-"""
-
-_USER_PROMPT_TEMPLATE = """\
-Comparison report to audit:
-{comparison_result}
-
-Return a JSON object with exactly these fields:
-{{
-  "ok": true | false,
-  "issues": ["<description of issue>", ...],   // empty array when ok=true
-  "confidence": <float 0.0 to 1.0>
-}}
-"""
+_PROMPTS = load_prompt("reflection.yaml")
+_SYSTEM_PROMPT = _PROMPTS["system_prompt"]
+_USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
 
 
 # ── Node function ─────────────────────────────────────────────────────────────

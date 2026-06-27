@@ -30,57 +30,13 @@ from src.llm.factory import get_llm
 
 logger = logging.getLogger(__name__)
 
-# ── Prompt ────────────────────────────────────────────────────────────────────
+# ── Prompts ───────────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """\
-You are a query parser for a Dubai real estate assistant.
+from src.prompts.loader import load_prompt
 
-Your job is to do two things from the user's query:
-
-1. PARSE: Extract structured intent into a JSON object.
-   Only include keys that are explicitly or strongly implied by the query.
-   Never invent values. Use null for anything not mentioned.
-
-   Possible keys:
-    area_name: Optional[str] = None - e.g "Dubai Marina"
-    address: Optional[str] = None - e.g "123 Main St"
-    building_name: Optional[str] = None - e.g "Burj Khalifa"
-    type: Optional[str] = None - e.g "apartment" | "villa" | "townhouse" | "studio" | "penthouse" | "office" | "retail"
-    furnishing: Optional[str] = None - e.g "furnished" | "unfurnished"
-    completion_status: Optional[str] = None - e.g "off-plan" | "ready"
-    price_min: Optional[float] = None - minimum price in the user's currency
-    price_max: Optional[float] = None - maximum price in the user's currency
-    currency: Optional[str] = None - currency code the user mentioned (e.g "USD", "EUR", "GBP"). Omit or null if user says AED or doesn't specify.
-    beds_min: Optional[int] = None - minimum number of bedrooms
-    beds_max: Optional[int] = None - maximum number of bedrooms
-    baths_min: Optional[int] = None - minimum number of bathrooms
-    baths_max: Optional[int] = None - maximum number of bathrooms
-    year_of_completion_min: Optional[int] = None - minimum year of completion
-    year_of_completion_max: Optional[int] = None - maximum year of completion
-    total_parking_spaces_min: Optional[int] = None - minimum number of parking spaces
-    total_parking_spaces_max: Optional[int] = None - maximum number of parking spaces
-    total_floors_min: Optional[int] = None - minimum number of floors
-    total_floors_max: Optional[int] = None - maximum number of floors
-    total_building_area_sqft_min: Optional[float] = None - minimum total building area in sqft
-    total_building_area_sqft_max: Optional[float] = None - maximum total building area in sqft
-    post_date_min: Optional[str] = None - minimum post date
-    post_date_max: Optional[str] = None - maximum post date
-
-
-2. ROUTE: Decide which path to take.
-     "query_routing"  → user wants specific property results, recommendations, or comparisons
-     "web_search"     → user is asking a general question (market trends, area overview,
-                        investment advice, mortgage info, etc.)
-
-Return ONLY valid JSON — no prose, no markdown fences:
-{
-  "parsed_query": { ... },
-  "route": "query_routing" | "web_search",
-  "route_reason": "<one sentence explaining the routing decision>"
-}
-"""
-
-_USER_PROMPT_TEMPLATE = "Parse and route this query: {query}"
+_PROMPTS = load_prompt("query_understanding.yaml")
+_SYSTEM_PROMPT = _PROMPTS["system_prompt"]
+_USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
 
 
 # ── Node function ─────────────────────────────────────────────────────────────

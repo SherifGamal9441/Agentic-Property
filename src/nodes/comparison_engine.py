@@ -29,51 +29,14 @@ from src.llm.factory import get_llm
 
 logger = logging.getLogger(__name__)
 
-# ── Prompt templates ──────────────────────────────────────────────────────────
+# ── Prompts ───────────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT_RECOMMEND = """\
-You are an expert real estate comparison assistant specialising in UAE property.
-Your job is to evaluate how well each retrieved property matches the user's requirements.
+from src.prompts.loader import load_prompt
 
-Rules:
-- Be objective and data-driven. Only reference criteria explicitly stated in the requirements.
-- fit_score: 0.0 = no match at all, 1.0 = perfect match on every criterion.
-- price_assessment: compare the property's price to typical market rates for its type/location.
-- Return ONLY valid JSON — no prose, no markdown fences, no extra keys.
-"""
-
-_SYSTEM_PROMPT_INSIGHTS = """\
-You are an expert real estate comparison assistant specialising in UAE property.
-You are evaluating HISTORICAL data. These properties may already be sold.
-Your job is to evaluate them to derive market insights, not to recommend them as active listings.
-
-Rules:
-- Be objective and data-driven. Only reference criteria explicitly stated in the requirements.
-- fit_score: 0.0 = no match at all, 1.0 = perfect match on every criterion.
-- price_assessment: compare the property's price to typical market rates for its type/location.
-- Return ONLY valid JSON — no prose, no markdown fences, no extra keys.
-"""
-
-_USER_PROMPT_TEMPLATE = """\
-User requirements:
-{parsed_query}
-
-Retrieved properties:
-{retrieved_properties}
-
-For EACH property, produce an entry with exactly these fields:
-  - id              (string)
-  - title           (string)
-  - fit_score       (float, 0.0 to 1.0)
-  - matched_criteria    (array of strings — which user requirements this property satisfies)
-  - unmatched_criteria  (array of strings — which user requirements this property does NOT satisfy)
-  - price_assessment    ("below_market" | "fair" | "above_market")
-
-Return a JSON object in this exact shape:
-{{
-  "properties": [ ... ]
-}}
-"""
+_PROMPTS = load_prompt("comparison_engine.yaml")
+_SYSTEM_PROMPT_RECOMMEND = _PROMPTS["system_prompt_recommend"]
+_SYSTEM_PROMPT_INSIGHTS = _PROMPTS["system_prompt_insights"]
+_USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
 
 
 # ── Node function ─────────────────────────────────────────────────────────────

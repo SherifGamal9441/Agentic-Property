@@ -25,57 +25,15 @@ from src.llm.factory import get_llm
 
 logger = logging.getLogger(__name__)
 
-# ── Prompt ────────────────────────────────────────────────────────────────────
+# ── Prompts ───────────────────────────────────────────────────────────────────
 
-_SYSTEM_PROMPT = """\
-You are a query classifier for a Dubai real estate assistant.
+from src.prompts.loader import load_prompt
 
-You must evaluate every user query against exactly two rules:
-  Rule 1 — Geography: The query must be about Dubai or areas within Dubai.
-            Queries about other cities, countries, or unspecified locations fail this rule.
-  Rule 2 — Topic:     The query must be about real estate or property.
-            This includes: buying, renting, investing, prices, market trends, property types,
-            locations within Dubai, mortgages, developers, and similar topics.
-            Anything unrelated to real estate fails this rule.
-
-Return ONLY valid JSON — no prose, no markdown fences:
-{
-  "relevant": true | false,
-  "failed_rule": null | "geography" | "topic" | "both",
-  "reason": "<one short sentence explaining why it passed or failed>"
-}
-"""
-
-_USER_PROMPT_TEMPLATE = "Classify this query: {query}"
-
-# ── Rejection message builder ─────────────────────────────────────────────────
-
-_SCOPE_LIST = (
-    "Here's what I *can* help you with:\n"
-    "• Finding apartments, villas, or townhouses for sale or rent in Dubai\n"
-    "• Comparing properties across different Dubai neighbourhoods\n"
-    "• Market insights and price trends for Dubai real estate\n"
-    "• Advice on buying, renting, or investing in Dubai property\n\n"
-    "Feel free to ask about any of the above!"
-)
-
-_OPENINGS = {
-    "geography": (
-        "I can only help with property searches and real estate questions "
-        "specifically in Dubai.\n\n"
-        "Your question seems to be about a location outside Dubai — "
-        "I'm not able to assist with that."
-    ),
-    "topic": (
-        "I'm a specialised Dubai real estate assistant — I can only help with "
-        "property-related questions.\n\n"
-        "Your question appears to be about something outside my area of expertise."
-    ),
-    "both": (
-        "I'm a specialised Dubai real estate assistant. Your question is outside "
-        "what I can help with — it's neither about Dubai nor about property topics."
-    ),
-}
+_PROMPTS = load_prompt("query_relevancy.yaml")
+_SYSTEM_PROMPT = _PROMPTS["system_prompt"]
+_USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
+_SCOPE_LIST = _PROMPTS["scope_list"]
+_OPENINGS = _PROMPTS["openings"]
 
 
 def _rejection_msg(failed_rule: str) -> str:
