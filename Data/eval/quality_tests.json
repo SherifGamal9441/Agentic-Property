@@ -1,0 +1,604 @@
+[
+  {
+    "id": "Q001",
+    "query": "Find me a 1-bedroom apartment in Business Bay under 1.5M AED",
+    "criteria": [
+      "Answer mentions specific property names or building names",
+      "Answer states the price and location clearly",
+      "Answer is written in clear, helpful language",
+      "Answer does NOT expose internal fields like fit_score or JSON keys",
+      "Answer includes at least one caveat or limitation if data is incomplete"
+    ],
+    "min_score": 0.6,
+    "tags": ["basic", "recommendation", "apartment"]
+  },
+  {
+    "id": "Q002",
+    "query": "Compare apartments in Downtown Dubai vs Dubai Marina for investment",
+    "criteria": [
+      "Answer provides a meaningful comparison between the two areas",
+      "Answer mentions specific data points (price ranges, features) for both areas",
+      "Answer gives a clear recommendation or conclusion",
+      "Answer does NOT expose internal fit_score or JSON data"
+    ],
+    "min_score": 0.6,
+    "tags": ["comparison", "recommendation", "investment"]
+  },
+  {
+    "id": "Q003",
+    "query": "What are the best areas to invest in Dubai real estate?",
+    "criteria": [
+      "Answer provides specific area names with reasoning",
+      "Answer cites data points or market trends",
+      "Answer is informative and well-structured",
+      "Answer does NOT recommend specific active properties"
+    ],
+    "min_score": 0.6,
+    "tags": ["general", "web_search", "investment"]
+  },
+  {
+    "id": "Q004",
+    "query": "كم تكلفة شقة في دبي مارينا؟",
+    "criteria": [
+      "Answer is primarily in Arabic or the user's language",
+      "Answer provides useful price information about Dubai Marina apartments",
+      "Answer is helpful and complete"
+    ],
+    "min_score": 0.5,
+    "tags": ["arabic", "language", "pricing"]
+  },
+  {
+    "id": "Q005",
+    "query": "I have 500k USD what can I buy in Dubai?",
+    "criteria": [
+      "Answer handles the currency conversion correctly",
+      "Answer shows prices in both USD and AED",
+      "Answer provides realistic property options within budget",
+      "Mentions the exchange rate used"
+    ],
+    "min_score": 0.6,
+    "tags": ["currency", "conversion", "budget"]
+  },
+  {
+    "id": "Q006",
+    "query": "Tell me about the history of Dubai real estate development",
+    "criteria": [
+      "Answer is informative and well-structured",
+      "Answer does NOT recommend specific properties",
+      "Answer references credible information or historical trends",
+      "Answer is a reasonable length for the topic"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "history"]
+  },
+  {
+    "id": "Q007",
+    "query": "Find a 2-bedroom villa in Palm Jumeirah under 8M AED",
+    "criteria": [
+      "Answer mentions specific villas or property names",
+      "Answer provides price and location details",
+      "Answer evaluates how well the property matches the request",
+      "Answer is honest about any limitations in the data",
+      "Answer is formatted in clear readable paragraphs"
+    ],
+    "min_score": 0.6,
+    "tags": ["basic", "villa", "luxury", "recommendation"]
+  },
+  {
+    "id": "Q008",
+    "query": "What is the average price per square foot in Dubai Marina?",
+    "criteria": [
+      "Answer provides specific price per sqft data or range",
+      "Answer cites the source of information",
+      "Answer is concise and directly addresses the question",
+      "If exact data unavailable answer explains why and offers alternatives"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "web_search", "pricing"]
+  },
+  {
+    "id": "Q009",
+    "query": "I want a studio in JLT under 700k AED",
+    "criteria": [
+      "Answer lists specific studios or explains search results clearly",
+      "Answer includes price and building information",
+      "Answer is helpful even if no exact matches found",
+      "If no results the answer suggests adjustments to criteria"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "studio", "budget"]
+  },
+  {
+    "id": "Q010",
+    "query": "How do I get a mortgage as a foreigner in Dubai?",
+    "criteria": [
+      "Answer provides useful information about mortgage options for foreigners",
+      "Answer mentions specific requirements or steps",
+      "Answer is well-structured and easy to follow",
+      "Answer is honest about limitations of the information"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "web_search", "mortgage", "legal"]
+  },
+  {
+    "id": "Q011",
+    "query": "أبحث عن فيلا في نخلة جميرا ب 4 غرف نوم",
+    "criteria": [
+      "Answer responds primarily in Arabic",
+      "Answer provides specific property details or search results",
+      "Answer is relevant to the query about Palm Jumeirah villas",
+      "Answer is helpful and complete"
+    ],
+    "min_score": 0.5,
+    "tags": ["arabic", "language", "villa"]
+  },
+  {
+    "id": "Q012",
+    "query": "Best off-plan investments in Dubai right now",
+    "criteria": [
+      "Answer mentions specific off-plan projects or areas",
+      "Answer discusses investment potential or ROI",
+      "Answer includes relevant caveats about off-plan risks",
+      "Answer is well-structured and informative"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "off-plan", "investment"]
+  },
+  {
+    "id": "Q013",
+    "query": "3 bedroom apartment in Downtown Dubai with high floor",
+    "criteria": [
+      "Answer mentions specific apartment buildings or properties",
+      "Answer includes price and floor/location details",
+      "Answer discusses how well each option matches the criteria",
+      "Answer is well-formatted and easy to read"
+    ],
+    "min_score": 0.6,
+    "tags": ["basic", "apartment", "downtown"]
+  },
+  {
+    "id": "Q014",
+    "query": "What is the rental yield in Jumeirah Village Circle?",
+    "criteria": [
+      "Answer provides specific yield percentage or range",
+      "Answer discusses factors affecting rental yields in JVC",
+      "Answer is informative and data-driven",
+      "If exact data unavailable answer explains why"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "web_search", "ROI", "investment"]
+  },
+  {
+    "id": "Q015",
+    "query": "Find me a penthouse in Dubai with a private pool",
+    "criteria": [
+      "Answer mentions specific penthouse properties",
+      "Answer includes price and location details",
+      "Answer evaluates how well properties match the request",
+      "Answer is honest about limitations in the data"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "luxury", "penthouse"]
+  },
+  {
+    "id": "Q016",
+    "query": "Tell me about Dubai property market trends in 2024",
+    "criteria": [
+      "Answer provides specific market trends or data points",
+      "Answer is informative and well-structured",
+      "Answer does NOT recommend specific properties",
+      "Answer references credible sources or data"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "market"]
+  },
+  {
+    "id": "Q017",
+    "query": "Are there any properties in Dubai under 300k AED?",
+    "criteria": [
+      "Answer honestly addresses whether such properties exist",
+      "If none available answer suggests realistic alternatives",
+      "Answer is helpful and not dismissive",
+      "Answer provides specific information about the budget segment"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "budget", "edge_case"]
+  },
+  {
+    "id": "Q018",
+    "query": "Compare living in Dubai Marina vs Arabian Ranches",
+    "criteria": [
+      "Answer provides meaningful comparison between the two areas",
+      "Answer discusses lifestyle location amenities and property types",
+      "Answer gives clear pros and cons for each area",
+      "Answer helps the user make an informed decision"
+    ],
+    "min_score": 0.6,
+    "tags": ["comparison", "lifestyle", "areas"]
+  },
+  {
+    "id": "Q019",
+    "query": "What is the procedure to buy property in Dubai as a non-resident?",
+    "criteria": [
+      "Answer provides clear steps or process overview",
+      "Answer mentions specific requirements documents or fees",
+      "Answer is accurate and helpful",
+      "Answer includes relevant caveats about legal aspects"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "web_search", "process", "legal"]
+  },
+  {
+    "id": "Q020",
+    "query": "I need a townhouse in Arabian Ranches 3 beds budget 2.5M",
+    "criteria": [
+      "Answer mentions specific townhouse properties or communities",
+      "Answer provides price and location details",
+      "Answer evaluates how well properties match the criteria",
+      "Answer is clear and actionable"
+    ],
+    "min_score": 0.6,
+    "tags": ["basic", "townhouse", "recommendation"]
+  },
+  {
+    "id": "Q021",
+    "query": "و我从迪拜房地产投资中能期待多少回报？",
+    "criteria": [
+      "Answer responds in Chinese or the user's language",
+      "Answer provides useful information about Dubai real estate returns",
+      "Answer is informative and addresses the investment question",
+      "Answer is helpful and complete"
+    ],
+    "min_score": 0.4,
+    "tags": ["chinese", "language", "investment"]
+  },
+  {
+    "id": "Q022",
+    "query": "What are the upcoming developments in Dubai for 2025?",
+    "criteria": [
+      "Answer mentions specific upcoming projects or areas",
+      "Answer provides useful information about future developments",
+      "Answer is well-structured and informative",
+      "If information is incomplete answer acknowledges this honestly"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "developments"]
+  },
+  {
+    "id": "Q023",
+    "query": "Furnished 1 bedroom apartment in JBR with sea view",
+    "criteria": [
+      "Answer mentions specific apartment buildings or properties",
+      "Answer includes price and view details",
+      "Answer evaluates how well properties match the criteria",
+      "Answer is well-formatted with clear property summaries"
+    ],
+    "min_score": 0.6,
+    "tags": ["basic", "furnished", "beach"]
+  },
+  {
+    "id": "Q024",
+    "query": "Is buying property in Dubai a good investment in 2024?",
+    "criteria": [
+      "Answer provides balanced analysis of pros and cons",
+      "Answer mentions specific data points or market trends",
+      "Answer is informative and helps decision-making",
+      "Answer does NOT make unrealistic promises about returns"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "web_search", "investment"]
+  },
+  {
+    "id": "Q025",
+    "query": "Properties in Dubai with 5 bedrooms and large garden",
+    "criteria": [
+      "Answer mentions specific large properties or communities",
+      "Answer includes price and size details",
+      "Answer evaluates suitability for the user's needs",
+      "Answer is clear and actionable"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "large", "luxury"]
+  },
+  {
+    "id": "Q026",
+    "query": "What is the best time to buy property in Dubai?",
+    "criteria": [
+      "Answer provides useful timing advice or seasonal trends",
+      "Answer discusses market cycles or events affecting prices",
+      "Answer is informative and practical",
+      "Answer does NOT give false certainty about market timing"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "web_search", "advice"]
+  },
+  {
+    "id": "Q027",
+    "query": "Quels sont les meilleurs quartiers pour investir à Dubaï?",
+    "criteria": [
+      "Answer responds in French or the user's language",
+      "Answer provides specific area recommendations with reasoning",
+      "Answer discusses investment potential for each area",
+      "Answer is informative and well-structured"
+    ],
+    "min_score": 0.4,
+    "tags": ["french", "language", "investment"]
+  },
+  {
+    "id": "Q028",
+    "query": "Studio apartment in Dubai under 400k AED",
+    "criteria": [
+      "Answer honestly addresses whether such properties exist",
+      "If available answer provides details about options",
+      "If not available answer suggests realistic budget adjustments",
+      "Answer is helpful and not dismissive of the budget"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "budget", "edge_case"]
+  },
+  {
+    "id": "Q029",
+    "query": "What are the best schools near Dubai Marina?",
+    "criteria": [
+      "Answer provides specific school names and information",
+      "Answer discusses proximity to Dubai Marina",
+      "Answer is informative and well-organized",
+      "If information is incomplete answer acknowledges this"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "lifestyle"]
+  },
+  {
+    "id": "Q030",
+    "query": "Luxury apartment in Burj Khalifa area for investment",
+    "criteria": [
+      "Answer mentions specific luxury properties in Downtown Dubai",
+      "Answer discusses investment potential and ROI",
+      "Answer includes price ranges and property features",
+      "Answer is well-structured and informative"
+    ],
+    "min_score": 0.6,
+    "tags": ["basic", "luxury", "investment"]
+  },
+  {
+    "id": "Q031",
+    "query": "What is the cost of living in Dubai for a family of 4?",
+    "criteria": [
+      "Answer provides specific cost breakdown or ranges",
+      "Answer discusses housing education healthcare and daily expenses",
+      "Answer is informative and practical",
+      "If data is approximate answer makes this clear"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "web_search", "lifestyle"]
+  },
+  {
+    "id": "Q032",
+    "query": "Off-plan townhouse in Dubailand under 1.5M AED",
+    "criteria": [
+      "Answer mentions specific off-plan projects or communities",
+      "Answer provides pricing and completion timeline details",
+      "Answer discusses the investment potential",
+      "Answer includes relevant caveats about off-plan purchases"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "off-plan", "townhouse"]
+  },
+  {
+    "id": "Q033",
+    "query": "Compare DAMAC Hills vs Arabian Ranches for family living",
+    "criteria": [
+      "Answer provides meaningful comparison between both communities",
+      "Answer discusses amenities schools and lifestyle for families",
+      "Answer gives clear pros and cons for each option",
+      "Answer helps the user make an informed decision"
+    ],
+    "min_score": 0.6,
+    "tags": ["comparison", "family", "communities"]
+  },
+  {
+    "id": "Q034",
+    "query": "What happens to Dubai property prices during a recession?",
+    "criteria": [
+      "Answer provides analysis of historical market behavior",
+      "Answer discusses factors that influence Dubai property prices",
+      "Answer is informative and balanced",
+      "Answer does NOT make definitive predictions"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "market"]
+  },
+  {
+    "id": "Q035",
+    "query": "Encuentra un apartamento en Dubai Marina por menos de 2M AED",
+    "criteria": [
+      "Answer responds primarily in Spanish",
+      "Answer provides specific apartment details or search results",
+      "Answer includes price and location information",
+      "Answer is helpful and complete"
+    ],
+    "min_score": 0.4,
+    "tags": ["spanish", "language", "apartment"]
+  },
+  {
+    "id": "Q036",
+    "query": "What are the service charges for apartments in Dubai Marina?",
+    "criteria": [
+      "Answer provides information about typical service charges",
+      "Answer discusses factors affecting service charge costs",
+      "Answer is informative and practical",
+      "If exact data unavailable answer explains why"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "costs"]
+  },
+  {
+    "id": "Q037",
+    "query": "I want a property with high rental yield in Dubai",
+    "criteria": [
+      "Answer identifies areas with high rental yields",
+      "Answer provides specific yield data or ranges",
+      "Answer discusses factors that affect rental returns",
+      "Answer is well-structured and actionable"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "investment", "ROI"]
+  },
+  {
+    "id": "Q038",
+    "query": "Ready villa in Emirates Hills with pool",
+    "criteria": [
+      "Answer mentions specific villa properties or communities",
+      "Answer includes price location and feature details",
+      "Answer evaluates how well properties match the request",
+      "Answer is clear and well-formatted"
+    ],
+    "min_score": 0.6,
+    "tags": ["basic", "villa", "luxury"]
+  },
+  {
+    "id": "Q039",
+    "query": "What documents do I need to buy property in Dubai?",
+    "criteria": [
+      "Answer provides specific document requirements",
+      "Answer distinguishes between cash buyers and mortgage buyers",
+      "Answer mentions relevant government agencies or processes",
+      "Answer is practical and actionable"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "legal"]
+  },
+  {
+    "id": "Q040",
+    "query": "Penthouse in Palm Jumeirah with private pool and sea view",
+    "criteria": [
+      "Answer mentions specific penthouse properties",
+      "Answer includes price and premium feature details",
+      "Answer evaluates how well properties match the criteria",
+      "Answer is well-structured with clear property highlights"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "luxury", "penthouse"]
+  },
+  {
+    "id": "Q041",
+    "query": "Tell me about the Dubai 2040 Urban Master Plan",
+    "criteria": [
+      "Answer provides information about the 2040 plan",
+      "Answer discusses implications for real estate and areas",
+      "Answer is informative and well-structured",
+      "Answer references specific details from the plan"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "future"]
+  },
+  {
+    "id": "Q042",
+    "query": "Apartment in Dubai with good natural lighting and balcony",
+    "criteria": [
+      "Answer mentions specific properties with these features",
+      "Answer includes price and location details",
+      "Answer evaluates suitability for the user's preferences",
+      "Answer is helpful and specific"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "apartment", "features"]
+  },
+  {
+    "id": "Q043",
+    "query": "How does Airbnb perform in Dubai?",
+    "criteria": [
+      "Answer provides information about short-term rental regulations",
+      "Answer discusses areas where Airbnb performs well",
+      "Answer covers licensing requirements and rules",
+      "Answer is informative and practical"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "rental"]
+  },
+  {
+    "id": "Q044",
+    "query": "Best properties for first-time buyers in Dubai",
+    "criteria": [
+      "Answer recommends areas suitable for first-time buyers",
+      "Answer discusses budget-friendly options and entry prices",
+      "Answer provides practical advice for first-time buyers",
+      "Answer is encouraging and informative"
+    ],
+    "min_score": 0.5,
+    "tags": ["general", "first_time", "advice"]
+  },
+  {
+    "id": "Q045",
+    "query": "Недвижимость в Дубае для инвестиций",
+    "criteria": [
+      "Answer responds primarily in Russian",
+      "Answer provides useful investment information about Dubai real estate",
+      "Answer discusses areas and property types for investment",
+      "Answer is informative and complete"
+    ],
+    "min_score": 0.4,
+    "tags": ["russian", "language", "investment"]
+  },
+  {
+    "id": "Q046",
+    "query": "What is the property registration fee in Dubai?",
+    "criteria": [
+      "Answer provides specific fee percentage or amount",
+      "Answer explains how fees are calculated",
+      "Answer mentions DLD and related costs",
+      "Answer is accurate and practical"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "costs"]
+  },
+  {
+    "id": "Q047",
+    "query": "2 bedroom apartment in Dubai with parking and gym included",
+    "criteria": [
+      "Answer mentions specific properties with these amenities",
+      "Answer includes price location and amenity details",
+      "Answer evaluates how well properties match the criteria",
+      "Answer is clear and well-formatted"
+    ],
+    "min_score": 0.5,
+    "tags": ["basic", "apartment", "amenities"]
+  },
+  {
+    "id": "Q048",
+    "query": "What are the most expensive areas in Dubai?",
+    "criteria": [
+      "Answer lists specific high-end areas with reasoning",
+      "Answer provides price ranges or market context",
+      "Answer discusses what makes these areas expensive",
+      "Answer is informative and well-structured"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "areas"]
+  },
+  {
+    "id": "Q049",
+    "query": "I have 1M EUR to invest in Dubai real estate where should I buy?",
+    "criteria": [
+      "Answer handles the EUR to AED currency conversion appropriately",
+      "Answer shows price context in both EUR and AED",
+      "Answer recommends specific areas or property types",
+      "Answer provides reasoning for each recommendation",
+      "Answer is practical and actionable"
+    ],
+    "min_score": 0.6,
+    "tags": ["currency", "conversion", "investment", "recommendation"]
+  },
+  {
+    "id": "Q050",
+    "query": "Sustainability and green buildings in Dubai real estate",
+    "criteria": [
+      "Answer discusses sustainable developments in Dubai",
+      "Answer mentions specific green building projects or communities",
+      "Answer is informative and well-structured",
+      "Answer covers relevant environmental initiatives"
+    ],
+    "min_score": 0.5,
+    "tags": ["web_search", "general", "sustainability"]
+  }
+]

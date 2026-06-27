@@ -1,0 +1,662 @@
+[
+  {
+    "id": "S001",
+    "query": "Find me a 2-bedroom apartment in Dubai Marina under 3M AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Dubai Marina",
+        "type": "Apartment",
+        "beds_min": 2,
+        "price_max": 3000000
+      }
+    },
+    "tags": ["basic", "recommendation", "apartment"]
+  },
+  {
+    "id": "S002",
+    "query": "Show me villas in Palm Jumeirah with 4 bedrooms",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Palm Jumeirah",
+        "type": "Villa",
+        "beds_min": 4
+      }
+    },
+    "tags": ["basic", "recommendation", "villa", "luxury"]
+  },
+  {
+    "id": "S003",
+    "query": "I need a studio in JLT under 800k AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Jumeirah Lake Towers",
+        "type": "Studio",
+        "price_max": 800000
+      }
+    },
+    "tags": ["basic", "recommendation", "studio"]
+  },
+  {
+    "id": "S004",
+    "query": "Townhouse in Arabian Ranches 3 bedrooms budget 2.5M AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Arabian Ranches",
+        "type": "Townhouse",
+        "beds_min": 3,
+        "price_max": 2500000
+      }
+    },
+    "tags": ["basic", "recommendation", "townhouse"]
+  },
+  {
+    "id": "S005",
+    "query": "What are the latest property market trends in Dubai?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "market"]
+  },
+  {
+    "id": "S006",
+    "query": "Compare apartments in Downtown Dubai vs Business Bay for investment",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend"
+    },
+    "tags": ["comparison", "recommendation", "investment"]
+  },
+  {
+    "id": "S007",
+    "query": "Tell me about the history of real estate development in Dubai",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "history"]
+  },
+  {
+    "id": "S008",
+    "query": "What's the weather like in Paris?",
+    "expected": {
+      "is_relevant": false,
+      "route": null,
+      "final_answer_contains": ["can only help", "Dubai"]
+    },
+    "tags": ["rejection", "geography", "out_of_scope"]
+  },
+  {
+    "id": "S009",
+    "query": "How do I bake a chocolate cake?",
+    "expected": {
+      "is_relevant": false,
+      "route": null,
+      "final_answer_contains": ["property", "real estate", "Dubai"]
+    },
+    "tags": ["rejection", "topic", "out_of_scope"]
+  },
+  {
+    "id": "S010",
+    "query": "كم تكلفة شقة في دبي مارينا؟",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "parsed_query": {
+        "area_name": "Dubai Marina",
+        "type": "Apartment"
+      }
+    },
+    "tags": ["arabic", "language", "pricing"]
+  },
+  {
+    "id": "S011",
+    "query": "أبحث عن فيلا في نخلة جميرا ب 4 غرف نوم",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "parsed_query": {
+        "area_name": "Palm Jumeirah",
+        "type": "Villa",
+        "beds_min": 4
+      }
+    },
+    "tags": ["arabic", "language", "villa"]
+  },
+  {
+    "id": "S012",
+    "query": "و我从迪拜房地产投资中能期待多少回报？",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["chinese", "language", "web_search", "investment"]
+  },
+  {
+    "id": "S013",
+    "query": "Quels sont les meilleurs quartiers pour investir à Dubaï?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["french", "language", "web_search", "investment"]
+  },
+  {
+    "id": "S014",
+    "query": "Encuentra un apartamento en Dubai Marina por menos de 2M AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "parsed_query": {
+        "area_name": "Dubai Marina",
+        "type": "Apartment",
+        "price_max": 2000000
+      }
+    },
+    "tags": ["spanish", "language", "apartment"]
+  },
+  {
+    "id": "S015",
+    "query": "Недвижимость в Дубае для инвестиций",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["russian", "language", "web_search", "investment"]
+  },
+  {
+    "id": "S016",
+    "query": "Penthouse in Burj Khalifa area with sea view",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Downtown Dubai",
+        "type": "Penthouse"
+      }
+    },
+    "tags": ["basic", "luxury", "penthouse"]
+  },
+  {
+    "id": "S017",
+    "query": "Off-plan apartments in Dubai for under 1M AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "type": "Apartment",
+        "completion_status": "Off-Plan",
+        "price_max": 1000000
+      }
+    },
+    "tags": ["basic", "off-plan", "apartment"]
+  },
+  {
+    "id": "S018",
+    "query": "Ready to move in villas in Emirates Hills",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Emirates Hills",
+        "type": "Villa",
+        "completion_status": "Ready"
+      }
+    },
+    "tags": ["basic", "ready", "villa", "luxury"]
+  },
+  {
+    "id": "S019",
+    "query": "Furnished apartment for rent in Dubai Marina",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Dubai Marina",
+        "type": "Apartment",
+        "furnishing": "Furnished"
+      }
+    },
+    "tags": ["basic", "furnished", "rental"]
+  },
+  {
+    "id": "S020",
+    "query": "Unfurnished 1 bedroom in Business Bay",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Business Bay",
+        "type": "Apartment",
+        "beds_min": 1,
+        "beds_max": 1,
+        "furnishing": "Unfurnished"
+      }
+    },
+    "tags": ["basic", "unfurnished", "apartment"]
+  },
+  {
+    "id": "S021",
+    "query": "What is the average price per square foot in Dubai Marina?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "pricing"]
+  },
+  {
+    "id": "S022",
+    "query": "How do I get a mortgage as a foreigner in Dubai?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "mortgage"]
+  },
+  {
+    "id": "S023",
+    "query": "What are the best schools near Dubai Marina?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "lifestyle"]
+  },
+  {
+    "id": "S024",
+    "query": "Is Dubai property market overpriced right now?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "market"]
+  },
+  {
+    "id": "S025",
+    "query": "Properties in Dubai under 500k AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "price_max": 500000
+      }
+    },
+    "tags": ["basic", "budget", "affordable"]
+  },
+  {
+    "id": "S026",
+    "query": "Luxury penthouse in Palm Jumeirah over 20M AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Palm Jumeirah",
+        "type": "Penthouse",
+        "price_min": 20000000
+      }
+    },
+    "tags": ["basic", "luxury", "high_budget"]
+  },
+  {
+    "id": "S027",
+    "query": "Best areas to buy property in Dubai for families",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "family"]
+  },
+  {
+    "id": "S028",
+    "query": "What is the ROI for rentals in JVC?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "investment", "ROI"]
+  },
+  {
+    "id": "S029",
+    "query": "Tell me about DAMAC Hills 2 properties",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "DAMAC Hills"
+      }
+    },
+    "tags": ["basic", "area_specific"]
+  },
+  {
+    "id": "S030",
+    "query": "1 bedroom apartment in JBR with beach view",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Jumeirah Beach Residence",
+        "type": "Apartment",
+        "beds_min": 1,
+        "beds_max": 1
+      }
+    },
+    "tags": ["basic", "apartment", "beach"]
+  },
+  {
+    "id": "S031",
+    "query": "What can I buy in Dubai with 250k USD?",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "currency": "USD",
+        "price_max": 250000
+      }
+    },
+    "tags": ["currency", "conversion", "budget"]
+  },
+  {
+    "id": "S032",
+    "query": "I have 1M EUR to invest in Dubai property",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "currency": "EUR",
+        "price_max": 1000000
+      }
+    },
+    "tags": ["currency", "conversion", "investment"]
+  },
+  {
+    "id": "S033",
+    "query": "Show me properties between 2M and 3M AED in Dubai Marina",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Dubai Marina",
+        "price_min": 2000000,
+        "price_max": 3000000
+      }
+    },
+    "tags": ["basic", "price_range"]
+  },
+  {
+    "id": "S034",
+    "query": "What's the best real estate developer in Dubai?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "developers"]
+  },
+  {
+    "id": "S035",
+    "query": "Properties in Dubai with swimming pool",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend"
+    },
+    "tags": ["basic", "amenities"]
+  },
+  {
+    "id": "S036",
+    "query": "Tell me about the best restaurants in London",
+    "expected": {
+      "is_relevant": false,
+      "route": null,
+      "final_answer_contains": ["can only help", "Dubai"]
+    },
+    "tags": ["rejection", "geography", "out_of_scope"]
+  },
+  {
+    "id": "S037",
+    "query": "How does the stock market work?",
+    "expected": {
+      "is_relevant": false,
+      "route": null,
+      "final_answer_contains": ["property", "real estate", "Dubai"]
+    },
+    "tags": ["rejection", "topic", "out_of_scope"]
+  },
+  {
+    "id": "S038",
+    "query": "أريد معلومات عن أفضل المناطق السكنية في دبي",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["arabic", "language", "web_search", "areas"]
+  },
+  {
+    "id": "S039",
+    "query": "Estudio en Dubai por menos de 600k AED",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "parsed_query": {
+        "type": "Studio",
+        "price_max": 600000
+      }
+    },
+    "tags": ["spanish", "language", "studio", "budget"]
+  },
+  {
+    "id": "S040",
+    "query": "Grundstücke in Dubai kaufen",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active"
+    },
+    "tags": ["german", "language", "land"]
+  },
+  {
+    "id": "S041",
+    "query": "I want a property with 5 bedrooms and a private pool",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "beds_min": 5
+      }
+    },
+    "tags": ["basic", "large", "luxury"]
+  },
+  {
+    "id": "S042",
+    "query": "Studio apartment in Dubai under 400k AED is that possible?",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "type": "Studio",
+        "price_max": 400000
+      }
+    },
+    "tags": ["basic", "budget", "edge_case"]
+  },
+  {
+    "id": "S043",
+    "query": "Dubai property",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend"
+    },
+    "tags": ["basic", "short_query", "edge_case"]
+  },
+  {
+    "id": "S044",
+    "query": "",
+    "expected": {
+      "is_relevant": false,
+      "route": null,
+      "final_answer_contains": ["question", "ask"]
+    },
+    "tags": ["empty_query", "edge_case"]
+  },
+  {
+    "id": "S045",
+    "query": "Hi, I'm looking for a modern 2-bedroom apartment in Dubai Marina with a balcony and parking, built after 2020, furnished, within 2.5M AED, close to the metro station, preferably on a high floor with sea view and good natural lighting",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Dubai Marina",
+        "type": "Apartment",
+        "beds_min": 2,
+        "price_max": 2500000,
+        "furnishing": "Furnished",
+        "year_of_completion_min": 2020
+      }
+    },
+    "tags": ["basic", "long_query", "detailed"]
+  },
+  {
+    "id": "S046",
+    "query": "What is the best area to live in Dubai for a single person?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "lifestyle"]
+  },
+  {
+    "id": "S047",
+    "query": "3 bedroom apartment in Downtown Dubai with high floor",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "area_name": "Downtown Dubai",
+        "type": "Apartment",
+        "beds_min": 3,
+        "beds_max": 3
+      }
+    },
+    "tags": ["basic", "apartment", "downtown"]
+  },
+  {
+    "id": "S048",
+    "query": "Are there any historical property records for Jumeirah Village Circle?",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "historical",
+      "data_intent": "insights_only",
+      "parsed_query": {
+        "area_name": "Jumeirah Village Circle"
+      }
+    },
+    "tags": ["historical", "insights", "edge_case"]
+  },
+  {
+    "id": "S049",
+    "query": "Cheapest apartment for sale in Dubai right now",
+    "expected": {
+      "is_relevant": true,
+      "route": "query_routing",
+      "data_source": "active",
+      "data_intent": "recommend",
+      "parsed_query": {
+        "type": "Apartment"
+      }
+    },
+    "tags": ["basic", "budget", "edge_case"]
+  },
+  {
+    "id": "S050",
+    "query": "What is the procedure to buy property in Dubai as a non-resident?",
+    "expected": {
+      "is_relevant": true,
+      "route": "web_search",
+      "data_source": null,
+      "data_intent": null
+    },
+    "tags": ["general", "web_search", "process", "legal"]
+  }
+]
