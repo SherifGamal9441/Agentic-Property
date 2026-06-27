@@ -7,14 +7,16 @@ from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import UniqueConstraint
-from database import SessionLocal, engine
-from models import HistoricalListing, ActiveListing, Base
+from .database import SessionLocal, engine
+from .db_tables import HistoricalListing, ActiveListing, Base
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-HISTORICAL_CSV = "data/historical_dld.csv"
-ACTIVE_CSV = "data/active_dld.csv"
+# Make paths robust to where the script is run from
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+HISTORICAL_CSV = os.path.join(PROJECT_ROOT, "data", "historical_dld.csv")
+ACTIVE_CSV = os.path.join(PROJECT_ROOT, "data", "active_dld.csv")
 
 def wait_for_db(retries=30, delay=2):
     """Wait for Postgres to become available."""

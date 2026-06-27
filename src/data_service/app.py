@@ -6,8 +6,8 @@ from datetime import date, datetime
 from typing import Optional, List, Any
 from pydantic import BaseModel, Field, ConfigDict, validator
 
-from database import get_db
-from models import HistoricalListing, ActiveListing
+from .database import get_db
+from .db_tables import HistoricalListing, ActiveListing
 
 # ---------------------------------------------------------------------------
 # Pydantic request models
