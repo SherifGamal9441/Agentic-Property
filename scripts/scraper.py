@@ -7,6 +7,7 @@ import dataclasses
 import json
 import logging
 import os
+import sys
 import time
 from logging.handlers import RotatingFileHandler
 from dataclasses import dataclass
@@ -17,6 +18,8 @@ from typing import Any, Optional
 import httpx
 from dotenv import load_dotenv
 from sqlalchemy.dialects.postgresql import insert
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.data_service.database import SessionLocal
 from src.data_service.db_tables import ActiveListing

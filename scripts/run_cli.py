@@ -9,6 +9,10 @@ Usage:
 
 import logging
 import sys
+from pathlib import Path
+
+# Add project root to sys.path so 'src' can be imported
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.agents.graph import agent_graph
 

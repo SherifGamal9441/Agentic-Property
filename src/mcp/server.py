@@ -19,11 +19,17 @@ import sys
 import logging
 from pathlib import Path
 
+# Ensure project root is on sys.path so absolute imports work when
+# this file is executed standalone by `mcp run src/mcp/server.py`.
+_PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 import httpx
 import yaml
 from mcp.server.fastmcp import FastMCP
 
-from .schemas import BasePropertyFilters, HistoricalFilters
+from src.mcp.schemas import BasePropertyFilters, HistoricalFilters
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

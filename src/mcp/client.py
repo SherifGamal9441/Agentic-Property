@@ -119,7 +119,9 @@ def _call_tool_sync(tool_name: str, arguments: dict) -> list[dict]:
         if key in arguments and arguments[key] is not None:
             arguments[key] = arguments[key].strip().title()
     try:
-        text = _call_raw_sync(tool_name, arguments)
+        # Server tools expect a single `filters` parameter (Pydantic model),
+        # so wrap the flat kwargs under a "filters" key.
+        text = _call_raw_sync(tool_name, {"filters": arguments})
         return json.loads(text).get("listings", [])
     except (json.JSONDecodeError, RuntimeError) as e:
         logger.error("_call_tool: %s failed: %s", tool_name, e)
