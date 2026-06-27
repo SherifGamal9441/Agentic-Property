@@ -1,8 +1,9 @@
-# data-service/main.py
+# src/data_service/app.py
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from datetime import date, datetime
+from typing import Optional, List
 from pydantic import BaseModel, ConfigDict, validator
 from src.mcp.schemas import BasePropertyFilters, HistoricalFilters
 

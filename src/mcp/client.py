@@ -159,18 +159,6 @@ def convert_currency_sync(from_currency: str, to_currency: str, amount: float) -
 
 async def search_historical(**filters) -> list[dict]:
     _ensure_connected()
-    return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(
-        _call_raw_async("search_historical_listings", filters), _loop
-    ))  # Note: _call_tool_sync logic is partly duplicated, so we adapt wrapper.
-    # Actually, it's easier to just run the sync version in executor or wrap:
-    
-async def search_active(**filters) -> list[dict]:
-    _ensure_connected()
-    return search_active_sync(**filters)  # since it's just delegating anyway
-
-# Redefine async with wrap_future to not block event loops
-async def search_historical(**filters) -> list[dict]:
-    _ensure_connected()
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, lambda: search_historical_sync(**filters))
 
