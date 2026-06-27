@@ -26,19 +26,19 @@ stdio:
     - mcp
     - mcp
     - run
-    - server.py
-  cwd: dld-mcp-server/mcp-server
+    - src/mcp/server.py
+  cwd: .
 
 # ── Transport 2: SSE (hosted server) ───────────────────────────────────────────
 # Connect to a running MCP server via Server-Sent Events.
-# Start the server: python dld-mcp-server/mcp-server/server.py
+# Start the server: python -m src.mcp.server
 # (host/port/transport come from the `server:` section above)
 sse:
   url: http://localhost:8001/sse
 
 # ── Transport 3: streamable HTTP ───────────────────────────────────────────────
 # Connect to a running MCP server via HTTP streaming.
-# Start the server: MCP_TRANSPORT=streamable-http python dld-mcp-server/mcp-server/server.py
+# Start the server: MCP_TRANSPORT=streamable-http python -m src.mcp.server
 streamable_http:
   url: http://localhost:8001/mcp
 
