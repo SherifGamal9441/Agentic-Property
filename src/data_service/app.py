@@ -3,8 +3,8 @@ from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from datetime import date, datetime
-from typing import Optional, List, Any
-from pydantic import BaseModel, Field, ConfigDict, validator
+from pydantic import BaseModel, ConfigDict, validator
+from src.mcp.schemas import BasePropertyFilters, HistoricalFilters
 
 from .database import get_db
 from .db_tables import HistoricalListing, ActiveListing
@@ -13,33 +13,7 @@ from .db_tables import HistoricalListing, ActiveListing
 # Pydantic request models
 # ---------------------------------------------------------------------------
 
-class BaseSearchRequest(BaseModel):
-    area_name: Optional[str] = None
-    price_min: Optional[float] = None
-    price_max: Optional[float] = None
-    beds_min: Optional[int] = None
-    beds_max: Optional[int] = None
-    baths_min: Optional[int] = None
-    baths_max: Optional[int] = None
-    type: Optional[str] = None
-    furnishing: Optional[str] = None
-    completion_status: Optional[str] = None
-    building_name: Optional[str] = None
-    address: Optional[str] = None
-    year_of_completion_min: Optional[int] = None
-    year_of_completion_max: Optional[int] = None
-    total_parking_spaces_min: Optional[int] = None
-    total_parking_spaces_max: Optional[int] = None
-    total_floors_min: Optional[int] = None
-    total_floors_max: Optional[int] = None
-    total_building_area_sqft_min: Optional[float] = None
-    total_building_area_sqft_max: Optional[float] = None
-    limit: int = Field(default=20, ge=1, le=100)
-
-class HistoricalSearchRequest(BaseSearchRequest):
-    post_date_min: Optional[date] = None
-    post_date_max: Optional[date] = None
-
+class HistoricalSearchRequest(HistoricalFilters):
     @validator('post_date_min', 'post_date_max', pre=True)
     def parse_date(cls, v):
         if isinstance(v, str):
@@ -49,7 +23,7 @@ class HistoricalSearchRequest(BaseSearchRequest):
                 raise ValueError("Invalid date format. Use YYYY-MM-DD.")
         return v
 
-class ActiveSearchRequest(BaseSearchRequest):
+class ActiveSearchRequest(BasePropertyFilters):
     # no post_date fields
     pass
 
@@ -90,7 +64,7 @@ class SearchResponse(BaseModel):
 # Helper: build query filters
 # ---------------------------------------------------------------------------
 
-def apply_filters(query, model, filters: BaseSearchRequest):
+def apply_filters(query, model, filters: BasePropertyFilters):
     """
     Apply all non-null filters from the request to the SQLAlchemy query.
     """

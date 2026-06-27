@@ -23,6 +23,8 @@ import httpx
 import yaml
 from mcp.server.fastmcp import FastMCP
 
+from .schemas import BasePropertyFilters, HistoricalFilters
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -56,35 +58,9 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-async def search_historical_listings(
-    area_name: str | None = None,
-    address: str | None = None,
-    building_name: str | None = None,
-    type: str | None = None,
-    furnishing: str | None = None,
-    completion_status: str | None = None,
-    price_min: float | None = None,
-    price_max: float | None = None,
-    beds_min: int | None = None,
-    beds_max: int | None = None,
-    baths_min: int | None = None,
-    baths_max: int | None = None,
-    year_of_completion_min: int | None = None,
-    year_of_completion_max: int | None = None,
-    total_parking_spaces_min: int | None = None,
-    total_parking_spaces_max: int | None = None,
-    total_floors_min: int | None = None,
-    total_floors_max: int | None = None,
-    total_building_area_sqft_min: float | None = None,
-    total_building_area_sqft_max: float | None = None,
-    post_date_min: str | None = None,
-    post_date_max: str | None = None,
-    limit: int = 20,
-) -> dict:
+async def search_historical_listings(filters: HistoricalFilters) -> dict:
     """Search Dubai real estate historical transactions with various filters."""
-    # ponytail: locals() at the top = the signature IS the payload source.
-    # Adding a param auto-includes it here. Keep this the first statement.
-    payload = {k: v for k, v in locals().items() if v is not None}
+    payload = filters.model_dump(exclude_none=True)
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(f"{DATA_SERVICE_URL}/search/historical", json=payload)
         resp.raise_for_status()
@@ -92,32 +68,9 @@ async def search_historical_listings(
 
 
 @mcp.tool()
-async def search_active_listings(
-    area_name: str | None = None,
-    address: str | None = None,
-    building_name: str | None = None,
-    type: str | None = None,
-    furnishing: str | None = None,
-    completion_status: str | None = None,
-    price_min: float | None = None,
-    price_max: float | None = None,
-    beds_min: int | None = None,
-    beds_max: int | None = None,
-    baths_min: int | None = None,
-    baths_max: int | None = None,
-    year_of_completion_min: int | None = None,
-    year_of_completion_max: int | None = None,
-    total_parking_spaces_min: int | None = None,
-    total_parking_spaces_max: int | None = None,
-    total_floors_min: int | None = None,
-    total_floors_max: int | None = None,
-    total_building_area_sqft_min: float | None = None,
-    total_building_area_sqft_max: float | None = None,
-    limit: int = 20,
-) -> dict:
+async def search_active_listings(filters: BasePropertyFilters) -> dict:
     """Search current active Dubai real estate listings with various filters."""
-    # ponytail: locals() at the top = the signature IS the payload source.
-    payload = {k: v for k, v in locals().items() if v is not None}
+    payload = filters.model_dump(exclude_none=True)
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(f"{DATA_SERVICE_URL}/search/active", json=payload)
         resp.raise_for_status()
