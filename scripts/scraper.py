@@ -18,8 +18,8 @@ import httpx
 from dotenv import load_dotenv
 from sqlalchemy.dialects.postgresql import insert
 
-from database import SessionLocal
-from models import ActiveListing
+from src.data_service.database import SessionLocal
+from src.data_service.db_tables import ActiveListing
 
 load_dotenv()
 
