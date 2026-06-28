@@ -5,18 +5,47 @@ Warm gray + terracotta palette (ChatGPT-style with warm colors).
 Sidebar: chat history. Main: messages + collapsible "thinking" dropdown.
 Agent answer streams token-by-token via LangGraph astream_events.
 
+Each chat in the sidebar is an isolated thread with its own UUID thread_id.
+LangGraph's SqliteSaver persists conversation state per thread, so clicking
+a chat resumes the conversation from where it left off.
+
 Usage:
-    uv run streamlit run app.py
+    uv run streamlit run main.py
 """
 
 import asyncio
+import json
 import logging
 import sys
 import time
+import uuid
+from pathlib import Path
 
 import streamlit as st
 
 from src.agents.graph import agent_graph
+
+# ── Persisted chat metadata ────────────────────────────────────────────────────
+
+_CHAT_META_FILE = Path(__file__).parent / "chat_metadata.json"
+
+
+def _load_chat_metadata() -> list[dict]:
+    """Load persisted chat metadata (survives Streamlit restarts)."""
+    if _CHAT_META_FILE.exists():
+        try:
+            return json.loads(_CHAT_META_FILE.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return []
+    return []
+
+
+def _save_chat_metadata(chats: list[dict]) -> None:
+    """Persist chat metadata to JSON file."""
+    _CHAT_META_FILE.write_text(
+        json.dumps(chats, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
 
 # ── Page config ────────────────────────────────────────────────────────────────
 
@@ -81,6 +110,7 @@ st.markdown(
 # ── Node names that appear in graph events ─────────────────────────────────────
 
 _NODE_NAMES = {
+    "memory",
     "query_relevancy",
     "query_understanding",
     "query_routing",
@@ -112,22 +142,13 @@ if "messages" not in st.session_state:
     st.session_state.messages = []  # list of {role, content, thinking}
 
 if "chat_history" not in st.session_state:
-    # Each entry: {title: str, messages: list}
-    st.session_state.chat_history = []
+    st.session_state.chat_history = _load_chat_metadata()
 
 if "current_chat_index" not in st.session_state:
     st.session_state.current_chat_index = None
 
-
-def _start_new_chat():
-    """Save current messages to history and start a fresh chat."""
-    if st.session_state.messages:
-        title = _make_title(st.session_state.messages)
-        st.session_state.chat_history.append(
-            {"title": title, "messages": list(st.session_state.messages)}
-        )
-    st.session_state.messages = []
-    st.session_state.current_chat_index = None
+if "current_thread_id" not in st.session_state:
+    st.session_state.current_thread_id = str(uuid.uuid4())
 
 
 def _make_title(messages: list) -> str:
@@ -139,6 +160,39 @@ def _make_title(messages: list) -> str:
     return "Empty chat"
 
 
+def _start_new_chat():
+    """Save current chat to history and start a fresh one with a new thread_id."""
+    if st.session_state.messages:
+        title = _make_title(st.session_state.messages)
+        thread_id = st.session_state.current_thread_id
+
+        if st.session_state.current_chat_index is not None:
+            # Update existing entry in-place
+            idx = st.session_state.current_chat_index
+            if idx < len(st.session_state.chat_history):
+                st.session_state.chat_history[idx] = {
+                    "thread_id": thread_id,
+                    "title": title,
+                    "messages": list(st.session_state.messages),
+                    "created_at": st.session_state.chat_history[idx].get(
+                        "created_at", time.strftime("%Y-%m-%dT%H:%M:%S")
+                    ),
+                }
+        else:
+            # Append new chat entry
+            st.session_state.chat_history.append({
+                "thread_id": thread_id,
+                "title": title,
+                "messages": list(st.session_state.messages),
+                "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            })
+
+    st.session_state.messages = []
+    st.session_state.current_chat_index = None
+    st.session_state.current_thread_id = str(uuid.uuid4())
+    _save_chat_metadata(st.session_state.chat_history)
+
+
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 
 with st.sidebar:
@@ -147,10 +201,11 @@ with st.sidebar:
 
     for i, chat in enumerate(reversed(st.session_state.chat_history)):
         idx = len(st.session_state.chat_history) - 1 - i
-        label = chat["title"]
+        label = chat.get("title", "Untitled")
         if st.button(label, key=f"hist_{idx}", use_container_width=True):
             st.session_state.messages = list(chat["messages"])
             st.session_state.current_chat_index = idx
+            st.session_state.current_thread_id = chat["thread_id"]
             st.rerun()
 
 # ── Main chat area ─────────────────────────────────────────────────────────────
@@ -196,10 +251,12 @@ if prompt := st.chat_input("Ask about Dubai property…"):
         src_logger = logging.getLogger("src")
         src_logger.addHandler(capture)
 
+        config = {"configurable": {"thread_id": st.session_state.current_thread_id}}
+
         async def _stream():
             first_token = True
             async for event in agent_graph.astream_events(
-                {"query": prompt}, version="v2"
+                {"query": prompt}, config=config, version="v2"
             ):
                 kind = event["event"]
                 name = event.get("name", "")
@@ -301,10 +358,22 @@ if prompt := st.chat_input("Ask about Dubai property…"):
             {"role": "assistant", "content": full_answer, "thinking": thinking_text}
         )
 
-        # If this was an existing chat being continued, update history
+        # Update or create chat entry in persisted history
         if st.session_state.current_chat_index is not None:
             idx = st.session_state.current_chat_index
             if idx < len(st.session_state.chat_history):
                 st.session_state.chat_history[idx]["messages"] = list(
                     st.session_state.messages
                 )
+        else:
+            # First message in a brand new chat — add to history
+            title = _make_title(st.session_state.messages)
+            st.session_state.chat_history.append({
+                "thread_id": st.session_state.current_thread_id,
+                "title": title,
+                "messages": list(st.session_state.messages),
+                "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            })
+            st.session_state.current_chat_index = len(st.session_state.chat_history) - 1
+
+        _save_chat_metadata(st.session_state.chat_history)

@@ -51,13 +51,14 @@ def answer_generation_node(state: AgentState) -> dict:
     LangGraph node: generate the final user-facing response.
 
     Detects which path ran by inspecting state, then builds the appropriate
-    prompt and streams the LLM response.
+    prompt and streams the LLM response. Also appends the current turn
+    (user query + assistant answer) to conversation_history.
 
     Args:
         state: Current AgentState.
 
     Returns:
-        Partial state dict with `final_answer` populated.
+        Partial state dict with `final_answer` and `conversation_history` populated.
     """
     llm = get_llm(streaming=True)
     messages = _build_messages(state)
@@ -73,14 +74,43 @@ def answer_generation_node(state: AgentState) -> dict:
     print()
     final_answer = "".join(chunks)
 
-    logger.info("answer_generation: response complete (%d chars)", len(final_answer))
-    return {"final_answer": final_answer}
+    # Append this turn to conversation history
+    new_entries = [
+        {"role": "user", "content": state.query},
+        {"role": "assistant", "content": final_answer},
+    ]
+    updated_history = state.conversation_history + new_entries
+
+    logger.info("answer_generation: response complete (%d chars, %d total turns)",
+                len(final_answer), len(updated_history) // 2)
+    return {
+        "final_answer": final_answer,
+        "conversation_history": updated_history,
+    }
 
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
 def _build_messages(state: AgentState) -> list:
     """Choose the right prompt template based on what data is in state."""
+
+    # Build system prompt with conversation context when available
+    system_with_context = _SYSTEM_PROMPT
+    if state.conversation_context and "(No prior conversation" not in state.conversation_context:
+        system_with_context += (
+            f"\n\nPrior conversation for context:\n{state.conversation_context}"
+        )
+
+    # ── Meta-question / memory direct path ──────────────────────────────────
+    if state.route == "memory_direct":
+        logger.info("answer_generation: memory direct path (meta-question)")
+        user_content = (
+            f"User query: {state.query}\n\n"
+            f"Here is the conversation history. Answer based on what you find in it. "
+            f"If you cannot answer from the history, say so honestly.\n\n"
+            f"{state.conversation_context}"
+        )
+        return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
     # ── web_search path ───────────────────────────────────────────────────────
     if state.web_search_summary:
@@ -89,7 +119,7 @@ def _build_messages(state: AgentState) -> list:
             query=state.query,
             web_search_summary=state.web_search_summary,
         )
-        return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+        return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
     # ── query_routing path ────────────────────────────────────────────────────
     reflection_issues = (
@@ -103,7 +133,7 @@ def _build_messages(state: AgentState) -> list:
     if not state.retrieved_properties and not state.comparison_result:
         logger.info("answer_generation: no-results path")
         user_content = _NO_RESULTS_TEMPLATE.format(query=state.query)
-        return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+        return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
     # Historical data — insights only
     if state.data_intent == "insights_only":
@@ -115,7 +145,7 @@ def _build_messages(state: AgentState) -> list:
         )
         if currency_note:
             user_content += f"\n\n{currency_note}"
-        return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+        return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
     # Recommend — current cached data
     logger.info("answer_generation: recommend path (cached data)")
@@ -126,7 +156,7 @@ def _build_messages(state: AgentState) -> list:
     )
     if currency_note:
         user_content += f"\n\n{currency_note}"
-    return [SystemMessage(content=_SYSTEM_PROMPT), HumanMessage(content=user_content)]
+    return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
 
 def _build_currency_note(state: AgentState) -> str:

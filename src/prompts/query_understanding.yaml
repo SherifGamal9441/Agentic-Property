@@ -45,4 +45,8 @@ system_prompt: |
     "route_reason": "<one sentence explaining the routing decision>"
   }
 
-user_prompt_template: "Parse and route this query: {query}"
+user_prompt_template: |
+  Conversation history:
+  {conversation_context}
+  
+  Parse and route this query: {query}

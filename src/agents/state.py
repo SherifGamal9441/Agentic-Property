@@ -113,3 +113,12 @@ class AgentState(BaseModel):
        - General question answer  (web_search path)
        - Out-of-scope explanation (is_relevant=False path)
     The API layer always reads this one field."""
+
+    # ── Conversation memory ──────────────────────────────────────────────────
+    conversation_history: list[dict] = []
+    """Accumulated user/assistant message pairs across turns.
+    Shape: [{"role": "user"|"assistant", "content": str}, ...]"""
+
+    conversation_context: str = ""
+    """Pre-formatted string of recent conversation history, ready to inject
+    into LLM prompts. Built by the memory node at the start of each turn."""

@@ -81,12 +81,12 @@ def test_answer_generation_populates_final_answer(mock_get_llm):
 
 @patch("src.nodes.answer_generation.get_llm")
 def test_answer_generation_only_mutates_final_answer(mock_get_llm):
-    """Node returns only final_answer — does not overwrite other state fields."""
+    """Node returns final_answer and conversation_history — does not overwrite other state fields."""
     mock_get_llm.return_value = _mock_streaming_llm(STREAMED_TOKENS)
 
     result = answer_generation_node(AgentState(**BASE_STATE))
 
-    assert set(result.keys()) == {"final_answer"}
+    assert set(result.keys()) == {"final_answer", "conversation_history"}
 
 
 @patch("src.nodes.answer_generation.get_llm")

@@ -9,6 +9,11 @@ system_prompt: |
               locations within Dubai, mortgages, developers, and similar topics.
               Anything unrelated to real estate fails this rule.
   
+  When the user's query is a follow-up to prior conversation, use the conversation
+  context to understand what they're asking about. Even brief queries like "tell me
+  more" or "what about a 3BR instead?" are relevant if the conversation is about
+  Dubai real estate.
+  
   Return ONLY valid JSON — no prose, no markdown fences:
   {
     "relevant": true | false,
@@ -16,7 +21,11 @@ system_prompt: |
     "reason": "<one short sentence explaining why it passed or failed>"
   }
 
-user_prompt_template: "Classify this query: {query}"
+user_prompt_template: |
+  Conversation history:
+  {conversation_context}
+  
+  Classify this query: {query}
 
 scope_list: |
   Here's what I *can* help you with:

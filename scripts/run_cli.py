@@ -3,12 +3,16 @@ Agentic Property — interactive CLI.
 
 Run the agent pipeline and get answers in real time.
 
+Each session has a UUID thread_id for conversation isolation.
+Type 'new' to start a fresh conversation thread.
+
 Usage:
-    uv run python main.py
+    uv run python scripts/run_cli.py
 """
 
 import logging
 import sys
+import uuid
 from pathlib import Path
 
 # Add project root to sys.path so 'src' can be imported
@@ -27,9 +31,12 @@ _DIVIDER = "=" * 60
 
 def main() -> None:
     print("Agentic Property — Dubai real estate assistant")
-    print("Type your question, or 'quit' / 'exit' to stop.\n")
-    #lets add config for the checkpointer history
-    config={"configurable": {"thread_id": "user1"}}
+    print("Type your question, or 'quit' / 'exit' to stop.")
+    print("Type 'new' to start a new conversation thread.\n")
+
+    thread_id = str(uuid.uuid4())
+    print(f"[Thread: {thread_id[:8]}...]\n")
+
     while True:
         try:
             query = input("You > ").strip()
@@ -42,6 +49,12 @@ def main() -> None:
         if query.lower() in ("quit", "exit"):
             print("Bye!")
             break
+        if query.lower() == "new":
+            thread_id = str(uuid.uuid4())
+            print(f"\n[New thread: {thread_id[:8]}...]\n")
+            continue
+
+        config = {"configurable": {"thread_id": thread_id}}
 
         print(f"\n{_DIVIDER}")
         result = agent_graph.invoke({"query": query}, config=config)
@@ -54,7 +67,8 @@ def main() -> None:
         source = result.get("data_source", "n/a")
         intent = result.get("data_intent", "n/a")
         currency = result.get("currency", "AED")
-        print(f"\n[route={route} | source={source} | intent={intent} | currency={currency}]")
+        turns = len(result.get("conversation_history", [])) // 2
+        print(f"\n[route={route} | source={source} | intent={intent} | currency={currency} | turns={turns}]")
         print()
 
 

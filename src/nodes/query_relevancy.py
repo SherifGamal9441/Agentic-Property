@@ -61,7 +61,10 @@ def query_relevancy_node(state: AgentState) -> dict:
 
     messages = [
         SystemMessage(content=_SYSTEM_PROMPT),
-        HumanMessage(content=_USER_PROMPT_TEMPLATE.format(query=state.query)),
+        HumanMessage(content=_USER_PROMPT_TEMPLATE.format(
+            query=state.query,
+            conversation_context=state.conversation_context,
+        )),
     ]
 
     response = llm.invoke(messages)

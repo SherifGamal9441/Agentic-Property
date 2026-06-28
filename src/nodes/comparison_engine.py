@@ -63,6 +63,7 @@ def comparison_engine_node(state: AgentState) -> dict:
     user_message = _USER_PROMPT_TEMPLATE.format(
         parsed_query=json.dumps(state.parsed_query, ensure_ascii=False, indent=2),
         retrieved_properties=json.dumps(properties, ensure_ascii=False, indent=2),
+        conversation_context=state.conversation_context,
     )
 
     sys_prompt = _SYSTEM_PROMPT_INSIGHTS if state.data_intent == "insights_only" else _SYSTEM_PROMPT_RECOMMEND

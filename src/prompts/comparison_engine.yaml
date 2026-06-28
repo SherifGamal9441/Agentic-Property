@@ -20,6 +20,9 @@ system_prompt_insights: |
   - Return ONLY valid JSON — no prose, no markdown fences, no extra keys.
 
 user_prompt_template: |
+  Conversation history:
+  {conversation_context}
+  
   User requirements:
   {parsed_query}
 

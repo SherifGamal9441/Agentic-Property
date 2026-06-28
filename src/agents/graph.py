@@ -4,24 +4,26 @@ LangGraph StateGraph — full pipeline with dual-path topology.
 Graph topology:
                               ┌── END (is_relevant=False, final_answer set)
                               │
-START ──► query_relevancy ──► query_understanding
-                                       │
-               ┌───────────────────────┴─────────────────────────┐
-               │ route="query_routing"                            │ route="web_search"
-               ▼                                                  ▼
-         query_routing                                     web_search (sub-graph)
-               │                                                  │
-               ▼                                                  │
-      comparison_engine                                           │
-               │                                                  │
-               ▼                                                  │
-           reflection                                             │
-               │                                                  │
-               └──────────────────┬───────────────────────────────┘
-                                  ▼
-                         answer_generation
-                                  │
-                                 END
+START ──► memory ──► query_relevancy ──► query_understanding
+                │                                │
+                │ (meta question)                │
+                ▼                                ▼
+         answer_generation           ┌───────────┴───────────┐
+                                     │ route="query_routing"  │ route="web_search"
+                                     ▼                         ▼
+                               query_routing            web_search (sub-graph)
+                                     │                         │
+                                     ▼                         │
+                            comparison_engine                  │
+                                     │                         │
+                                     ▼                         │
+                                 reflection                    │
+                                     │                         │
+                                     └─────────┬───────────────┘
+                                               ▼
+                                        answer_generation
+                                               │
+                                              END
 
 Retry loop (reflection → query_routing):
     If reflection sets needs_retry=True and retry_count < max_retries,
@@ -38,6 +40,7 @@ from src.nodes.query_routing import query_routing_node, route_after_routing
 from src.nodes.query_understanding import query_understanding_node, route_after_understanding
 from src.nodes.reflection import reflection_node, route_after_reflection
 from src.nodes.web_search import create_web_search_agent
+from src.nodes.memory import memory_node, route_after_memory
 from src.memory.long_term_memory import checkpointer
 
 def build_graph() -> StateGraph:
@@ -50,6 +53,7 @@ def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
 
     # ── Register nodes ────────────────────────────────────────────────────────
+    graph.add_node("memory", memory_node)
     graph.add_node("query_relevancy", query_relevancy_node)
     graph.add_node("query_understanding", query_understanding_node)
     graph.add_node("query_routing", query_routing_node)
@@ -58,8 +62,16 @@ def build_graph() -> StateGraph:
     graph.add_node("reflection", reflection_node)
     graph.add_node("answer_generation", answer_generation_node)
 
-    # ── Entry ─────────────────────────────────────────────────────────────────
-    graph.add_edge(START, "query_relevancy")
+    # ── Entry → memory → query_relevancy or answer_generation ─────────────────
+    graph.add_edge(START, "memory")
+    graph.add_conditional_edges(
+        "memory",
+        route_after_memory,
+        {
+            "query_relevancy": "query_relevancy",
+            "answer_generation": "answer_generation",
+        },
+    )
 
     # ── After relevancy: proceed or end ───────────────────────────────────────
     graph.add_conditional_edges(

@@ -5,11 +5,11 @@ Three fake-state tests, one per graph path:
 
   Path A — Recommendation (query_routing → comparison_engine → reflection → answer_generation)
       Seeds state as if query_routing returned cached properties.
-      Runs from comparison_engine onward (query_relevancy + understanding already ran).
+      Runs from memory onward through the full pipeline.
 
   Path B — Web search (web_search → answer_generation)
       Seeds state as if web_search ran and produced a summary.
-      Runs answer_generation directly.
+      Runs the full graph.
 
   Path C — Rejection (query_relevancy already rejected)
       State has is_relevant=False and final_answer already set.
@@ -19,6 +19,7 @@ All LLM calls are mocked — no Ollama daemon needed.
 """
 
 import json
+import uuid
 from unittest.mock import MagicMock, patch
 
 from src.agents.graph import build_graph
@@ -63,17 +64,22 @@ def _make_stream_mock(tokens: list[str]):
 @patch("src.nodes.answer_generation.get_llm")
 @patch("src.nodes.reflection.get_llm")
 @patch("src.nodes.comparison_engine.get_llm")
-@patch("src.nodes.query_routing._call_cached_tool")
+@patch("src.nodes.query_routing.search_active_sync")
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
+@patch("src.nodes.memory.get_llm")
 def test_recommendation_path(
-    mock_rel_llm, mock_und_llm, mock_cached_tool,
-    mock_comp_llm, mock_refl_llm, mock_ans_llm
+    mock_mem_llm, mock_rel_llm, mock_und_llm,
+    mock_search, mock_comp_llm, mock_refl_llm, mock_ans_llm
 ):
     """
-    Full recommendation path with fake cached properties.
-    query_relevancy → query_understanding → query_routing → comparison → reflection → answer.
+    Full recommendation path with fake properties from active search.
+    memory → query_relevancy → query_understanding → query_routing
+    → comparison → reflection → answer.
     """
+    # Memory node: empty history → no LLM call, context is "first message"
+    mock_mem_llm.return_value = None  # won't be called
+
     # Relevancy: accept
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": True, "failed_rule": None, "reason": "valid Dubai query"})
@@ -84,8 +90,8 @@ def test_recommendation_path(
         "route": "query_routing",
         "route_reason": "property recommendation",
     }))
-    # Cached tool: return one fake property
-    mock_cached_tool.return_value = [
+    # Active search: return one property
+    mock_search.return_value = [
         {"id": "prop-001", "title": "Marina Crest 2BR", "price": 1_750_000,
          "area_sqm": 110, "location": "Dubai Marina", "bedrooms": 2, "amenities": ["sea view"]}
     ]
@@ -97,15 +103,20 @@ def test_recommendation_path(
     mock_ans_llm.return_value = _make_stream_mock(FINAL_ANSWER_TOKENS)
 
     graph = build_graph()
-    final_state = graph.invoke({"query": "2BR in Dubai Marina, sea view, AED 1.8M"})
+    final_state = graph.invoke(
+        {"query": "2BR in Dubai Marina, sea view, AED 1.8M"},
+        {"configurable": {"thread_id": f"test-rec-{uuid.uuid4()}"}},
+    )
 
     assert final_state["route"] == "query_routing"
-    assert final_state["data_source"] == "cached"
+    assert final_state["data_source"] == "active"
     assert final_state["data_intent"] == "recommend"
     assert final_state["comparison_result"] is not None
     assert final_state["reflection_output"]["ok"] is True
     assert final_state["final_answer"] == "Marina Crest is your best match."
     assert final_state["is_relevant"] is True
+    # Conversation history should have 2 entries (user + assistant)
+    assert len(final_state["conversation_history"]) == 2
 
 
 # ── Path B — Web search path ──────────────────────────────────────────────────
@@ -113,11 +124,15 @@ def test_recommendation_path(
 @patch("src.nodes.answer_generation.get_llm")
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
-def test_web_search_path(mock_rel_llm, mock_und_llm, mock_ans_llm):
+@patch("src.nodes.memory.get_llm")
+def test_web_search_path(mock_mem_llm, mock_rel_llm, mock_und_llm, mock_ans_llm):
     """
-    Web search path: query_relevancy → query_understanding → web_search → answer_generation.
+    Web search path: memory → query_relevancy → query_understanding
+    → web_search → answer_generation.
     We seed web_search_summary directly to bypass the real web_search sub-graph.
     """
+    mock_mem_llm.return_value = None  # won't be called (empty history)
+
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": True, "failed_rule": None, "reason": "valid general question"})
     )
@@ -139,27 +154,37 @@ def test_web_search_path(mock_rel_llm, mock_und_llm, mock_ans_llm):
         mock_ws.return_value = fake_web_search_agent()
 
         graph = build_graph()
-        final_state = graph.invoke({"query": "What are rental trends in Downtown Dubai?"})
+        final_state = graph.invoke(
+            {"query": "What are rental trends in Downtown Dubai?"},
+            {"configurable": {"thread_id": f"test-ws-{uuid.uuid4()}"}},
+        )
 
     assert final_state["route"] == "web_search"
     assert final_state["final_answer"] == "Rents are rising."
+    assert len(final_state["conversation_history"]) == 2
 
 
 # ── Path C — Rejection path ───────────────────────────────────────────────────
 
 @patch("src.nodes.query_understanding.get_llm")  # should NOT be called
 @patch("src.nodes.query_relevancy.get_llm")
-def test_rejection_path(mock_rel_llm, mock_und_llm):
+@patch("src.nodes.memory.get_llm")
+def test_rejection_path(mock_mem_llm, mock_rel_llm, mock_und_llm):
     """
-    Rejection path: query_relevancy rejects → END immediately.
+    Rejection path: memory → query_relevancy rejects → END immediately.
     query_understanding must NOT be called.
     """
+    mock_mem_llm.return_value = None  # won't be called (empty history)
+
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": False, "failed_rule": "topic", "reason": "not real estate"})
     )
 
     graph = build_graph()
-    final_state = graph.invoke({"query": "What is the best pasta recipe?"})
+    final_state = graph.invoke(
+        {"query": "What is the best pasta recipe?"},
+        {"configurable": {"thread_id": f"test-rej-{uuid.uuid4()}"}},
+    )
 
     assert final_state["is_relevant"] is False
     assert final_state["final_answer"] is not None
