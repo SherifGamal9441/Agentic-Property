@@ -28,7 +28,8 @@ _DIVIDER = "=" * 60
 def main() -> None:
     print("Agentic Property — Dubai real estate assistant")
     print("Type your question, or 'quit' / 'exit' to stop.\n")
-
+    #lets add config for the checkpointer history
+    config={"configurable": {"thread_id": "user1"}}
     while True:
         try:
             query = input("You > ").strip()
@@ -43,7 +44,7 @@ def main() -> None:
             break
 
         print(f"\n{_DIVIDER}")
-        result = agent_graph.invoke({"query": query})
+        result = agent_graph.invoke({"query": query}, config=config)
 
         print(f"\n{_DIVIDER}")
         print("Assistant >")

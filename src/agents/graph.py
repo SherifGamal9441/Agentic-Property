@@ -38,7 +38,7 @@ from src.nodes.query_routing import query_routing_node, route_after_routing
 from src.nodes.query_understanding import query_understanding_node, route_after_understanding
 from src.nodes.reflection import reflection_node, route_after_reflection
 from src.nodes.web_search import create_web_search_agent
-
+from src.memory.long_term_memory import checkpointer
 
 def build_graph() -> StateGraph:
     """
@@ -108,7 +108,7 @@ def build_graph() -> StateGraph:
     # ── Both paths converge here ──────────────────────────────────────────────
     graph.add_edge("answer_generation", END)
 
-    return graph.compile()
+    return graph.compile(checkpointer=checkpointer)
 
 
 # Singleton — import `agent_graph` wherever you need to invoke the pipeline
