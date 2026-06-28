@@ -41,15 +41,23 @@ from src.nodes.query_understanding import query_understanding_node, route_after_
 from src.nodes.reflection import reflection_node, route_after_reflection
 from src.nodes.web_search import create_web_search_agent
 from src.nodes.memory import memory_node, route_after_memory
-from src.memory.long_term_memory import checkpointer
+from src.memory.long_term_memory import checkpointer as _default_checkpointer
 
-def build_graph() -> StateGraph:
+def build_graph(checkpointer=None):
     """
     Build and compile the full agent pipeline.
+
+    Args:
+        checkpointer: Optional checkpointer override. If None, uses the
+                      module-level sync SqliteSaver (suitable for CLI/tests).
+                      Pass an AsyncSqliteSaver for Streamlit async streaming.
 
     Returns:
         A compiled LangGraph application ready to invoke.
     """
+    if checkpointer is None:
+        checkpointer = _default_checkpointer
+
     graph = StateGraph(AgentState)
 
     # ── Register nodes ────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.agents.graph import agent_graph
+from src.logging_setup import setup_file_logging
 
 logging.basicConfig(
     level=logging.INFO,
@@ -26,13 +27,17 @@ logging.basicConfig(
     stream=sys.stderr,
 )
 
+# Create timestamped log file for this run
+_log_path = setup_file_logging()
+
 _DIVIDER = "=" * 60
 
 
 def main() -> None:
     print("Agentic Property — Dubai real estate assistant")
     print("Type your question, or 'quit' / 'exit' to stop.")
-    print("Type 'new' to start a new conversation thread.\n")
+    print("Type 'new' to start a new conversation thread.")
+    print(f"[Logs: {_log_path}]\n")
 
     thread_id = str(uuid.uuid4())
     print(f"[Thread: {thread_id[:8]}...]\n")

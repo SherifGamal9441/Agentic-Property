@@ -23,7 +23,9 @@ from pathlib import Path
 
 import streamlit as st
 
-from src.agents.graph import agent_graph
+from src.agents.graph import build_graph
+from src.memory.long_term_memory import create_async_checkpointer
+from src.logging_setup import setup_file_logging
 
 # ── Persisted chat metadata ────────────────────────────────────────────────────
 
@@ -125,6 +127,9 @@ _NODE_NAMES = {
 logging.basicConfig(
     level=logging.INFO, format="%(name)s: %(message)s", stream=sys.stderr
 )
+
+# Timestamped log file — one per Streamlit session
+_log_path = setup_file_logging()
 
 
 class _LogCapture(logging.Handler):
@@ -254,8 +259,12 @@ if prompt := st.chat_input("Ask about Dubai property…"):
         config = {"configurable": {"thread_id": st.session_state.current_thread_id}}
 
         async def _stream():
+            # Build graph with async checkpointer (requires running event loop)
+            async_cp = await create_async_checkpointer()
+            async_graph = build_graph(checkpointer=async_cp)
+
             first_token = True
-            async for event in agent_graph.astream_events(
+            async for event in async_graph.astream_events(
                 {"query": prompt}, config=config, version="v2"
             ):
                 kind = event["event"]
