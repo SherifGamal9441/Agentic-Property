@@ -44,13 +44,16 @@ settings = Settings()
 # Logging
 # ---------------------------------------------------------------------------
 
+log_dir = Path("logs/scraper")
+log_dir.mkdir(parents=True, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s  %(levelname)-8s  %(message)s",
     datefmt="%H:%M:%S",
     handlers=[
         logging.StreamHandler(),
-        RotatingFileHandler("scraper.log", maxBytes=10*1024*1024, backupCount=3, encoding="utf-8"),
+        RotatingFileHandler(log_dir / "scraper.log", maxBytes=10*1024*1024, backupCount=3, encoding="utf-8"),
     ],
 )
 log = logging.getLogger(__name__)

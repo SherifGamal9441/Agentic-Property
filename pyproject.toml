@@ -19,6 +19,9 @@ dependencies = [
     # ── MCP client (src/tools/dld_mcp.py) ─────────────────────────────────────
     "mcp[cli]>=1.27",
     "streamlit>=1.58.0",
+    "psycopg2-binary>=2.9.12",
+    "dvc>=3.67.1",
+    "dvc-s3>=3.3.0",
 ]
 
 [dependency-groups]
