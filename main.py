@@ -263,43 +263,48 @@ if prompt := st.chat_input("Ask about Dubai property…"):
             async_cp = await create_async_checkpointer()
             async_graph = build_graph(checkpointer=async_cp)
 
-            first_token = True
-            async for event in async_graph.astream_events(
-                {"query": prompt}, config=config, version="v2"
-            ):
-                kind = event["event"]
-                name = event.get("name", "")
+            try:
+                first_token = True
+                async for event in async_graph.astream_events(
+                    {"query": prompt}, config=config, version="v2"
+                ):
+                    kind = event["event"]
+                    name = event.get("name", "")
 
-                # ── Node start ──
-                if kind == "on_chain_start" and name in _NODE_NAMES:
-                    thinking_lines.append(f'<span class="log-line">→ {name} …</span>')
-                    thinking_placeholder.markdown(
-                        "\n".join(thinking_lines), unsafe_allow_html=True
-                    )
-
-                # ── Token stream ──
-                elif kind == "on_chat_model_stream":
-                    token = event["data"]["chunk"].content
-                    if token:
-                        if first_token:
-                            timings[0] = time.time() - t_start
-                            first_token = False
-                        answer_tokens.append(token)
-                        answer_placeholder.markdown("".join(answer_tokens))
-
-                # ── Node end ──
-                elif kind == "on_chain_end" and name in _NODE_NAMES:
-                    if thinking_lines:
-                        thinking_lines[-1] = thinking_lines[-1].replace("…", "✓")
+                    # ── Node start ──
+                    if kind == "on_chain_start" and name in _NODE_NAMES:
+                        thinking_lines.append(f'<span class="log-line">→ {name} …</span>')
                         thinking_placeholder.markdown(
                             "\n".join(thinking_lines), unsafe_allow_html=True
                         )
 
-                # ── Root chain end → final state ──
-                elif kind == "on_chain_end" and name == "LangGraph":
-                    output = event["data"].get("output", {})
-                    if isinstance(output, dict):
-                        final_state[0] = output
+                    # ── Token stream ──
+                    elif kind == "on_chat_model_stream":
+                        token = event["data"]["chunk"].content
+                        if token:
+                            if first_token:
+                                timings[0] = time.time() - t_start
+                                first_token = False
+                            answer_tokens.append(token)
+                            answer_placeholder.markdown("".join(answer_tokens))
+
+                    # ── Node end ──
+                    elif kind == "on_chain_end" and name in _NODE_NAMES:
+                        if thinking_lines:
+                            thinking_lines[-1] = thinking_lines[-1].replace("…", "✓")
+                            thinking_placeholder.markdown(
+                                "\n".join(thinking_lines), unsafe_allow_html=True
+                            )
+
+                    # ── Root chain end → final state ──
+                    elif kind == "on_chain_end" and name == "LangGraph":
+                        output = event["data"].get("output", {})
+                        if isinstance(output, dict):
+                            final_state[0] = output
+            finally:
+                # Close aiosqlite connection to prevent "Event loop is closed" errors
+                if hasattr(async_cp, 'conn') and async_cp.conn is not None:
+                    await async_cp.conn.close()
 
         asyncio.run(_stream())
 

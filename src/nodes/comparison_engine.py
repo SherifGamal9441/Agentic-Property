@@ -20,12 +20,12 @@ Output written to state:
 
 import json
 import logging
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
 from src.llm.factory import get_llm
+from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -77,15 +77,10 @@ def comparison_engine_node(state: AgentState) -> dict:
     raw = response.content.strip()
 
     try:
-        comparison_result = json.loads(raw)
+        comparison_result = parse_llm_json(raw)
     except json.JSONDecodeError:
-        # Attempt to extract JSON block if the model wrapped it despite instructions
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            comparison_result = json.loads(match.group())
-        else:
-            logger.error("comparison_engine: LLM returned non-JSON output:\n%s", raw)
-            comparison_result = {"properties": [], "_parse_error": raw}
+        logger.error("comparison_engine: LLM returned non-JSON output:\n%s", raw)
+        comparison_result = {"properties": [], "_parse_error": raw}
 
     logger.info(
         "comparison_engine: scored %d properties",

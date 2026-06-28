@@ -57,8 +57,10 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
             )
         case "groq":
             return ChatGroq(
+                model=settings.groq_model,
                 api_key=settings.groq_api_key,
                 streaming=streaming,
+                reasoning_format='hidden' #This will hide the reasoning steps
             )
 
         case _:

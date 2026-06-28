@@ -16,12 +16,12 @@ Writes to state:
 
 import json
 import logging
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
 from src.llm.factory import get_llm
+from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -71,15 +71,11 @@ def query_relevancy_node(state: AgentState) -> dict:
     raw = response.content.strip()
 
     try:
-        result = json.loads(raw)
+        result = parse_llm_json(raw)
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            result = json.loads(match.group())
-        else:
-            # Cannot parse — fail safe: let the query through rather than block valid users
-            logger.warning("query_relevancy: could not parse LLM response, defaulting to relevant")
-            return {"is_relevant": True}
+        # Cannot parse — fail safe: let the query through rather than block valid users
+        logger.warning("query_relevancy: could not parse LLM response, defaulting to relevant")
+        return {"is_relevant": True}
 
     is_relevant: bool = result.get("relevant", True)
     failed_rule: str = result.get("failed_rule") or "both"

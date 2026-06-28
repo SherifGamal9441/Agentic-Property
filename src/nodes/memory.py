@@ -14,12 +14,12 @@ Writes to state:
 
 import json
 import logging
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
 from src.llm.factory import get_llm
+from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -51,16 +51,12 @@ def _format_history_for_context(history: list[dict]) -> str:
 
 
 def _parse_llm_response(raw: str) -> dict:
-    """Parse LLM JSON response, with fallbacks for unparseable output."""
+    """Parse LLM JSON response, with safe default on failure."""
     try:
-        return json.loads(raw)
+        return parse_llm_json(raw)
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            return json.loads(match.group())
-    # Safe default: treat as property query (let it through the pipeline)
-    logger.warning("memory: could not parse LLM response, defaulting to property_query")
-    return {"category": "property_query"}
+        logger.warning("memory: could not parse LLM response, defaulting to property_query")
+        return {"category": "property_query"}
 
 
 def memory_node(state: AgentState) -> dict:
@@ -111,7 +107,7 @@ def memory_node(state: AgentState) -> dict:
             "route": "memory_direct",
         }
 
-    return {"conversation_context": context}
+    return {"conversation_context": context, "route": None}
 
 
 def route_after_memory(state: AgentState) -> str:

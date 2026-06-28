@@ -20,13 +20,13 @@ Writes to state:
 
 import json
 import logging
-import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
 from config.pydantic.settings import settings
 from src.llm.factory import get_llm
+from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -69,19 +69,15 @@ def reflection_node(state: AgentState) -> dict:
     raw = response.content.strip()
 
     try:
-        reflection_output = json.loads(raw)
+        reflection_output = parse_llm_json(raw)
     except json.JSONDecodeError:
-        match = re.search(r"\{.*\}", raw, re.DOTALL)
-        if match:
-            reflection_output = json.loads(match.group())
-        else:
-            logger.error("reflection: LLM returned non-JSON output:\n%s", raw)
-            # Fail safe: treat as failed quality check so we can retry or escalate
-            reflection_output = {
-                "ok": False,
-                "issues": ["reflection node could not parse LLM response"],
-                "confidence": 0.0,
-            }
+        logger.error("reflection: LLM returned non-JSON output:\n%s", raw)
+        # Fail safe: treat as failed quality check so we can retry or escalate
+        reflection_output = {
+            "ok": False,
+            "issues": ["reflection node could not parse LLM response"],
+            "confidence": 0.0,
+        }
 
     ok: bool = reflection_output.get("ok", False)
     current_retry_count: int = state.retry_count
