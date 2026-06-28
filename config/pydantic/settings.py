@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # ── Agent behaviour ───────────────────────────────────────────────────────
     max_retries: int = 3
 
+    # ── Data service ─────────────────────────────────────────────────────────
+    data_service_host: str = "0.0.0.0"
+    data_service_port: int = 8000
+
 
 # Singleton — import this everywhere instead of re-instantiating
 settings = Settings()

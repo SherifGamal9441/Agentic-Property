@@ -8,7 +8,7 @@ COPY . .
 
 ENV MCP_HOST=0.0.0.0
 ENV MCP_PORT=8001
-ENV MCP_TRANSPORT=sse
+ENV MCP_TRANSPORT=streamable-http
 EXPOSE 8001
 
 CMD ["python", "-m", "src.mcp.server"]

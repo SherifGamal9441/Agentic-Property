@@ -5,7 +5,7 @@
 # Non-secret connection params. Secrets like EXCHANGERATE_API_KEY come from
 # .env via os.environ — don't put them here.
 env:
-  DATA_SERVICE_URL: http://localhost:8000
+  DATA_SERVICE_URL: http://localhost:8000  # port must match DATA_SERVICE_PORT in .env
 
 # ── Server-side settings (used when hosting the MCP server) ───────────────────
 # Override per-teammate if you host on a different port/host.
