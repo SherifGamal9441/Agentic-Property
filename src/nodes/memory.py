@@ -1,15 +1,15 @@
 """
 Memory Node
 
-Runs FIRST in the graph pipeline. Two responsibilities:
+Runs FIRST in the graph pipeline. Three responsibilities:
   1. Build conversation_context from conversation_history for downstream nodes.
-  2. Detect meta-questions (queries about the conversation itself) and
-     short-circuit the pipeline — skipping the property nodes entirely
-     and passing only conversation history to answer_generation.
+  2. Classify every query as property_query, greeting, or meta_question.
+  3. Short-circuit greetings and meta-questions directly to answer_generation,
+     skipping the entire property pipeline.
 
 Writes to state:
     conversation_context: str
-    route: str | None        — set to "memory_direct" for meta-questions
+    route: str | None        — set to "memory_greeting" or "memory_direct"
 """
 
 import json
@@ -50,16 +50,29 @@ def _format_history_for_context(history: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _parse_llm_response(raw: str) -> dict:
+    """Parse LLM JSON response, with fallbacks for unparseable output."""
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+    # Safe default: treat as property query (let it through the pipeline)
+    logger.warning("memory: could not parse LLM response, defaulting to property_query")
+    return {"category": "property_query"}
+
+
 def memory_node(state: AgentState) -> dict:
     """
-    LangGraph node: prepare conversation context and detect meta-questions.
+    LangGraph node: prepare conversation context, classify query, and route.
 
     Args:
         state: Current AgentState. Reads conversation_history and query.
 
     Returns:
         Partial state dict with conversation_context populated.
-        If meta-question detected, also sets route="memory_direct".
+        Sets route="memory_greeting" or "memory_direct" for short-circuit paths.
     """
     logger.info("memory: building conversation context (%d prior turns)",
                 len(state.conversation_history) // 2)
@@ -67,37 +80,36 @@ def memory_node(state: AgentState) -> dict:
     # Build conversation context for downstream nodes
     context = _format_history_for_context(state.conversation_history)
 
-    # Only run meta-detection LLM call when there's prior history
-    if state.conversation_history:
-        llm = get_llm(streaming=False)
-        user_message = _USER_PROMPT_TEMPLATE.format(
-            query=state.query,
-            conversation_history=context,
-        )
-        messages = [
-            SystemMessage(content=_SYSTEM_PROMPT),
-            HumanMessage(content=user_message),
-        ]
-        response = llm.invoke(messages)
-        raw = response.content.strip()
+    # Classify every query (greeting / meta / property)
+    llm = get_llm(streaming=False)
+    user_message = _USER_PROMPT_TEMPLATE.format(
+        query=state.query,
+        conversation_history=context,
+    )
+    messages = [
+        SystemMessage(content=_SYSTEM_PROMPT),
+        HumanMessage(content=user_message),
+    ]
+    response = llm.invoke(messages)
+    raw = response.content.strip()
+    result = _parse_llm_response(raw)
 
-        try:
-            result = json.loads(raw)
-        except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", raw, re.DOTALL)
-            if match:
-                result = json.loads(match.group())
-            else:
-                logger.warning("memory: could not parse meta-detection response, assuming non-meta")
-                result = {"is_meta": False}
+    category = result.get("category", "property_query")
+    logger.info("memory: classified as %s (reason: %s)", category, result.get("reason", "?"))
 
-        is_meta = result.get("is_meta", False)
-        if is_meta:
-            logger.info("memory: meta-question detected — short-circuiting to answer_generation")
-            return {
-                "conversation_context": context,
-                "route": "memory_direct",
-            }
+    if category == "greeting":
+        logger.info("memory: greeting detected — short-circuiting to answer_generation")
+        return {
+            "conversation_context": context,
+            "route": "memory_greeting",
+        }
+
+    if category == "meta_question":
+        logger.info("memory: meta-question detected — short-circuiting to answer_generation")
+        return {
+            "conversation_context": context,
+            "route": "memory_direct",
+        }
 
     return {"conversation_context": context}
 
@@ -107,9 +119,9 @@ def route_after_memory(state: AgentState) -> str:
     Called by LangGraph's add_conditional_edges after memory_node runs.
 
     Returns:
-        "query_relevancy" — normal pipeline
-        "answer_generation" — meta-question, skip the pipeline
+        "query_relevancy" — normal property pipeline
+        "answer_generation" — greeting or meta-question, skip the pipeline
     """
-    if state.route == "memory_direct":
+    if state.route in ("memory_greeting", "memory_direct"):
         return "answer_generation"
     return "query_relevancy"

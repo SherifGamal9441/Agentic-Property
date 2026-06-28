@@ -8,17 +8,17 @@ from src.nodes.memory import (
     memory_node,
     route_after_memory,
     _format_history_for_context,
+    _parse_llm_response,
 )
 
+# ── _format_history_for_context ───────────────────────────────────────────────
 
 def test_format_history_empty():
-    """Empty history returns first-message placeholder."""
     result = _format_history_for_context([])
     assert "first message" in result.lower()
 
 
 def test_format_history_with_messages():
-    """History is formatted with role labels and truncated content."""
     history = [
         {"role": "user", "content": "2BR apartments in Dubai Marina"},
         {"role": "assistant", "content": "Found Marina Crest 2BR for AED 1.75M"},
@@ -29,58 +29,90 @@ def test_format_history_with_messages():
 
 
 def test_format_history_truncates_long_messages():
-    """Messages over 300 chars are truncated."""
     long_text = "x" * 500
     history = [{"role": "user", "content": long_text}]
     result = _format_history_for_context(history)
     assert "..." in result
-    assert len(result.split(": ", 1)[1]) <= 303  # content + "...\n"
+    assert len(result.split(": ", 1)[1]) <= 303
 
 
 def test_format_history_capped_at_max_turns():
-    """Only last N turns are included."""
     history = []
     for i in range(25):
         history.append({"role": "user", "content": f"question {i}"})
         history.append({"role": "assistant", "content": f"answer {i}"})
     result = _format_history_for_context(history)
-    # Should contain recent messages but not the earliest ones
     assert "question 24" in result
     assert "answer 24" in result
-    assert "question 0" not in result  # capped out
+    assert "question 0" not in result
 
 
-def test_empty_history_no_llm_call():
-    """With empty history, no LLM is called, context shows first message."""
-    state = AgentState(query="apartments in Dubai Marina", conversation_history=[])
-    result = memory_node(state)
-    assert "first message" in result["conversation_context"].lower()
-    assert result.get("route") != "memory_direct"
+# ── _parse_llm_response ──────────────────────────────────────────────────────
+
+def test_parse_clean_json():
+    result = _parse_llm_response('{"category": "greeting", "reason": "user says hi"}')
+    assert result["category"] == "greeting"
 
 
-def test_with_history_builds_context():
-    """With history, context is built and previous queries appear."""
-    state = AgentState(
-        query="what about a 3BR instead?",
-        conversation_history=[
-            {"role": "user", "content": "2BR apartments in Dubai Marina"},
-            {"role": "assistant", "content": "Found Marina Crest 2BR for AED 1.75M"},
-        ],
-    )
-    result = memory_node(state)
-    assert "Dubai Marina" in result["conversation_context"]
-    assert "Marina Crest" in result["conversation_context"]
+def test_parse_garbage_defaults_to_property():
+    result = _parse_llm_response("not json at all")
+    assert result["category"] == "property_query"
+
+
+def test_parse_json_with_markdown_fence():
+    result = _parse_llm_response('```json\n{"category": "meta_question"}\n```')
+    assert result["category"] == "meta_question"
+
+
+# ── memory_node (mocked LLM) ─────────────────────────────────────────────────
+
+def _make_llm_mock(category: str = "property_query", reason: str = "test"):
+    """Helper: create a mock LLM that returns a given category."""
+    mock_resp = MagicMock()
+    mock_resp.content = json.dumps({"category": category, "reason": reason})
+    mock_llm = MagicMock()
+    mock_llm.invoke.return_value = mock_resp
+    return mock_llm
 
 
 @patch("src.nodes.memory.get_llm")
-def test_meta_question_detected(mock_llm):
-    """Meta-question about conversation is detected and short-circuits."""
-    mock_resp = MagicMock()
-    mock_resp.content = json.dumps(
-        {"is_meta": True, "reason": "asks about prior question"}
-    )
-    mock_llm.return_value.invoke.return_value = mock_resp
+def test_empty_history_classified_as_property(mock_get_llm):
+    """Empty history with property query → classified as property_query."""
+    mock_get_llm.return_value = _make_llm_mock("property_query")
+    state = AgentState(query="apartments in Dubai Marina", conversation_history=[])
+    result = memory_node(state)
+    assert "first message" in result["conversation_context"].lower()
+    assert result.get("route") is None  # no short-circuit
 
+
+@patch("src.nodes.memory.get_llm")
+def test_greeting_empty_history(mock_get_llm):
+    """Greeting with empty history → short-circuit to greeting."""
+    mock_get_llm.return_value = _make_llm_mock("greeting", "user says hi")
+    state = AgentState(query="hi there", conversation_history=[])
+    result = memory_node(state)
+    assert result["route"] == "memory_greeting"
+
+
+@patch("src.nodes.memory.get_llm")
+def test_greeting_mid_conversation(mock_get_llm):
+    """Greeting mid-conversation → still greeting, not property."""
+    mock_get_llm.return_value = _make_llm_mock("greeting", "mid-convo greeting")
+    state = AgentState(
+        query="hello again",
+        conversation_history=[
+            {"role": "user", "content": "2BR in Marina"},
+            {"role": "assistant", "content": "Found one."},
+        ],
+    )
+    result = memory_node(state)
+    assert result["route"] == "memory_greeting"
+
+
+@patch("src.nodes.memory.get_llm")
+def test_meta_question_detected(mock_get_llm):
+    """Meta-question → short-circuit to memory_direct."""
+    mock_get_llm.return_value = _make_llm_mock("meta_question", "asks about prior")
     state = AgentState(
         query="what was my last question?",
         conversation_history=[
@@ -93,14 +125,9 @@ def test_meta_question_detected(mock_llm):
 
 
 @patch("src.nodes.memory.get_llm")
-def test_normal_followup_not_meta(mock_llm):
-    """Follow-up property query with history is NOT classified as meta."""
-    mock_resp = MagicMock()
-    mock_resp.content = json.dumps(
-        {"is_meta": False, "reason": "property follow-up"}
-    )
-    mock_llm.return_value.invoke.return_value = mock_resp
-
+def test_normal_followup_is_property(mock_get_llm):
+    """Follow-up property query → property_query, no short-circuit."""
+    mock_get_llm.return_value = _make_llm_mock("property_query", "follow-up")
     state = AgentState(
         query="show me villas instead",
         conversation_history=[
@@ -109,34 +136,42 @@ def test_normal_followup_not_meta(mock_llm):
         ],
     )
     result = memory_node(state)
-    assert result.get("route") != "memory_direct"
+    assert result.get("route") is None
 
 
 @patch("src.nodes.memory.get_llm")
-def test_unparseable_llm_response_defaults_to_non_meta(mock_llm):
-    """When LLM returns garbage, we default to non-meta (safe fallback)."""
+def test_unparseable_defaults_to_property(mock_get_llm):
+    """Garbage LLM response → defaults to property_query."""
     mock_resp = MagicMock()
     mock_resp.content = "not valid json at all"
-    mock_llm.return_value.invoke.return_value = mock_resp
+    mock_llm = MagicMock()
+    mock_llm.invoke.return_value = mock_resp
+    mock_get_llm.return_value = mock_llm
 
     state = AgentState(
         query="what was my last question?",
         conversation_history=[
-            {"role": "user", "content": "2BR apartments in Dubai Marina"},
-            {"role": "assistant", "content": "Found Marina Crest"},
+            {"role": "user", "content": "hi"},
+            {"role": "assistant", "content": "hello"},
         ],
     )
     result = memory_node(state)
-    assert result.get("route") != "memory_direct"
+    assert result.get("route") is None  # no short-circuit (safe default)
 
 
-def test_route_after_memory():
-    """Router returns correct target based on state."""
-    state = AgentState(route="memory_direct")
-    assert route_after_memory(state) == "answer_generation"
+# ── route_after_memory ────────────────────────────────────────────────────────
 
-    state = AgentState(route=None)
-    assert route_after_memory(state) == "query_relevancy"
+def test_route_greeting():
+    assert route_after_memory(AgentState(route="memory_greeting")) == "answer_generation"
 
-    state = AgentState(route="query_routing")
-    assert route_after_memory(state) == "query_relevancy"
+
+def test_route_meta():
+    assert route_after_memory(AgentState(route="memory_direct")) == "answer_generation"
+
+
+def test_route_normal():
+    assert route_after_memory(AgentState(route=None)) == "query_relevancy"
+
+
+def test_route_property_pipeline():
+    assert route_after_memory(AgentState(route="query_routing")) == "query_relevancy"

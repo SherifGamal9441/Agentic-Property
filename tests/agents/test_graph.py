@@ -77,8 +77,10 @@ def test_recommendation_path(
     memory → query_relevancy → query_understanding → query_routing
     → comparison → reflection → answer.
     """
-    # Memory node: empty history → no LLM call, context is "first message"
-    mock_mem_llm.return_value = None  # won't be called
+    # Memory node: classify as property_query (won't short-circuit)
+    mock_mem_llm.return_value = _make_invoke_mock(
+        json.dumps({"category": "property_query", "reason": "valid query"})
+    )
 
     # Relevancy: accept
     mock_rel_llm.return_value = _make_invoke_mock(
@@ -131,7 +133,9 @@ def test_web_search_path(mock_mem_llm, mock_rel_llm, mock_und_llm, mock_ans_llm)
     → web_search → answer_generation.
     We seed web_search_summary directly to bypass the real web_search sub-graph.
     """
-    mock_mem_llm.return_value = None  # won't be called (empty history)
+    mock_mem_llm.return_value = _make_invoke_mock(
+        json.dumps({"category": "property_query", "reason": "valid"})
+    )
 
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": True, "failed_rule": None, "reason": "valid general question"})
@@ -174,7 +178,9 @@ def test_rejection_path(mock_mem_llm, mock_rel_llm, mock_und_llm):
     Rejection path: memory → query_relevancy rejects → END immediately.
     query_understanding must NOT be called.
     """
-    mock_mem_llm.return_value = None  # won't be called (empty history)
+    mock_mem_llm.return_value = _make_invoke_mock(
+        json.dumps({"category": "property_query", "reason": "let relevancy decide"})
+    )
 
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": False, "failed_rule": "topic", "reason": "not real estate"})

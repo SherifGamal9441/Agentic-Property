@@ -47,8 +47,8 @@ def test_thread_isolation(
     mock_search, mock_comp_llm, mock_refl_llm, mock_ans_llm,
 ):
     """Two different thread_ids produce independent conversation histories."""
-    # Memory node: no meta detection (empty history on first turn)
-    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"is_meta": False}))
+    # Memory node: classify as property_query (won't short-circuit)
+    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"category": "property_query", "reason": "valid"}))
     # Relevancy: accept
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": True, "failed_rule": None, "reason": "valid"})
@@ -93,7 +93,7 @@ def test_thread_isolation(
     # ── Turn 2 — Thread A (accumulates) ─────────────────────────────────────
     mock_ans_llm.return_value = _make_stream_mock(["Second ", "answer."])
     # Memory node now has history → needs meta-detection response
-    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"is_meta": False}))
+    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"category": "property_query", "reason": "follow-up"}))
 
     result_a2 = graph.invoke(
         {"query": "what about 3BR?"},
@@ -104,7 +104,7 @@ def test_thread_isolation(
     # ── Verify Thread B is still independent ────────────────────────────────
     # Re-invoke thread B to get its current state
     mock_ans_llm.return_value = _make_stream_mock(["Third ", "answer."])
-    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"is_meta": False}))
+    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"category": "property_query", "reason": "follow-up"}))
 
     result_b2 = graph.invoke(
         {"query": "show me more villas"},

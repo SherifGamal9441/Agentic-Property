@@ -17,6 +17,14 @@ user-facing response depending on what data is available:
   Path C — query_relevancy (out-of-scope) → END (never reaches here)
       final_answer is already set by query_relevancy_node directly
 
+  Path D — memory (greeting) → HERE
+      Reads: state.query
+      Generates a warm, natural greeting response with examples
+
+  Path E — memory (meta_question) → HERE
+      Reads: conversation_context
+      Answers questions about the conversation itself
+
 The API layer always reads state.final_answer — one field, all paths.
 
 Writes to state:
@@ -42,6 +50,7 @@ _RECOMMEND_TEMPLATE = _PROMPTS["recommend_template"]
 _INSIGHTS_TEMPLATE = _PROMPTS["insights_template"]
 _WEB_SEARCH_TEMPLATE = _PROMPTS["web_search_template"]
 _NO_RESULTS_TEMPLATE = _PROMPTS["no_results_template"]
+_GREETING_TEMPLATE = _PROMPTS["greeting_template"]
 
 
 # ── Node function ─────────────────────────────────────────────────────────────
@@ -110,6 +119,12 @@ def _build_messages(state: AgentState) -> list:
             f"If you cannot answer from the history, say so honestly.\n\n"
             f"{state.conversation_context}"
         )
+        return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
+
+    # ── Greeting / small-talk path ──────────────────────────────────────────
+    if state.route == "memory_greeting":
+        logger.info("answer_generation: greeting path")
+        user_content = _GREETING_TEMPLATE.format(query=state.query)
         return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
     # ── web_search path ───────────────────────────────────────────────────────

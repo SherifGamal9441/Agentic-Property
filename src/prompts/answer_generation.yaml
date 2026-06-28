@@ -61,3 +61,15 @@ no_results_template: |
   2. Suggests what the user could adjust (broader location, higher budget, fewer criteria).
   3. Invites them to refine their search.
   Keep it concise and constructive.
+
+greeting_template: |
+  The user just started the conversation with: "{query}"
+
+  This is a greeting or small-talk opening — they haven't asked a property
+  question yet. Respond warmly and naturally. Include:
+  1. A friendly greeting back.
+  2. A brief introduction of yourself as a Dubai real estate assistant.
+  3. 2-3 example questions they could ask (apartment search, market trends,
+     area comparisons) to guide them toward a useful query.
+
+  Keep it warm and inviting but concise — no filler.
