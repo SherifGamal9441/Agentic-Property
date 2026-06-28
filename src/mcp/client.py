@@ -61,10 +61,15 @@ async def _build_client():
         )
         async with stdio_client(params) as (read, write):
             yield read, write
-    elif _ACTIVE in ("sse", "streamable_http"):
+    elif _ACTIVE == "sse":
         from mcp.client.sse import sse_client
-        url = _CFG[_ACTIVE]["url"]
+        url = _CFG["sse"]["url"]
         async with sse_client(url) as (read, write):
+            yield read, write
+    elif _ACTIVE == "streamable_http":
+        from mcp.client.streamable_http import streamablehttp_client
+        url = _CFG["streamable_http"]["url"]
+        async with streamablehttp_client(url) as (read, write, _session_id):
             yield read, write
     else:
         raise ValueError(f"Unknown MCP transport: {_ACTIVE!r}")
