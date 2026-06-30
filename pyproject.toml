@@ -22,6 +22,8 @@ dependencies = [
     "psycopg2-binary>=2.9.12",
     "dvc>=3.67.1",
     "dvc-s3>=3.3.0",
+    # ── Evaluation ─────────────────────────────────────────────────────────────
+    "langsmith>=0.3.13",
 ]
 
 [dependency-groups]
