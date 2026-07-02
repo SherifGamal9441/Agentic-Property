@@ -69,20 +69,22 @@ def apply_filters(query, model, filters: BasePropertyFilters):
     """
     Apply all non-null filters from the request to the SQLAlchemy query.
     """
-    # Equality filters (string fields) — exact match
-    eq_fields = [
+    # String filters — use partial case-insensitive match (ilike)
+    # This ensures "apartment" matches "Apartments" in the DB.
+    # It also handles comma-separated lists from the LLM (e.g. "Al Satwa, Jumeirah")
+    # by treating them as an OR condition.
+    string_fields = [
         'area_name', 'type', 'furnishing', 'completion_status',
+        'address', 'building_name'
     ]
-    for field in eq_fields:
+    for field in string_fields:
         value = getattr(filters, field, None)
         if value is not None:
-            query = query.filter(getattr(model, field) == value)
-
-    # Partial case-insensitive match for address and building name
-    for field in ('address', 'building_name'):
-        value = getattr(filters, field, None)
-        if value is not None:
-            query = query.filter(getattr(model, field).ilike(f'%{value}%'))
+            # Split by comma and strip whitespace for multiple values
+            terms = [t.strip() for t in str(value).split(',')]
+            conditions = [getattr(model, field).ilike(f'%{term}%') for term in terms if term]
+            if conditions:
+                query = query.filter(or_(*conditions))
 
     # Range filters (numeric)
     range_fields = [
