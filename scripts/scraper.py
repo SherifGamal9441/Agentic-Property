@@ -17,28 +17,88 @@ from typing import Any, Optional
 
 import httpx
 from dotenv import load_dotenv
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.data_service.database import SessionLocal
+from src.data_service.database import SessionLocal, is_sqlite
 from src.data_service.db_tables import ActiveListing
 
 load_dotenv()
+
+_insert = sqlite_insert if is_sqlite else pg_insert
 
 # ---------------------------------------------------------------------------
 # Settings
 # ---------------------------------------------------------------------------
 
-class Settings:
-    @property
-    def rapidapi_headers(self) -> dict[str, str]:
+RAPIDAPI_HOST = "uae-real-estate2.p.rapidapi.com"
+
+
+def _load_api_keys() -> list[str]:
+    """Load API keys from RAPIDAPI_KEYS (comma-separated) or RAPIDAPI_KEY (single fallback)."""
+    keys_raw = os.getenv("RAPIDAPI_KEYS", "")
+    keys = [k.strip() for k in keys_raw.split(",") if k.strip()]
+    if not keys:
+        single = os.getenv("RAPIDAPI_KEY", "").strip()
+        if single:
+            keys = [single]
+    return keys
+
+
+class KeyRotator:
+    """Round-robin API key rotation with per-key usage tracking and 429 exhaustion handling."""
+
+    def __init__(self, keys: list[str]):
+        if not keys:
+            raise ValueError(
+                "No API keys found. Set RAPIDAPI_KEYS (comma-separated) or RAPIDAPI_KEY in .env"
+            )
+        self.keys = keys
+        self.usage: dict[str, int] = {k: 0 for k in keys}
+        self.exhausted: set[str] = set()
+        self._idx = 0
+        self._lock = asyncio.Lock()
+
+    async def get_key(self) -> str:
+        """Return next available key (round-robin), skipping exhausted ones."""
+        async with self._lock:
+            available = [k for k in self.keys if k not in self.exhausted]
+            if not available:
+                raise RuntimeError("All API keys exhausted — add more keys or wait for quota reset")
+            key = available[self._idx % len(available)]
+            self._idx += 1
+            self.usage[key] += 1
+            return key
+
+    async def mark_exhausted(self, key: str) -> None:
+        """Mark a key as exhausted (hit 429 / monthly quota)."""
+        async with self._lock:
+            if key not in self.exhausted:
+                self.exhausted.add(key)
+                remaining = len(self.keys) - len(self.exhausted)
+                log.warning(
+                    "Key ...%s marked exhausted (%d keys remaining)",
+                    key[-4:],
+                    remaining,
+                )
+
+    @staticmethod
+    def headers_for(key: str) -> dict[str, str]:
         return {
-            "x-rapidapi-host": "uae-real-estate2.p.rapidapi.com",
-            "x-rapidapi-key": os.getenv("RAPIDAPI_KEY", ""),
+            "x-rapidapi-host": RAPIDAPI_HOST,
+            "x-rapidapi-key": key,
         }
 
-settings = Settings()
+    @property
+    def available_count(self) -> int:
+        return len(self.keys) - len(self.exhausted)
+
+    def log_status(self) -> None:
+        for k, v in self.usage.items():
+            status = "EXHAUSTED" if k in self.exhausted else "active"
+            log.info("  Key ...%s — %d requests (%s)", k[-4:], v, status)
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -160,17 +220,35 @@ def _parse_detail(data: dict[str, Any]) -> ApartmentListing:
     )
 
 # ---------------------------------------------------------------------------
+# DB helpers — skip properties we already have
+# ---------------------------------------------------------------------------
+
+def _get_existing_ids() -> set[str]:
+    """Return set of property_ids already in the active_listings table."""
+    try:
+        with SessionLocal() as session:
+            rows = session.query(ActiveListing.property_id).all()
+            return {r[0] for r in rows}
+    except Exception as exc:
+        log.warning("Could not query existing IDs from DB: %s — will fetch all", exc)
+        return set()
+
+
+# ---------------------------------------------------------------------------
 # Phase 1 — collect property IDs
 # ---------------------------------------------------------------------------
 
 async def _collect_ids(
     client: httpx.AsyncClient,
     n: int,
+    rotator: KeyRotator,
+    existing_ids: set[str],
 ) -> list[int]:
-    url = "https://uae-real-estate2.p.rapidapi.com/properties_search"
+    url = f"https://{RAPIDAPI_HOST}/properties_search"
     ids: list[int] = []
     page = 0
     page_size = int(os.getenv("SEARCH_PAGE_SIZE", "25"))
+    skipped = 0
 
     while len(ids) < n:
         categories_raw = os.getenv("SCRAPER_CATEGORIES", "apartments")
@@ -183,9 +261,14 @@ async def _collect_ids(
         }
         params = {"page": page}
 
-        log.info("Search page %d — collected %d / %d IDs so far", page, len(ids), n)
+        log.info("Search page %d — collected %d / %d new IDs so far (skipped %d existing)", page, len(ids), n, skipped)
 
-        resp = await client.post(url, json=payload, params=params)
+        key = await rotator.get_key()
+        resp = await client.post(url, json=payload, params=params, headers=KeyRotator.headers_for(key))
+        if resp.status_code == 429:
+            await rotator.mark_exhausted(key)
+            log.warning("Search page %d — key ...%s rate-limited, trying next key", page, key[-4:])
+            continue
         resp.raise_for_status()
         body = resp.json()
 
@@ -197,6 +280,10 @@ async def _collect_ids(
         for item in results:
             pid = item.get("id")
             if pid and pid not in ids:
+                pid_str = str(pid)
+                if pid_str in existing_ids:
+                    skipped += 1
+                    continue
                 ids.append(pid)
             if len(ids) >= n:
                 break
@@ -208,6 +295,7 @@ async def _collect_ids(
         page += 1
         await asyncio.sleep(float(os.getenv("SCRAPER_REQUEST_DELAY", "0.5")))
 
+    log.info("ID collection done: %d new, %d existing skipped", len(ids), skipped)
     return ids[:n]
 
 # ---------------------------------------------------------------------------
@@ -220,18 +308,26 @@ async def _fetch_detail(
     sem: asyncio.Semaphore,
     index: int,
     total: int,
+    rotator: KeyRotator,
 ) -> Optional[ApartmentListing]:
-    url = f"https://uae-real-estate2.p.rapidapi.com/property/{property_id}"
+    url = f"https://{RAPIDAPI_HOST}/property/{property_id}"
     async with sem:
         max_retries = 3
+        resp = None
         for attempt in range(max_retries):
             try:
-                resp = await client.get(url)
-                if resp.status_code == 429 and attempt < max_retries - 1:
-                    wait = 2 ** attempt
-                    log.warning("Rate limited on ID %d, retrying in %ds (attempt %d/%d)", property_id, wait, attempt + 1, max_retries)
-                    await asyncio.sleep(wait)
-                    continue
+                key = await rotator.get_key()
+                resp = await client.get(url, headers=KeyRotator.headers_for(key))
+                if resp.status_code == 429:
+                    await rotator.mark_exhausted(key)
+                    if rotator.available_count > 0 and attempt < max_retries - 1:
+                        log.warning(
+                            "Rate limited on ID %d with key ...%s, switching key (attempt %d/%d)",
+                            property_id, key[-4:], attempt + 1, max_retries,
+                        )
+                        continue
+                    log.warning("Rate limited on ID %d and no keys left — skipping", property_id)
+                    return None
                 resp.raise_for_status()
                 break
             except httpx.HTTPStatusError as exc:
@@ -268,11 +364,11 @@ async def _fetch_detail(
         return listing
 
 # ---------------------------------------------------------------------------
-# Database upsert
+# Database append (dedup on property_id)
 # ---------------------------------------------------------------------------
 
 def _write_to_db(listings: list[ApartmentListing]) -> int:
-    """Upsert listings into the active_listings table."""
+    """Append new listings to the active_listings table (skip existing property_ids)."""
     if not listings:
         log.warning("No listings to write to DB.")
         return 0
@@ -285,19 +381,15 @@ def _write_to_db(listings: list[ApartmentListing]) -> int:
         records.append(d)
 
     with SessionLocal() as session:
-        stmt = insert(ActiveListing).values(records)
-        stmt = stmt.on_conflict_do_update(
+        stmt = _insert(ActiveListing).values(records)
+        stmt = stmt.on_conflict_do_nothing(
             index_elements=["property_id"],
-            set_={
-                c.name: getattr(stmt.excluded, c.name)
-                for c in ActiveListing.__table__.columns
-                if c.name != "id"
-            }
         )
         result = session.execute(stmt)
         session.commit()
-        log.info("Upserted %d active listings into DB", result.rowcount)
-        return result.rowcount
+        inserted = result.rowcount or len(records)
+        log.info("Appended %d new active listings to DB (dedup on property_id)", inserted)
+        return inserted
 
 # ---------------------------------------------------------------------------
 # Output helpers (CSV kept as fallback)
@@ -349,21 +441,30 @@ async def scrape(n: int, output_path: str = "") -> list[ApartmentListing]:
     output_mode = os.getenv("SCRAPER_OUTPUT", "db").lower()
     log.info("Output mode: %s", output_mode)
 
+    rotator = KeyRotator(_load_api_keys())
+    log.info("Loaded %d API key(s) for rotation", len(rotator.keys))
+
+    existing_ids: set[str] = set()
+    if output_mode == "db":
+        existing_ids = _get_existing_ids()
+        if existing_ids:
+            log.info("DB already has %d listings — will skip those IDs", len(existing_ids))
+
     async with httpx.AsyncClient(
-        headers=settings.rapidapi_headers,
         timeout=20,
     ) as client:
 
-        ids = await _collect_ids(client, n)
-        log.info("Collected %d property IDs", len(ids))
+        ids = await _collect_ids(client, n, rotator, existing_ids)
+        log.info("Collected %d new property IDs", len(ids))
 
         if not ids:
-            log.error("No IDs found — check your API key and quota.")
+            log.error("No new IDs found — check your API key and quota, or DB may already have everything.")
+            rotator.log_status()
             return []
 
         sem = asyncio.Semaphore(int(os.getenv("SCRAPER_CONCURRENCY", "3")))
         tasks = [
-            _fetch_detail(client, pid, sem, i + 1, len(ids))
+            _fetch_detail(client, pid, sem, i + 1, len(ids), rotator)
             for i, pid in enumerate(ids)
         ]
         results = await asyncio.gather(*tasks)
@@ -371,6 +472,7 @@ async def scrape(n: int, output_path: str = "") -> list[ApartmentListing]:
     listings = [r for r in results if r is not None]
     elapsed = time.monotonic() - t0
     log.info("Done — %d / %d listings fetched in %.1fs", len(listings), len(ids), elapsed)
+    rotator.log_status()
 
     if output_mode == "csv":
         if not output_path:
@@ -415,7 +517,7 @@ if __name__ == "__main__":
         print("Error: n must be ≥ 1", file=sys.stderr)
         sys.exit(1)
 
-    max_listings = int(os.getenv("SCRAPER_MAX_LISTINGS", "90"))
+    max_listings = int(os.getenv("SCRAPER_MAX_LISTINGS", "3000"))
     if n > max_listings:
         print(
             f"Error: n={n} exceeds SCRAPER_MAX_LISTINGS={max_listings}. "
