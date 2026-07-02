@@ -56,12 +56,18 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
                 extra_body={"enable_thinking": False},
             )
         case "groq":
-            return ChatGroq(
+            # Only hide reasoning tokens during streaming (answer_generation).
+            # Non-streaming nodes (query_understanding, memory, etc.) need
+            # the full response — the thinking model can otherwise put all
+            # output into the hidden reasoning block and return empty content.
+            groq_kwargs = dict(
                 model=settings.groq_model,
                 api_key=settings.groq_api_key,
                 streaming=streaming,
-                reasoning_format='hidden' #This will hide the reasoning steps
             )
+            if streaming:
+                groq_kwargs["reasoning_format"] = "hidden"
+            return ChatGroq(**groq_kwargs)
 
         case _:
             raise ValueError(

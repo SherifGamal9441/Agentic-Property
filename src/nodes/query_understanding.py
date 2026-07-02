@@ -21,6 +21,7 @@ Writes to state:
 
 import json
 import logging
+import re
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -66,6 +67,17 @@ def query_understanding_node(state: AgentState) -> dict:
 
     response = llm.invoke(messages)
     raw = response.content.strip()
+
+    # Qwen thinking models may wrap output in <think>...</think> tags;
+    # strip them so the JSON parser only sees the actual content.
+    raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
+
+    # If content is empty (thinking model swallowed output), retry once.
+    if not raw:
+        logger.warning("query_understanding: empty response, retrying once")
+        response = llm.invoke(messages)
+        raw = response.content.strip()
+        raw = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL).strip()
 
     try:
         result = parse_llm_json(raw)
