@@ -25,6 +25,8 @@ dependencies = [
     "langgraph-checkpoint-sqlite>=3.1.0",
     # ── Evaluation ─────────────────────────────────────────────────────────────
     "langsmith>=0.3.13",
+    "fastapi>=0.139.0",
+    "sqlalchemy>=2.0.51",
 ]
 
 [dependency-groups]

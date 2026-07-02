@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Property — Architecture Graph</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --bg: #1a1a1a;
+    --surface: #2a2a2a;
+    --text: #e0d6c8;
+    --accent: #c2653a;
+    --blue: #4a90d9;
+    --amber: #e8a838;
+    --green: #2ecc71;
+    --purple: #9b59b6;
+    --red: #e74c3c;
+    --border: #3a3530;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ─────────────────────────────────── */
+  #sidebar {
+    width: 340px;
+    min-width: 340px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  #sidebar-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #sidebar-header h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+  }
+  #sidebar-header p {
+    font-size: 13px;
+    color: #8b7a6a;
+    margin-top: 4px;
+  }
+
+  #node-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  .node-card {
+    margin: 4px 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+  }
+  .node-card:hover {
+    border-color: var(--accent);
+    background: #2e2a26;
+  }
+  .node-card.active {
+    border-color: var(--accent);
+    background: #332820;
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .node-card .node-index {
+    display: inline-block;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 22px;
+    margin-right: 8px;
+    color: #fff;
+  }
+  .node-card .node-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .node-card .node-route {
+    font-size: 11px;
+    color: #8b7a6a;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .color-memory { background: var(--blue); }
+  .color-relevancy { background: var(--amber); color: #1a1a1a !important; }
+  .color-understanding { background: var(--amber); color: #1a1a1a !important; }
+  .color-routing { background: var(--green); }
+  .color-web { background: var(--purple); }
+  .color-comparison { background: var(--green); }
+  .color-reflection { background: var(--red); }
+  .color-answer { background: var(--blue); }
+
+  /* ── Detail panel ────────────────────────────── */
+  #detail-panel {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    min-height: 180px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  #detail-panel h3 {
+    font-size: 16px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  #detail-panel .detail-index {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  #detail-panel .detail-desc {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #b8a898;
+  }
+  #detail-panel .detail-reads,
+  #detail-panel .detail-writes {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  #detail-panel .detail-reads strong,
+  #detail-panel .detail-writes strong {
+    color: var(--amber);
+  }
+  #detail-panel code {
+    font-family: 'Consolas', 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: #3a3530;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--green);
+  }
+  #detail-hint {
+    font-size: 12px;
+    color: #5a4e44;
+    text-align: center;
+    padding: 32px 0;
+  }
+
+  /* ── Main graph area ─────────────────────────── */
+  #graph-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #toolbar {
+    padding: 8px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  #toolbar button {
+    background: #3a3530;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  #toolbar button:hover {
+    background: #4a443c;
+  }
+  #toolbar .legend-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+  .legend-item {
+    font-size: 12px;
+    color: #8b7a6a;
+    margin-left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .spacer { flex: 1; }
+
+  #mermaid-wrapper {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  #mermaid-output {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #mermaid-output svg {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* ── Tooltip ─────────────────────────────────── */
+  .mermaid-tooltip {
+    position: absolute;
+    background: #2a2a2a;
+    border: 1px solid var(--accent);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    pointer-events: none;
+    z-index: 100;
+    color: var(--text);
+  }
+
+  /* ── Responsive ──────────────────────────────── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: 100%; max-height: 40vh; }
+    #graph-container { height: 60vh; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- Sidebar -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>🏠 Agentic Property</h1>
+    <p>LangGraph pipeline — click a node for details</p>
+  </div>
+
+  <div id="node-list">
+    <!-- Populated by JS -->
+  </div>
+
+  <div id="detail-panel">
+    <div id="detail-hint">👈 Click a node in the list or graph to see details</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- Graph -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="graph-container">
+  <div id="toolbar">
+    <button onclick="resetZoom()" title="Reset zoom & pan">🔍 Reset</button>
+    <button onclick="zoomIn()" title="Zoom in">➕</button>
+    <button onclick="zoomOut()" title="Zoom out">➖</button>
+    <span class="spacer"></span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Entry/Answer</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span> Analysis</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span> Data</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--purple)"></span> Web</span>
+    <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span> Quality</span>
+  </div>
+
+  <div id="mermaid-wrapper">
+    <div id="mermaid-output"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// Node data
+// ═══════════════════════════════════════════════════
+const nodes = [
+  {
+    id: "memory",
+    index: 1,
+    name: "Memory",
+    colorClass: "color-memory",
+    color: "#4a90d9",
+    reads: "conversation_history, query",
+    writes: "conversation_context, route",
+    desc: "Runs first. Builds conversation context from chat history and classifies every query: greeting, meta-question, or property query. Greetings and meta-questions short-circuit directly to answer_generation — skipping the entire property pipeline.",
+    routes: [
+      { label: "greeting / meta question", to: "answer_generation" },
+      { label: "property query", to: "query_relevancy" }
+    ]
+  },
+  {
+    id: "query_relevancy",
+    index: 2,
+    name: "Query Relevancy",
+    colorClass: "color-relevancy",
+    color: "#e8a838",
+    reads: "query, conversation_context",
+    writes: "is_relevant, final_answer (when rejected)",
+    desc: "First gate in the pipeline. Two hard checks: (1) Is the question about Dubai? (2) Is it about real estate? If either fails, the graph ends immediately with a warm rejection message. Fail-safe: defaults to 'allow' on parse failure so valid users aren't blocked.",
+    routes: [
+      { label: "out of scope ❌", to: "END" },
+      { label: "relevant ✓", to: "query_understanding" }
+    ]
+  },
+  {
+    id: "query_understanding",
+    index: 3,
+    name: "Query Understanding",
+    colorClass: "color-understanding",
+    color: "#e8a838",
+    reads: "query, conversation_context",
+    writes: "parsed_query, route",
+    desc: "Two responsibilities in one LLM call: (1) Parse user intent into structured criteria — location, budget, bedrooms, amenities, property type, currency. (2) Decide the route: query_routing for property searches, web_search for general questions about Dubai real estate.",
+    routes: [
+      { label: "find properties", to: "query_routing" },
+      { label: "general question", to: "web_search" }
+    ]
+  },
+  {
+    id: "query_routing",
+    index: 4,
+    name: "Query Routing",
+    colorClass: "color-routing",
+    color: "#2ecc71",
+    reads: "parsed_query, retry_count",
+    writes: "retrieved_properties, data_source, data_intent, currency, exchange_rate",
+    desc: "Fetches properties from the DLD (Dubai Land Department) MCP server. Two-tier strategy: Tier 1 — active listings (data_intent='recommend'). Tier 2 — historical transactions (data_intent='insights_only'). Handles currency conversion: user-specified currencies (USD, EUR, GBP, etc.) are converted to AED before querying. Falls back to web_search when both tiers return empty.",
+    routes: [
+      { label: "has results", to: "comparison_engine" },
+      { label: "no results → fallback", to: "web_search" }
+    ]
+  },
+  {
+    id: "web_search",
+    index: 5,
+    name: "Web Search",
+    colorClass: "color-web",
+    color: "#9b59b6",
+    reads: "query, parsed_query",
+    writes: "web_search_query, web_search_results, web_search_summary",
+    desc: "Sub-graph (internal StateGraph). Searches the web via DuckDuckGo for Dubai real estate information, then summarizes results with an LLM. Used both as a primary path (general questions) and as a fallback when query_routing returns no matching properties.",
+    routes: [
+      { label: "always", to: "answer_generation" }
+    ]
+  },
+  {
+    id: "comparison_engine",
+    index: 6,
+    name: "Comparison Engine",
+    colorClass: "color-comparison",
+    color: "#2ecc71",
+    reads: "retrieved_properties, parsed_query, data_intent",
+    writes: "comparison_result",
+    desc: "Scores every retrieved property against the user's criteria. Outputs per-property: fit_score (0.0–1.0), matched_criteria, unmatched_criteria, and price_assessment (below_market / fair / above_market). When data_intent='insights_only', operates in market analysis mode — derives price ranges and trends without recommending specific properties.",
+    routes: [
+      { label: "always", to: "reflection" }
+    ]
+  },
+  {
+    id: "reflection",
+    index: 7,
+    name: "Reflection",
+    colorClass: "color-reflection",
+    color: "#e74c3c",
+    reads: "comparison_result, retry_count",
+    writes: "reflection_output, needs_retry, retry_count",
+    desc: "Quality audit node. Audits the comparison engine's output — not the raw data or user intent. Asks: is this comparison accurate, complete, and internally consistent? If the audit fails and retries remain (max_retries, default 3), routes back to query_routing to try the next tool tier. Otherwise forwards to answer_generation.",
+    routes: [
+      { label: "passed ✓", to: "answer_generation" },
+      { label: "needs retry 🔄", to: "query_routing" }
+    ]
+  },
+  {
+    id: "answer_generation",
+    index: 8,
+    name: "Answer Generation",
+    colorClass: "color-answer",
+    color: "#4a90d9",
+    reads: "comparison_result, reflection_output, web_search_summary, query, data_intent, currency",
+    writes: "final_answer",
+    desc: "Single convergence point for ALL paths. Inspects state and generates the right response: property recommendations (with fit scores and reasons), market insights (price ranges, trends), general Q&A answers, or warm greetings. The Streamlit UI and CLI always read final_answer — one field, every path.",
+    routes: [
+      { label: "always", to: "END" }
+    ]
+  }
+];
+
+// ═══════════════════════════════════════════════════
+// Mermaid diagram
+// ═══════════════════════════════════════════════════
+const mermaidDef = `
+flowchart TD
+    START((START)) --> memory
+
+    memory -->|"greeting / meta question"| answer_generation
+    memory -->|"property query"| query_relevancy
+
+    query_relevancy -->|"out of scope ❌"| END((END))
+    query_relevancy -->|"relevant ✓"| query_understanding
+
+    query_understanding -->|"find properties"| query_routing
+    query_understanding -->|"general question"| web_search
+
+    query_routing -->|"has results"| comparison_engine
+    query_routing -->|"no results → fallback"| web_search
+
+    comparison_engine --> reflection
+    reflection -->|"passed ✓"| answer_generation
+    reflection -->|"needs retry 🔄"| query_routing
+
+    web_search --> answer_generation
+    answer_generation --> END
+
+    %% Styles
+    style memory fill:#4a90d9,color:#fff,stroke:#2b5f8e
+    style query_relevancy fill:#e8a838,color:#1a1a1a,stroke:#c48a1e
+    style query_understanding fill:#e8a838,color:#1a1a1a,stroke:#c48a1e
+    style query_routing fill:#2ecc71,color:#fff,stroke:#1e8c4a
+    style web_search fill:#9b59b6,color:#fff,stroke:#6c3a82
+    style comparison_engine fill:#2ecc71,color:#fff,stroke:#1e8c4a
+    style reflection fill:#e74c3c,color:#fff,stroke:#a93226
+    style answer_generation fill:#4a90d9,color:#fff,stroke:#2b5f8e
+`;
+
+// ═══════════════════════════════════════════════════
+// Initialize Mermaid
+// ═══════════════════════════════════════════════════
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true,
+    curve: 'basis',
+    padding: 20,
+    nodeSpacing: 50,
+    rankSpacing: 60,
+  },
+  securityLevel: 'loose',
+});
+
+// ═══════════════════════════════════════════════════
+// Render
+// ═══════════════════════════════════════════════════
+let currentSvg = null;
+let currentScale = 1;
+let currentPanX = 0, currentPanY = 0;
+let isPanning = false;
+let panStartX, panStartY;
+
+const outputEl = document.getElementById('mermaid-output');
+
+async function renderGraph() {
+  outputEl.innerHTML = '';
+  const { svg } = await mermaid.render('agentic-property-graph', mermaidDef);
+  outputEl.innerHTML = svg;
+  currentSvg = outputEl.querySelector('svg');
+  if (currentSvg) {
+    currentSvg.style.cursor = 'grab';
+    attachNodeClickHandlers();
+    attachPanZoom();
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// Pan & Zoom
+// ═══════════════════════════════════════════════════
+function attachPanZoom() {
+  const wrapper = document.getElementById('mermaid-wrapper');
+
+  wrapper.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    currentScale = Math.max(0.3, Math.min(3, currentScale * delta));
+    applyTransform();
+  });
+
+  wrapper.addEventListener('mousedown', (e) => {
+    if (e.target.closest('.node') || e.target.closest('.edgeLabel')) return;
+    isPanning = true;
+    panStartX = e.clientX - currentPanX;
+    panStartY = e.clientY - currentPanY;
+    if (currentSvg) currentSvg.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isPanning) return;
+    currentPanX = e.clientX - panStartX;
+    currentPanY = e.clientY - panStartY;
+    applyTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isPanning = false;
+    if (currentSvg) currentSvg.style.cursor = 'grab';
+  });
+}
+
+function applyTransform() {
+  if (!currentSvg) return;
+  currentSvg.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentScale})`;
+  currentSvg.style.transformOrigin = 'center center';
+}
+
+function resetZoom() {
+  currentScale = 1;
+  currentPanX = 0;
+  currentPanY = 0;
+  applyTransform();
+}
+
+function zoomIn() {
+  currentScale = Math.min(3, currentScale * 1.2);
+  applyTransform();
+}
+
+function zoomOut() {
+  currentScale = Math.max(0.3, currentScale * 0.8);
+  applyTransform();
+}
+
+// ═══════════════════════════════════════════════════
+// Click handlers on SVG nodes
+// ═══════════════════════════════════════════════════
+function attachNodeClickHandlers() {
+  if (!currentSvg) return;
+  const nodeGroups = currentSvg.querySelectorAll('.node');
+  nodeGroups.forEach(g => {
+    g.style.cursor = 'pointer';
+    g.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Find node ID from the text content or class
+      const textEl = g.querySelector('text');
+      const rectEl = g.querySelector('rect');
+      if (!textEl) return;
+      const label = textEl.textContent.trim().toLowerCase().replace(/[^a-z_]/g, '');
+      const node = findNode(label);
+      if (node) selectNode(node);
+    });
+  });
+}
+
+function findNode(label) {
+  // Map common label variants
+  const map = {
+    'memory': 'memory',
+    'query_relevancy': 'query_relevancy',
+    'query_understanding': 'query_understanding',
+    'query_routing': 'query_routing',
+    'web_search': 'web_search',
+    'comparison_engine': 'comparison_engine',
+    'reflection': 'reflection',
+    'answer_generation': 'answer_generation',
+    'start': null,
+    'end': null,
+  };
+  const id = map[label];
+  if (!id) return null;
+  return nodes.find(n => n.id === id);
+}
+
+// ═══════════════════════════════════════════════════
+// Sidebar node list
+// ═══════════════════════════════════════════════════
+const nodeListEl = document.getElementById('node-list');
+nodes.forEach(node => {
+  const card = document.createElement('div');
+  card.className = 'node-card';
+  card.dataset.nodeId = node.id;
+  card.innerHTML = `
+    <span class="node-index ${node.colorClass}">${node.index}</span>
+    <span class="node-name">${node.name}</span>
+    <div class="node-route">
+      ${node.routes.map(r => `→ <b>${r.label}</b>: ${r.to.replace(/_/g, ' ')}`).join('<br>')}
+    </div>
+  `;
+  card.addEventListener('click', () => selectNode(node));
+  nodeListEl.appendChild(card);
+});
+
+// ═══════════════════════════════════════════════════
+// Detail panel
+// ═══════════════════════════════════════════════════
+const detailPanel = document.getElementById('detail-panel');
+let activeNodeId = null;
+
+function selectNode(node) {
+  activeNodeId = node.id;
+
+  // Update sidebar active state
+  document.querySelectorAll('.node-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.nodeId === node.id);
+  });
+
+  // Update SVG highlight
+  if (currentSvg) {
+    currentSvg.querySelectorAll('.node').forEach(g => {
+      const textEl = g.querySelector('text');
+      const rectEl = g.querySelector('rect');
+      const label = textEl ? textEl.textContent.trim().toLowerCase().replace(/[^a-z_]/g, '') : '';
+      const mapped = findNode(label);
+      const isActive = mapped && mapped.id === node.id;
+      if (rectEl) {
+        rectEl.setAttribute('stroke-width', isActive ? '3' : '1');
+        rectEl.setAttribute('stroke', isActive ? '#c2653a' : node.color);
+      }
+    });
+  }
+
+  // Update detail panel
+  detailPanel.innerHTML = `
+    <h3><span class="node-index ${node.colorClass}" style="display:inline-block;vertical-align:middle">${node.index}</span> ${node.name}</h3>
+    <div class="detail-index">Node ${node.index} of 8</div>
+    <div class="detail-desc">${node.desc}</div>
+    <div class="detail-reads"><strong>Reads:</strong> <code>${node.reads}</code></div>
+    <div class="detail-writes"><strong>Writes:</strong> <code>${node.writes}</code></div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════
+// Keyboard shortcuts
+// ═══════════════════════════════════════════════════
+window.addEventListener('keydown', (e) => {
+  if (e.key === '0' || (e.key === 'r' && e.ctrlKey)) {
+    e.preventDefault();
+    resetZoom();
+  }
+  if (e.key === '=' || e.key === '+') {
+    e.preventDefault();
+    zoomIn();
+  }
+  if (e.key === '-') {
+    e.preventDefault();
+    zoomOut();
+  }
+  // Number keys 1-8 select nodes
+  const num = parseInt(e.key);
+  if (num >= 1 && num <= 8 && nodes[num - 1]) {
+    selectNode(nodes[num - 1]);
+  }
+});
+
+// ═══════════════════════════════════════════════════
+// Init
+// ═══════════════════════════════════════════════════
+renderGraph();
+</script>
+</body>
+</html>

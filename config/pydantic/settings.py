@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 from dotenv import load_dotenv
 import os
+
 # Load .env into os.environ so secrets (EXCHANGERATE_API_KEY, RAPIDAPI_KEY)
 # are available to the MCP subprocess via os.environ passthrough in dld_mcp.py.
 load_dotenv()
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
     )
 
     # ── LLM ──────────────────────────────────────────────────────────────────
-    llm_provider: str = "groq"
+    llm_provider: str = os.getenv("LLM_PROVIDER", "groq")
 
     # Ollama (local GGUF via Ollama daemon — used during dev/testing phase)
     ollama_model: str = "llama3.1:8b"
