@@ -11,7 +11,9 @@ from pathlib import Path
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-_MEMORY_DIR = Path(__file__).resolve().parent
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+_MEMORY_DIR = _PROJECT_ROOT / "data" / "memory"
+_MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 _DB_PATH = str(_MEMORY_DIR / "chat_history.db")
 
 # ── Sync checkpointer (CLI, tests, sync invoke) ──────────────────────────────
