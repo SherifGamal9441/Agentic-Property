@@ -8,7 +8,7 @@ system_prompt: |
      Never invent values. Use null for anything not mentioned.
   
      Possible keys:
-      area_name: Optional[str] = None - e.g "Dubai Marina"
+      area_name: Optional[str] = None - e.g "Marina". Ignore the word "Dubai".
       address: Optional[str] = None - e.g "123 Main St"
       building_name: Optional[str] = None - e.g "Burj Khalifa"
       type: Optional[str] = None - e.g "apartment" | "villa" | "townhouse" | "studio" | "penthouse" | "office" | "retail"
