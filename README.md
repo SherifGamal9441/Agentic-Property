@@ -172,8 +172,11 @@ Agentic-Property/
    ```
 
 3. **Start the Backend Data Service**:
-   You can either run the FastAPI server natively (it automatically seeds the DB if empty), or use Docker Compose.
+   You can either run the FastAPI server natively, or use Docker Compose.
    ```bash
+   # Seed the database first
+   uv run python src/data_service/seed.py
+
    # Run the FastAPI Data Service locally
    uv run scripts/run_data_service.py
 
