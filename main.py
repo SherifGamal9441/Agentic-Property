@@ -52,58 +52,57 @@ def _save_chat_metadata(chats: list[dict]) -> None:
 
 # ── Page config ────────────────────────────────────────────────────────────────
 
-st.set_page_config(page_title="Agentic Property", page_icon="🏠", layout="wide")
+st.set_page_config(page_title="Agentic Property", layout="wide")
 
-# ── Warm gray + terracotta CSS ─────────────────────────────────────────────────
+# ── Adaptive UI CSS ────────────────────────────────────────────────────────────
 
 st.markdown(
     """
 <style>
-    /* Override Streamlit's default cool-gray palette */
-    .stApp {
-        background: #f5f3f0;
-    }
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: #2b2520;
-    }
-    [data-testid="stSidebar"] * {
-        color: #c4b8a8 !important;
-    }
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
-        color: #e8d9c8 !important;
-    }
     /* Chat messages — user bubble */
     [data-testid="stChatMessage"][data-testid*="user"] {
-        background: #ebe7e2;
+        background-color: var(--secondary-background-color);
         border-radius: 16px;
-        padding: 4px 8px;
+        padding: 8px 16px;
     }
     /* Chat input */
     [data-testid="stChatInput"] textarea {
-        border: 1px solid #d4cec7 !important;
         border-radius: 12px !important;
     }
     /* Thinking expander */
     [data-testid="stExpander"] details {
-        background: #faf8f6;
-        border: 1px solid #e8d0c0;
+        background-color: var(--background-color);
+        border: 1px solid var(--secondary-background-color);
         border-radius: 8px;
     }
     /* Accent color for route/source labels */
     .accent {
-        color: #c2653a;
+        color: var(--primary-color);
         font-weight: 600;
     }
     /* Thinking log lines */
     .log-line {
         font-family: 'Consolas', 'JetBrains Mono', monospace;
         font-size: 12px;
-        color: #6b5c4e;
+        color: var(--text-color);
+        opacity: 0.8;
         display: block;
         margin: 1px 0;
         white-space: pre-wrap;
         word-break: break-word;
+    }
+    /* Custom Headers */
+    .app-header {
+        color: var(--text-color);
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 0;
+    }
+    .app-subheader {
+        color: var(--text-color);
+        opacity: 0.7;
+        margin-top: 4px;
+        font-size: 16px;
     }
 </style>
 """,
@@ -217,8 +216,8 @@ with st.sidebar:
 # ── Main chat area ─────────────────────────────────────────────────────────────
 
 st.markdown(
-    "<h1 style='color:#1a1a1a;font-size:24px;margin-bottom:0'>🏠 Agentic Property</h1>"
-    "<p style='color:#8b7a6a;margin-top:4px'>Dubai real estate assistant</p>",
+    "<h1 class='app-header'>Agentic Property</h1>"
+    "<p class='app-subheader'>Dubai real estate assistant</p>",
     unsafe_allow_html=True,
 )
 
@@ -321,7 +320,7 @@ if prompt := st.chat_input("Ask about Dubai property…"):
             )
         if agent_logs:
             thinking_lines.append(
-                '<div style="margin-top:6px;font-size:12px;color:#8b7a6a">'
+                '<div style="margin-top:6px;font-size:12px;opacity:0.7">'
                 "─ Agent log ─</div>"
             )
             thinking_lines.extend(agent_logs)
@@ -352,7 +351,7 @@ if prompt := st.chat_input("Ask about Dubai property…"):
         ttft_str = f"{timings[0]:.1f}s" if timings[0] else "—"
         total_str = f"{timings[1]:.1f}s"
         timing_summary = (
-            f'<span style="color:#8b7a6a;font-size:13px">'
+            f'<span style="opacity:0.7;font-size:13px">'
             f"TTFT: {ttft_str} &nbsp;|&nbsp; Total: {total_str}"
             f"</span>"
         )

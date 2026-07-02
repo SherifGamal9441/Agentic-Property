@@ -10,6 +10,7 @@ Usage:
     python scripts/upload_eval_datasets.py --type structural # upload one
     python scripts/upload_eval_datasets.py --force           # skip confirmation
 """
+
 from __future__ import annotations
 
 import argparse
@@ -24,7 +25,7 @@ from langsmith import Client
 
 load_dotenv()
 
-EVAL_DIR = Path(__file__).parent.parent / "Data" / "eval"
+EVAL_DIR = Path(__file__).parent.parent / "data" / "eval"
 
 DATASETS = {
     "structural": {
@@ -46,33 +47,37 @@ def _load_json(path: Path) -> list[dict]:
 def _build_structural_examples(tests: list[dict]) -> list[dict]:
     examples = []
     for t in tests:
-        examples.append({
-            "inputs": {
-                "query": t["query"],
-                "id": t["id"],
-                "tags": t.get("tags", []),
-            },
-            "outputs": {
-                "expected": t["expected"],
-            },
-        })
+        examples.append(
+            {
+                "inputs": {
+                    "query": t["query"],
+                    "id": t["id"],
+                    "tags": t.get("tags", []),
+                },
+                "outputs": {
+                    "expected": t["expected"],
+                },
+            }
+        )
     return examples
 
 
 def _build_quality_examples(tests: list[dict]) -> list[dict]:
     examples = []
     for t in tests:
-        examples.append({
-            "inputs": {
-                "query": t["query"],
-                "id": t["id"],
-                "tags": t.get("tags", []),
-            },
-            "outputs": {
-                "criteria": t["criteria"],
-                "min_score": t["min_score"],
-            },
-        })
+        examples.append(
+            {
+                "inputs": {
+                    "query": t["query"],
+                    "id": t["id"],
+                    "tags": t.get("tags", []),
+                },
+                "outputs": {
+                    "criteria": t["criteria"],
+                    "min_score": t["min_score"],
+                },
+            }
+        )
     return examples
 
 
@@ -134,13 +139,11 @@ def main() -> None:
 
     client = Client()
 
-    types_to_upload = (
-        ["structural", "quality"]
-        if args.type == "both"
-        else [args.type]
-    )
+    types_to_upload = ["structural", "quality"] if args.type == "both" else [args.type]
 
-    print(f"Uploading datasets to LangSmith (project: {client._get_default_project_name() if hasattr(client, '_get_default_project_name') else 'default'})")
+    print(
+        f"Uploading datasets to LangSmith (project: {client._get_default_project_name() if hasattr(client, '_get_default_project_name') else 'default'})"
+    )
 
     for dt in types_to_upload:
         print(f"\n[{dt}]")
