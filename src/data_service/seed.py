@@ -93,20 +93,25 @@ def seed_table(csv_path: str, model_class, truncate_first: bool = False):
             if has_unique:
                 # Use dialect-specific INSERT ... ON CONFLICT DO NOTHING
                 dialect_name = session.bind.dialect.name
-                if dialect_name == "postgresql":
-                    from sqlalchemy.dialects.postgresql import insert as pg_insert
-                    stmt = pg_insert(model_class).values(records).on_conflict_do_nothing(
-                        index_elements=["property_id"]
-                    )
-                elif dialect_name == "sqlite":
-                    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-                    stmt = sqlite_insert(model_class).values(records).on_conflict_do_nothing(
-                        index_elements=["property_id"]
-                    )
-                else:
-                    # Generic fallback: plain insert (may fail on dupes)
-                    stmt = model_class.__table__.insert().values(records)
-                session.execute(stmt)
+                
+                chunk_size = 50
+                for i in range(0, len(records), chunk_size):
+                    chunk = records[i:i + chunk_size]
+                    if dialect_name == "postgresql":
+                        from sqlalchemy.dialects.postgresql import insert as pg_insert
+                        stmt = pg_insert(model_class).values(chunk).on_conflict_do_nothing(
+                            index_elements=["property_id"]
+                        )
+                    elif dialect_name == "sqlite":
+                        from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+                        stmt = sqlite_insert(model_class).values(chunk).on_conflict_do_nothing(
+                            index_elements=["property_id"]
+                        )
+                    else:
+                        # Generic fallback: plain insert (may fail on dupes)
+                        stmt = model_class.__table__.insert().values(chunk)
+                    session.execute(stmt)
+                    
                 session.commit()
                 inserted = len(records)
                 skipped = 0

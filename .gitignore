@@ -7,3 +7,4 @@ logs/
 *.sqlite
 .venv
 .hermes
+data/memory/

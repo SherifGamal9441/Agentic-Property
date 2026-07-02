@@ -29,7 +29,7 @@ from src.logging_setup import setup_file_logging
 
 # ── Persisted chat metadata ────────────────────────────────────────────────────
 
-_CHAT_META_FILE = Path(__file__).parent / "chat_metadata.json"
+_CHAT_META_FILE = Path(__file__).parent / "data" / "memory" / "chat_metadata.json"
 
 
 def _load_chat_metadata() -> list[dict]:
@@ -44,6 +44,7 @@ def _load_chat_metadata() -> list[dict]:
 
 def _save_chat_metadata(chats: list[dict]) -> None:
     """Persist chat metadata to JSON file."""
+    _CHAT_META_FILE.parent.mkdir(parents=True, exist_ok=True)
     _CHAT_META_FILE.write_text(
         json.dumps(chats, ensure_ascii=False, indent=2), encoding="utf-8"
     )

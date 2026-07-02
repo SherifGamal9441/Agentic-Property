@@ -123,6 +123,12 @@ def _call_tool_sync(tool_name: str, arguments: dict) -> list[dict]:
     for key in ("type", "furnishing", "completion_status", "area_name"):
         if key in arguments and arguments[key] is not None:
             arguments[key] = arguments[key].strip().title()
+            
+    # LLMs sometimes stubbornly extract "Dubai" as the area_name. 
+    # Since area_name in the DB refers to specific communities, this breaks the search.
+    if arguments.get("area_name") == "Dubai":
+        del arguments["area_name"]
+
     try:
         # Server tools expect a single `filters` parameter (Pydantic model),
         # so wrap the flat kwargs under a "filters" key.
