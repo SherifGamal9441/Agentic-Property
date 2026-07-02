@@ -8,13 +8,17 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "area_name": "Dubai Marina",
-        "type": "Apartment",
+        "area_name": "Marina",
+        "type": "apartment",
         "beds_min": 2,
         "price_max": 3000000
       }
     },
-    "tags": ["basic", "recommendation", "apartment"]
+    "tags": [
+      "basic",
+      "recommendation",
+      "apartment"
+    ]
   },
   {
     "id": "S002",
@@ -26,11 +30,16 @@
       "data_intent": "recommend",
       "parsed_query": {
         "area_name": "Palm Jumeirah",
-        "type": "Villa",
+        "type": "villa",
         "beds_min": 4
       }
     },
-    "tags": ["basic", "recommendation", "villa", "luxury"]
+    "tags": [
+      "basic",
+      "recommendation",
+      "villa",
+      "luxury"
+    ]
   },
   {
     "id": "S003",
@@ -42,11 +51,15 @@
       "data_intent": "recommend",
       "parsed_query": {
         "area_name": "Jumeirah Lake Towers",
-        "type": "Studio",
+        "type": "studio",
         "price_max": 800000
       }
     },
-    "tags": ["basic", "recommendation", "studio"]
+    "tags": [
+      "basic",
+      "recommendation",
+      "studio"
+    ]
   },
   {
     "id": "S004",
@@ -58,12 +71,16 @@
       "data_intent": "recommend",
       "parsed_query": {
         "area_name": "Arabian Ranches",
-        "type": "Townhouse",
+        "type": "townhouse",
         "beds_min": 3,
         "price_max": 2500000
       }
     },
-    "tags": ["basic", "recommendation", "townhouse"]
+    "tags": [
+      "basic",
+      "recommendation",
+      "townhouse"
+    ]
   },
   {
     "id": "S005",
@@ -74,7 +91,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "market"]
+    "tags": [
+      "general",
+      "web_search",
+      "market"
+    ]
   },
   {
     "id": "S006",
@@ -85,7 +106,11 @@
       "data_source": "active",
       "data_intent": "recommend"
     },
-    "tags": ["comparison", "recommendation", "investment"]
+    "tags": [
+      "comparison",
+      "recommendation",
+      "investment"
+    ]
   },
   {
     "id": "S007",
@@ -96,7 +121,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "history"]
+    "tags": [
+      "general",
+      "web_search",
+      "history"
+    ]
   },
   {
     "id": "S008",
@@ -104,9 +133,16 @@
     "expected": {
       "is_relevant": false,
       "route": null,
-      "final_answer_contains": ["can only help", "Dubai"]
+      "final_answer_contains": [
+        "can only help",
+        "Dubai"
+      ]
     },
-    "tags": ["rejection", "geography", "out_of_scope"]
+    "tags": [
+      "rejection",
+      "geography",
+      "out_of_scope"
+    ]
   },
   {
     "id": "S009",
@@ -114,58 +150,84 @@
     "expected": {
       "is_relevant": false,
       "route": null,
-      "final_answer_contains": ["property", "real estate", "Dubai"]
+      "final_answer_contains": [
+        "property",
+        "real estate",
+        "Dubai"
+      ]
     },
-    "tags": ["rejection", "topic", "out_of_scope"]
+    "tags": [
+      "rejection",
+      "topic",
+      "out_of_scope"
+    ]
   },
   {
     "id": "S010",
-    "query": "كم تكلفة شقة في دبي مارينا؟",
+    "query": "\u0643\u0645 \u062a\u0643\u0644\u0641\u0629 \u0634\u0642\u0629 \u0641\u064a \u062f\u0628\u064a \u0645\u0627\u0631\u064a\u0646\u0627\u061f",
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
       "parsed_query": {
-        "area_name": "Dubai Marina",
-        "type": "Apartment"
+        "area_name": "Marina",
+        "type": "apartment"
       }
     },
-    "tags": ["arabic", "language", "pricing"]
+    "tags": [
+      "arabic",
+      "language",
+      "pricing"
+    ]
   },
   {
     "id": "S011",
-    "query": "أبحث عن فيلا في نخلة جميرا ب 4 غرف نوم",
+    "query": "\u0623\u0628\u062d\u062b \u0639\u0646 \u0641\u064a\u0644\u0627 \u0641\u064a \u0646\u062e\u0644\u0629 \u062c\u0645\u064a\u0631\u0627 \u0628 4 \u063a\u0631\u0641 \u0646\u0648\u0645",
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
       "parsed_query": {
         "area_name": "Palm Jumeirah",
-        "type": "Villa",
+        "type": "villa",
         "beds_min": 4
       }
     },
-    "tags": ["arabic", "language", "villa"]
+    "tags": [
+      "arabic",
+      "language",
+      "villa"
+    ]
   },
   {
     "id": "S012",
-    "query": "و我从迪拜房地产投资中能期待多少回报？",
+    "query": "\u0648\u6211\u4ece\u8fea\u62dc\u623f\u5730\u4ea7\u6295\u8d44\u4e2d\u80fd\u671f\u5f85\u591a\u5c11\u56de\u62a5\uff1f",
     "expected": {
       "is_relevant": true,
       "route": "web_search",
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["chinese", "language", "web_search", "investment"]
+    "tags": [
+      "chinese",
+      "language",
+      "web_search",
+      "investment"
+    ]
   },
   {
     "id": "S013",
-    "query": "Quels sont les meilleurs quartiers pour investir à Dubaï?",
+    "query": "Quels sont les meilleurs quartiers pour investir \u00e0 Duba\u00ef?",
     "expected": {
       "is_relevant": true,
       "route": "web_search",
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["french", "language", "web_search", "investment"]
+    "tags": [
+      "french",
+      "language",
+      "web_search",
+      "investment"
+    ]
   },
   {
     "id": "S014",
@@ -174,23 +236,32 @@
       "is_relevant": true,
       "route": "query_routing",
       "parsed_query": {
-        "area_name": "Dubai Marina",
-        "type": "Apartment",
+        "area_name": "Marina",
+        "type": "apartment",
         "price_max": 2000000
       }
     },
-    "tags": ["spanish", "language", "apartment"]
+    "tags": [
+      "spanish",
+      "language",
+      "apartment"
+    ]
   },
   {
     "id": "S015",
-    "query": "Недвижимость в Дубае для инвестиций",
+    "query": "\u041d\u0435\u0434\u0432\u0438\u0436\u0438\u043c\u043e\u0441\u0442\u044c \u0432 \u0414\u0443\u0431\u0430\u0435 \u0434\u043b\u044f \u0438\u043d\u0432\u0435\u0441\u0442\u0438\u0446\u0438\u0439",
     "expected": {
       "is_relevant": true,
       "route": "web_search",
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["russian", "language", "web_search", "investment"]
+    "tags": [
+      "russian",
+      "language",
+      "web_search",
+      "investment"
+    ]
   },
   {
     "id": "S016",
@@ -201,11 +272,15 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "area_name": "Downtown Dubai",
-        "type": "Penthouse"
+        "area_name": "Downtown",
+        "type": "penthouse"
       }
     },
-    "tags": ["basic", "luxury", "penthouse"]
+    "tags": [
+      "basic",
+      "luxury",
+      "penthouse"
+    ]
   },
   {
     "id": "S017",
@@ -216,12 +291,16 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "type": "Apartment",
-        "completion_status": "Off-Plan",
+        "type": "apartment",
+        "completion_status": "off-plan",
         "price_max": 1000000
       }
     },
-    "tags": ["basic", "off-plan", "apartment"]
+    "tags": [
+      "basic",
+      "off-plan",
+      "apartment"
+    ]
   },
   {
     "id": "S018",
@@ -233,11 +312,16 @@
       "data_intent": "recommend",
       "parsed_query": {
         "area_name": "Emirates Hills",
-        "type": "Villa",
-        "completion_status": "Ready"
+        "type": "villa",
+        "completion_status": "ready"
       }
     },
-    "tags": ["basic", "ready", "villa", "luxury"]
+    "tags": [
+      "basic",
+      "ready",
+      "villa",
+      "luxury"
+    ]
   },
   {
     "id": "S019",
@@ -248,12 +332,16 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "area_name": "Dubai Marina",
-        "type": "Apartment",
-        "furnishing": "Furnished"
+        "area_name": "Marina",
+        "type": "apartment",
+        "furnishing": "furnished"
       }
     },
-    "tags": ["basic", "furnished", "rental"]
+    "tags": [
+      "basic",
+      "furnished",
+      "rental"
+    ]
   },
   {
     "id": "S020",
@@ -265,13 +353,17 @@
       "data_intent": "recommend",
       "parsed_query": {
         "area_name": "Business Bay",
-        "type": "Apartment",
+        "type": "apartment",
         "beds_min": 1,
         "beds_max": 1,
-        "furnishing": "Unfurnished"
+        "furnishing": "unfurnished"
       }
     },
-    "tags": ["basic", "unfurnished", "apartment"]
+    "tags": [
+      "basic",
+      "unfurnished",
+      "apartment"
+    ]
   },
   {
     "id": "S021",
@@ -282,7 +374,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "pricing"]
+    "tags": [
+      "general",
+      "web_search",
+      "pricing"
+    ]
   },
   {
     "id": "S022",
@@ -293,7 +389,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "mortgage"]
+    "tags": [
+      "general",
+      "web_search",
+      "mortgage"
+    ]
   },
   {
     "id": "S023",
@@ -304,7 +404,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "lifestyle"]
+    "tags": [
+      "general",
+      "web_search",
+      "lifestyle"
+    ]
   },
   {
     "id": "S024",
@@ -315,7 +419,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "market"]
+    "tags": [
+      "general",
+      "web_search",
+      "market"
+    ]
   },
   {
     "id": "S025",
@@ -329,7 +437,11 @@
         "price_max": 500000
       }
     },
-    "tags": ["basic", "budget", "affordable"]
+    "tags": [
+      "basic",
+      "budget",
+      "affordable"
+    ]
   },
   {
     "id": "S026",
@@ -341,11 +453,15 @@
       "data_intent": "recommend",
       "parsed_query": {
         "area_name": "Palm Jumeirah",
-        "type": "Penthouse",
+        "type": "penthouse",
         "price_min": 20000000
       }
     },
-    "tags": ["basic", "luxury", "high_budget"]
+    "tags": [
+      "basic",
+      "luxury",
+      "high_budget"
+    ]
   },
   {
     "id": "S027",
@@ -356,7 +472,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "family"]
+    "tags": [
+      "general",
+      "web_search",
+      "family"
+    ]
   },
   {
     "id": "S028",
@@ -367,7 +487,12 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "investment", "ROI"]
+    "tags": [
+      "general",
+      "web_search",
+      "investment",
+      "ROI"
+    ]
   },
   {
     "id": "S029",
@@ -381,7 +506,10 @@
         "area_name": "DAMAC Hills"
       }
     },
-    "tags": ["basic", "area_specific"]
+    "tags": [
+      "basic",
+      "area_specific"
+    ]
   },
   {
     "id": "S030",
@@ -393,12 +521,16 @@
       "data_intent": "recommend",
       "parsed_query": {
         "area_name": "Jumeirah Beach Residence",
-        "type": "Apartment",
+        "type": "apartment",
         "beds_min": 1,
         "beds_max": 1
       }
     },
-    "tags": ["basic", "apartment", "beach"]
+    "tags": [
+      "basic",
+      "apartment",
+      "beach"
+    ]
   },
   {
     "id": "S031",
@@ -413,7 +545,11 @@
         "price_max": 250000
       }
     },
-    "tags": ["currency", "conversion", "budget"]
+    "tags": [
+      "currency",
+      "conversion",
+      "budget"
+    ]
   },
   {
     "id": "S032",
@@ -428,7 +564,11 @@
         "price_max": 1000000
       }
     },
-    "tags": ["currency", "conversion", "investment"]
+    "tags": [
+      "currency",
+      "conversion",
+      "investment"
+    ]
   },
   {
     "id": "S033",
@@ -439,12 +579,15 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "area_name": "Dubai Marina",
+        "area_name": "Marina",
         "price_min": 2000000,
         "price_max": 3000000
       }
     },
-    "tags": ["basic", "price_range"]
+    "tags": [
+      "basic",
+      "price_range"
+    ]
   },
   {
     "id": "S034",
@@ -455,7 +598,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "developers"]
+    "tags": [
+      "general",
+      "web_search",
+      "developers"
+    ]
   },
   {
     "id": "S035",
@@ -466,7 +613,10 @@
       "data_source": "active",
       "data_intent": "recommend"
     },
-    "tags": ["basic", "amenities"]
+    "tags": [
+      "basic",
+      "amenities"
+    ]
   },
   {
     "id": "S036",
@@ -474,9 +624,16 @@
     "expected": {
       "is_relevant": false,
       "route": null,
-      "final_answer_contains": ["can only help", "Dubai"]
+      "final_answer_contains": [
+        "can only help",
+        "Dubai"
+      ]
     },
-    "tags": ["rejection", "geography", "out_of_scope"]
+    "tags": [
+      "rejection",
+      "geography",
+      "out_of_scope"
+    ]
   },
   {
     "id": "S037",
@@ -484,20 +641,33 @@
     "expected": {
       "is_relevant": false,
       "route": null,
-      "final_answer_contains": ["property", "real estate", "Dubai"]
+      "final_answer_contains": [
+        "property",
+        "real estate",
+        "Dubai"
+      ]
     },
-    "tags": ["rejection", "topic", "out_of_scope"]
+    "tags": [
+      "rejection",
+      "topic",
+      "out_of_scope"
+    ]
   },
   {
     "id": "S038",
-    "query": "أريد معلومات عن أفضل المناطق السكنية في دبي",
+    "query": "\u0623\u0631\u064a\u062f \u0645\u0639\u0644\u0648\u0645\u0627\u062a \u0639\u0646 \u0623\u0641\u0636\u0644 \u0627\u0644\u0645\u0646\u0627\u0637\u0642 \u0627\u0644\u0633\u0643\u0646\u064a\u0629 \u0641\u064a \u062f\u0628\u064a",
     "expected": {
       "is_relevant": true,
       "route": "web_search",
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["arabic", "language", "web_search", "areas"]
+    "tags": [
+      "arabic",
+      "language",
+      "web_search",
+      "areas"
+    ]
   },
   {
     "id": "S039",
@@ -507,21 +677,30 @@
       "route": "query_routing",
       "data_source": "active",
       "parsed_query": {
-        "type": "Studio",
+        "type": "studio",
         "price_max": 600000
       }
     },
-    "tags": ["spanish", "language", "studio", "budget"]
+    "tags": [
+      "spanish",
+      "language",
+      "studio",
+      "budget"
+    ]
   },
   {
     "id": "S040",
-    "query": "Grundstücke in Dubai kaufen",
+    "query": "Grundst\u00fccke in Dubai kaufen",
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
       "data_source": "active"
     },
-    "tags": ["german", "language", "land"]
+    "tags": [
+      "german",
+      "language",
+      "land"
+    ]
   },
   {
     "id": "S041",
@@ -535,7 +714,11 @@
         "beds_min": 5
       }
     },
-    "tags": ["basic", "large", "luxury"]
+    "tags": [
+      "basic",
+      "large",
+      "luxury"
+    ]
   },
   {
     "id": "S042",
@@ -546,11 +729,15 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "type": "Studio",
+        "type": "studio",
         "price_max": 400000
       }
     },
-    "tags": ["basic", "budget", "edge_case"]
+    "tags": [
+      "basic",
+      "budget",
+      "edge_case"
+    ]
   },
   {
     "id": "S043",
@@ -561,7 +748,11 @@
       "data_source": "active",
       "data_intent": "recommend"
     },
-    "tags": ["basic", "short_query", "edge_case"]
+    "tags": [
+      "basic",
+      "short_query",
+      "edge_case"
+    ]
   },
   {
     "id": "S044",
@@ -569,9 +760,15 @@
     "expected": {
       "is_relevant": false,
       "route": null,
-      "final_answer_contains": ["question", "ask"]
+      "final_answer_contains": [
+        "question",
+        "ask"
+      ]
     },
-    "tags": ["empty_query", "edge_case"]
+    "tags": [
+      "empty_query",
+      "edge_case"
+    ]
   },
   {
     "id": "S045",
@@ -582,15 +779,19 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "area_name": "Dubai Marina",
-        "type": "Apartment",
+        "area_name": "Marina",
+        "type": "apartment",
         "beds_min": 2,
         "price_max": 2500000,
-        "furnishing": "Furnished",
+        "furnishing": "furnished",
         "year_of_completion_min": 2020
       }
     },
-    "tags": ["basic", "long_query", "detailed"]
+    "tags": [
+      "basic",
+      "long_query",
+      "detailed"
+    ]
   },
   {
     "id": "S046",
@@ -601,7 +802,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "lifestyle"]
+    "tags": [
+      "general",
+      "web_search",
+      "lifestyle"
+    ]
   },
   {
     "id": "S047",
@@ -612,13 +817,17 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "area_name": "Downtown Dubai",
-        "type": "Apartment",
+        "area_name": "Downtown",
+        "type": "apartment",
         "beds_min": 3,
         "beds_max": 3
       }
     },
-    "tags": ["basic", "apartment", "downtown"]
+    "tags": [
+      "basic",
+      "apartment",
+      "downtown"
+    ]
   },
   {
     "id": "S048",
@@ -632,7 +841,11 @@
         "area_name": "Jumeirah Village Circle"
       }
     },
-    "tags": ["historical", "insights", "edge_case"]
+    "tags": [
+      "historical",
+      "insights",
+      "edge_case"
+    ]
   },
   {
     "id": "S049",
@@ -643,10 +856,14 @@
       "data_source": "active",
       "data_intent": "recommend",
       "parsed_query": {
-        "type": "Apartment"
+        "type": "apartment"
       }
     },
-    "tags": ["basic", "budget", "edge_case"]
+    "tags": [
+      "basic",
+      "budget",
+      "edge_case"
+    ]
   },
   {
     "id": "S050",
@@ -657,6 +874,11 @@
       "data_source": null,
       "data_intent": null
     },
-    "tags": ["general", "web_search", "process", "legal"]
+    "tags": [
+      "general",
+      "web_search",
+      "process",
+      "legal"
+    ]
   }
 ]

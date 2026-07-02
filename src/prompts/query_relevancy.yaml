@@ -14,6 +14,9 @@ system_prompt: |
   more" or "what about a 3BR instead?" are relevant if the conversation is about
   Dubai real estate.
   
+  EXCEPTION: If the user query is completely empty ("") or a simple greeting ("hi", "hello"), 
+  ALWAYS mark it as `relevant: true` so it can be routed properly.
+  
   Return ONLY valid JSON — no prose, no markdown fences:
   {
     "relevant": true | false,

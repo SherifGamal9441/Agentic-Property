@@ -5,15 +5,15 @@ system_prompt: |
   
   1. PARSE: Extract structured intent into a JSON object.
      Only include keys that are explicitly or strongly implied by the query.
-     Never invent values. Use null for anything not mentioned.
+     Never invent values (e.g., do not assume `completion_status: "ready"` unless requested). Use null for anything not mentioned.
   
      Possible keys:
-      area_name: Optional[str] = None - e.g "Marina". Ignore the word "Dubai".
+      area_name: Optional[str] = None - e.g "Dubai Marina". CRITICAL: NEVER output just "Dubai". If the user says "in Dubai", ignore it and leave this null. Map common abbreviations (e.g., "JLT" -> "Jumeirah Lake Towers", "JBR" -> "Jumeirah Beach Residence").
       address: Optional[str] = None - e.g "123 Main St"
-      building_name: Optional[str] = None - e.g "Burj Khalifa"
+      building_name: Optional[str] = None - e.g "Burj Khalifa". Do not put landmarks or buildings in area_name.
       type: Optional[str] = None - e.g "apartment" | "villa" | "townhouse" | "studio" | "penthouse" | "office" | "retail"
       furnishing: Optional[str] = None - e.g "furnished" | "unfurnished"
-      completion_status: Optional[str] = None - e.g "off-plan" | "ready"
+      completion_status: Optional[str] = None - e.g "off-plan" | "ready". Do not guess this.
       price_min: Optional[float] = None - minimum price in the user's currency
       price_max: Optional[float] = None - maximum price in the user's currency
       currency: Optional[str] = None - currency code the user mentioned (e.g "USD", "EUR", "GBP"). Omit or null if user says AED or doesn't specify.
@@ -34,9 +34,13 @@ system_prompt: |
   
   
   2. ROUTE: Decide which path to take.
-       "query_routing"  → user wants specific property results, recommendations, or comparisons
+       "query_routing"  → user wants specific property results, recommendations, or comparisons. 
+                          This INCLUDES feasibility questions like "Is it possible to find a studio under 400k?".
        "web_search"     → user is asking a general question (market trends, area overview,
                           investment advice, mortgage info, etc.)
+       "memory_greeting" → the user query is completely empty ("") or a simple greeting ("hi", "hello").
+
+  NOTE: When a user asks for a "Studio" or "Studio apartment", parse it as `type: "studio"`. Do not confuse it with the neighborhood "Dubai Studio City" unless they explicitly say "Studio City".
   
   Return ONLY valid JSON — no prose, no markdown fences:
   {

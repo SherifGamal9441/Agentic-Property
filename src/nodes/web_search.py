@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 
 # Ensure project root is on sys.path so `src.*` imports resolve
@@ -48,12 +49,34 @@ def rewrite_to_search_query(state: AgentState) -> dict:
 def web_search(state: AgentState) -> dict:
     """Search the web."""
     logger.info("Searching the web for: %s", state.web_search_query)
-    with DDGS() as ddgs:
-        results = list(ddgs.text(state.web_search_query, max_results=5))
-    web_results = [
-        {"title": r["title"], "url": r["href"], "snippet": r["body"]}
-        for r in results
-    ]
+    web_results = []
+    
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(state.web_search_query, max_results=5))
+        web_results = [
+            {"title": r["title"], "url": r["href"], "snippet": r["body"]}
+            for r in results
+        ]
+        if not web_results:
+            raise ValueError("No results returned by DuckDuckGo")
+    except Exception as e:
+        logger.warning("DuckDuckGo search failed: %s. Falling back to Tavily.", e)
+        tavily_key = os.getenv("TAVILY_API_KEY")
+        if not tavily_key:
+            logger.error("TAVILY_API_KEY not found. Web search failed entirely.")
+        else:
+            try:
+                from tavily import TavilyClient
+                tavily = TavilyClient(api_key=tavily_key)
+                response = tavily.search(query=state.web_search_query, max_results=5)
+                web_results = [
+                    {"title": r["title"], "url": r["url"], "snippet": r["content"]}
+                    for r in response.get("results", [])
+                ]
+            except Exception as tavily_e:
+                logger.error("Tavily search also failed: %s", tavily_e)
+        
     logger.info("Web search completed with %d results", len(web_results))
     return {"web_search_results": web_results}
 
