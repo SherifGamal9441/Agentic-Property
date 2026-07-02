@@ -1,6 +1,6 @@
 # 🏠 Agentic Property — Dubai Real Estate AI Assistant
 
-A LangGraph-powered agent that answers questions about Dubai real estate — from property recommendations to market insights — using DLD (Dubai Land Department) data and web search.
+A LangGraph-powered agent that answers questions about Dubai real estate — from property recommendations to market insights — using bayut data and web search.
 
 ## Architecture
 
@@ -61,7 +61,7 @@ flowchart TD
 START
   │
   ▼
-memory ──────────────────────────────────────────────┐
+memory ───────────────────────────────────────────────┐
   │ (property query)                                  │ (greeting / meta)
   ▼                                                   │
 query_relevancy ──❌ out of scope──► END              │
@@ -79,7 +79,7 @@ query_understanding                                   │
   │                         │                         │
   │                         └── no results ──┐        │
   │                                          │        │
-  └── "web_search" ──► web_search ◄─────────┘        │
+  └── "web_search" ──► web_search ◄─────────┘         │
                             │                         │
                             ▼                         │
                      answer_generation ◄──────────────┘
@@ -99,12 +99,13 @@ query_understanding                                   │
 ## Tech Stack
 
 - **Framework**: LangGraph (StateGraph with conditional edges)
-- **LLM**: Configurable via `src/llm/factory.py` (supports any LangChain-compatible model)
-- **Data**: DLD (Dubai Land Department) via MCP server
+- **LLM**: Configurable via `src/llm/factory.py` (supports any LangChain-compatible model: Ollama, vLLM, Groq, custom endpoints)
+- **Data**: DLD (Dubai Land Department) via MCP server & PostgreSQL (running via Docker)
 - **Web Search**: DuckDuckGo (ddgs) + LLM summarization
-- **Persistence**: SqliteSaver (LangGraph checkpointer) for conversation state
-- **UI**: Streamlit with streaming token-by-token output
+- **Persistence**: SqliteSaver (LangGraph checkpointer) for conversation state (stored in `data/memory/chat_history.db`)
+- **UI**: Streamlit with streaming token-by-token output and Light/Dark modes
 - **Validation**: Pydantic v2 (AgentState + settings)
+- **Evaluation**: LangSmith for structural and quality assurance testing
 
 ## Project Structure
 
@@ -114,9 +115,12 @@ Agentic-Property/
 ├── README.md
 ├── architecture.html           # Interactive graph visualization
 ├── pyproject.toml
+├── .env.example                # Template for environment variables
 ├── config/
 │   └── pydantic/
 │       └── settings.py         # Pydantic Settings (max_retries, LLM config, etc.)
+├── data/                       # Application data & persistent storage (chat history, CSVs)
+├── docker/                     # Dockerfile and docker-compose for data services
 ├── src/
 │   ├── agents/
 │   │   ├── graph.py            # LangGraph StateGraph definition
@@ -148,21 +152,69 @@ Agentic-Property/
 └── scripts/
     ├── run_cli.py              # CLI invocation
     ├── scraper.py              # Data scraping
-    └── run_data_service.py     # Data service launcher
+    ├── run_data_service.py     # Data service launcher (seeds DB automatically)
+    ├── upload_eval_datasets.py # Script for syncing eval datasets to LangSmith
+    └── run_langsmith_eval.py   # LangSmith evaluations (structural & quality)
 ```
+
+## Setup & Configuration
+
+1. **Environment Variables**:
+   Copy the example environment file and configure your API keys (e.g., Groq, LangSmith, OpenAI, etc.):
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Install Dependencies**:
+   The project uses [uv](https://github.com/astral-sh/uv) for fast package management.
+   ```bash
+   uv sync
+   ```
+
+3. **Start the Backend Data Service**:
+   You can either run the FastAPI server natively (it automatically seeds the DB if empty), or use Docker Compose.
+   ```bash
+   # Run the FastAPI Data Service locally
+   uv run scripts/run_data_service.py
+
+   # OR use Docker Compose (starts Postgres + Data Service + MCP Server)
+   cd docker && docker-compose up -d
+   ```
 
 ## Usage
 
+### Web UI
+Run the interactive Streamlit chat interface:
 ```bash
-# Install dependencies
-uv sync
-
-# Run the Streamlit UI
 uv run streamlit run main.py
+```
 
-# Run tests
-uv run pytest tests/ -v
-
-# CLI mode
+### CLI Mode
+Query the agent directly from the terminal without launching a web server:
+```bash
 uv run python scripts/run_cli.py "2-bedroom apartment in Dubai Marina under 2M AED"
+```
+
+## Evaluation (LangSmith)
+
+We use LangSmith to run objective assertions and LLM-as-a-judge quality testing against the dual-path routing.
+Make sure you have `LANGSMITH_API_KEY` set in your `.env`.
+
+```bash
+# Upload evaluation datasets
+uv run python scripts/upload_eval_datasets.py
+
+# Run both structural and quality evaluations
+uv run python scripts/run_langsmith_eval.py
+
+# Filter evaluations by type or tags
+uv run python scripts/run_langsmith_eval.py --type structural
+uv run python scripts/run_langsmith_eval.py --type quality --tag currency
+```
+
+## Running Tests
+
+Execute the unit tests and end-to-end (E2E) tests via Pytest:
+```bash
+uv run pytest tests/ -v
 ```
