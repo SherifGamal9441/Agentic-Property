@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # ── Data service ─────────────────────────────────────────────────────────
     data_service_host: str = "0.0.0.0"
-    data_service_port: int = 8000
+    data_service_port: int = 8005
 
 
 # Singleton — import this everywhere instead of re-instantiating
