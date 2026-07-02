@@ -51,11 +51,15 @@ DATASET_NAMES = {
 # Target function — wraps the agent graph so LangSmith can trace every run
 # ---------------------------------------------------------------------------
 
+from src.agents.graph import build_graph
+# Compile a stateless graph (no SQLite checkpointer) for evaluation to run queries in parallel cleanly
+agent_graph_eval = build_graph(checkpointer=False)
+
+
 @traceable(name="agentic-property-agent")
 def agent_target(inputs: dict) -> dict:
     """Invoke the LangGraph agent and return the full final state."""
-    from src.agents.graph import agent_graph
-    result = agent_graph.invoke({"query": inputs["query"]})
+    result = agent_graph_eval.invoke({"query": inputs["query"]})
     return result
 
 
@@ -258,7 +262,7 @@ def run_evaluation(
     tag: str | None = None,
     max_concurrency: int = 4,
 ) -> None:
-    dataset_name = DATASETS[eval_type]
+    dataset_name = DATASET_NAMES[eval_type]
 
     if eval_type == "structural":
         evaluators = STRUCTURAL_EVALUATORS

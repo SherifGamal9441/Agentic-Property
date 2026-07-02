@@ -48,15 +48,20 @@ def build_graph(checkpointer=None):
     Build and compile the full agent pipeline.
 
     Args:
-        checkpointer: Optional checkpointer override. If None, uses the
-                      module-level sync SqliteSaver (suitable for CLI/tests).
+        checkpointer: Optional checkpointer override.
+                      If None, defaults to the module-level sync SqliteSaver.
+                      If False, compiles without any checkpointer (stateless).
                       Pass an AsyncSqliteSaver for Streamlit async streaming.
 
     Returns:
         A compiled LangGraph application ready to invoke.
     """
-    if checkpointer is None:
-        checkpointer = _default_checkpointer
+    if checkpointer is False:
+        cp = None
+    elif checkpointer is None:
+        cp = _default_checkpointer
+    else:
+        cp = checkpointer
 
     graph = StateGraph(AgentState)
 
@@ -128,7 +133,7 @@ def build_graph(checkpointer=None):
     # ── Both paths converge here ──────────────────────────────────────────────
     graph.add_edge("answer_generation", END)
 
-    return graph.compile(checkpointer=checkpointer)
+    return graph.compile(checkpointer=cp)
 
 
 # Singleton — import `agent_graph` wherever you need to invoke the pipeline

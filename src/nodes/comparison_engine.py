@@ -78,6 +78,10 @@ def comparison_engine_node(state: AgentState) -> dict:
 
     try:
         comparison_result = parse_llm_json(raw)
+        if isinstance(comparison_result, list):
+            comparison_result = {"properties": comparison_result}
+        elif not isinstance(comparison_result, dict):
+            comparison_result = {"properties": [], "_parse_error": f"Unexpected JSON type: {type(comparison_result)}"}
     except json.JSONDecodeError:
         logger.error("comparison_engine: LLM returned non-JSON output:\n%s", raw)
         comparison_result = {"properties": [], "_parse_error": raw}
