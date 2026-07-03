@@ -246,6 +246,7 @@ if prompt := st.chat_input("Ask about Dubai property…"):
         answer_tokens: list[str] = []
         final_state: list[dict] = [{}]  # mutable container for inner function
         timings: list[float] = [0, 0]  # [t_first_token, t_total]
+        token_count: int = 0
 
         t_start = time.time()
 
@@ -286,6 +287,7 @@ if prompt := st.chat_input("Ask about Dubai property…"):
                                 timings[0] = time.time() - t_start
                                 first_token = False
                             answer_tokens.append(token)
+                            token_count += len(token.split())  # count words as token proxy
                             answer_placeholder.markdown("".join(answer_tokens))
 
                     # ── Node end ──
@@ -352,7 +354,7 @@ if prompt := st.chat_input("Ask about Dubai property…"):
         total_str = f"{timings[1]:.1f}s"
         timing_summary = (
             f'<span style="opacity:0.7;font-size:13px">'
-            f"TTFT: {ttft_str} &nbsp;|&nbsp; Total: {total_str}"
+            f"TTFT: {ttft_str} &nbsp;|&nbsp; Total: {total_str} &nbsp;|&nbsp; Tokens: {token_count}"
             f"</span>"
         )
         thinking_lines.append(

@@ -1,11 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" width="100%" height="100%">
   <defs>
-    <!-- Grid pattern -->
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a1a3a" stroke-width="0.5"/>
     </pattern>
-
-    <!-- Glow filters -->
     <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
       <feGaussianBlur stdDeviation="8" result="blur"/>
       <feFlood flood-color="#00e5ff" flood-opacity="0.6"/>
@@ -48,8 +45,6 @@
       <feComposite in2="blur" operator="in"/>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-
-    <!-- Arrow marker -->
     <marker id="arrow-cyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#00e5ff"/>
     </marker>
@@ -68,8 +63,6 @@
     <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#ff5252"/>
     </marker>
-
-    <!-- Title gradient -->
     <linearGradient id="title-grad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#00e5ff"/>
       <stop offset="50%" stop-color="#448aff"/>
@@ -78,238 +71,236 @@
   </defs>
 
   <!-- Background -->
-  <rect width="1200" height="700" fill="#0a0a14"/>
-  <rect width="1200" height="700" fill="url(#grid)"/>
+  <rect width="1200" height="720" fill="#0a0a14"/>
+  <rect width="1200" height="720" fill="url(#grid)"/>
 
   <!-- Title -->
-  <text x="600" y="48" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="28" font-weight="700" fill="url(#title-grad)" filter="url(#glow-cyan)">🏠 Agentic Property — Architecture</text>
-  <text x="600" y="72" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#6a6a8a">8-node LangGraph pipeline · dual-path routing · MCP-powered DLD data · self-correcting retry loop</text>
+  <text x="600" y="52" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="32" font-weight="700" fill="url(#title-grad)" filter="url(#glow-cyan)">🏠 Agentic Property — Architecture</text>
+  <text x="600" y="80" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="15" fill="#7a7a9a">8-node LangGraph pipeline · dual-path routing · MCP-powered DLD data · self-correcting retry loop</text>
 
   <!-- ═══════════════════════════════════════════════ -->
   <!-- DATA PIPELINE (right side, vertical) -->
   <!-- ═══════════════════════════════════════════════ -->
-  <g transform="translate(920, 100)">
-    <text x="140" y="0" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#6a6a8a" letter-spacing="3">DATA PIPELINE</text>
+  <g transform="translate(930, 105)">
+    <text x="140" y="0" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#8888aa" letter-spacing="3" font-weight="700">DATA PIPELINE</text>
 
-    <!-- Source: Bayut API -->
-    <rect x="60" y="18" width="160" height="40" rx="6" fill="#1a1a30" stroke="#00e5ff" stroke-width="1.5" filter="url(#glow-cyan)" opacity="0.9"/>
-    <text x="140" y="42" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#00e5ff" font-weight="600">🔑 Bayut API</text>
-    <text x="140" y="17" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#00e5ff" opacity="0.6">RapidAPI · Key Rotation</text>
+    <!-- Bayut API -->
+    <rect x="60" y="20" width="160" height="48" rx="8" fill="#1a1a30" stroke="#00e5ff" stroke-width="1.5" filter="url(#glow-cyan)" opacity="0.95"/>
+    <text x="140" y="48" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#00e5ff" font-weight="700">🔑 Bayut API</text>
+    <text x="140" y="18" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#00e5ff" opacity="0.8">RapidAPI · Key Rotation</text>
 
-    <line x1="140" y1="58" x2="140" y2="78" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
+    <line x1="140" y1="68" x2="140" y2="90" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arrow-cyan)"/>
 
     <!-- Scraper -->
-    <rect x="60" y="78" width="160" height="40" rx="6" fill="#1a1a2e" stroke="#448aff" stroke-width="1.5" filter="url(#glow-blue)" opacity="0.9"/>
-    <text x="140" y="102" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#448aff" font-weight="600">⚙️ Scraper</text>
-    <text x="140" y="77" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#448aff" opacity="0.6">Async · 3x Concurrency</text>
+    <rect x="60" y="90" width="160" height="48" rx="8" fill="#1a1a2e" stroke="#448aff" stroke-width="1.5" filter="url(#glow-blue)" opacity="0.95"/>
+    <text x="140" y="118" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#448aff" font-weight="700">⚙️ Scraper</text>
+    <text x="140" y="88" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#448aff" opacity="0.8">Async · 3x Concurrency</text>
 
-    <line x1="140" y1="118" x2="140" y2="138" stroke="#448aff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+    <line x1="140" y1="138" x2="140" y2="160" stroke="#448aff" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
 
-    <!-- SQLite / Postgres -->
-    <rect x="60" y="138" width="160" height="40" rx="6" fill="#1a1a2c" stroke="#ff9100" stroke-width="1.5" filter="url(#glow-orange)" opacity="0.9"/>
-    <text x="140" y="162" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#ff9100" font-weight="600">🗄️ SQLite / Postgres</text>
-    <text x="140" y="137" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#ff9100" opacity="0.6">28K+ Historical · Live Active</text>
+    <!-- DB -->
+    <rect x="60" y="160" width="160" height="48" rx="8" fill="#1a1a2c" stroke="#ff9100" stroke-width="1.5" filter="url(#glow-orange)" opacity="0.95"/>
+    <text x="140" y="188" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#ff9100" font-weight="700">🗄️ SQLite / Postgres</text>
+    <text x="140" y="158" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff9100" opacity="0.8">28K+ Historical · Live Active</text>
 
-    <line x1="140" y1="178" x2="140" y2="198" stroke="#ff9100" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+    <line x1="140" y1="208" x2="140" y2="230" stroke="#ff9100" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
 
-    <!-- FastAPI Data Service -->
-    <rect x="60" y="198" width="160" height="40" rx="6" fill="#1a1a2e" stroke="#00e676" stroke-width="1.5" filter="url(#glow-green)" opacity="0.9"/>
-    <text x="140" y="222" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#00e676" font-weight="600">🚀 FastAPI</text>
-    <text x="140" y="197" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#00e676" opacity="0.6">/search/active · /search/historical</text>
+    <!-- FastAPI -->
+    <rect x="60" y="230" width="160" height="48" rx="8" fill="#1a1a2e" stroke="#00e676" stroke-width="1.5" filter="url(#glow-green)" opacity="0.95"/>
+    <text x="140" y="258" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#00e676" font-weight="700">🚀 FastAPI</text>
+    <text x="140" y="228" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#00e676" opacity="0.8">/search/active · /search/historical</text>
 
-    <line x1="140" y1="238" x2="140" y2="258" stroke="#00e676" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+    <line x1="140" y1="278" x2="140" y2="300" stroke="#00e676" stroke-width="1.5" marker-end="url(#arrow-green)"/>
 
-    <!-- MCP Server -->
-    <rect x="60" y="258" width="160" height="40" rx="6" fill="#1a1a2a" stroke="#e040fb" stroke-width="1.5" filter="url(#glow-purple)" opacity="0.9"/>
-    <text x="140" y="282" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#e040fb" font-weight="600">🔌 MCP Server</text>
-    <text x="140" y="257" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#e040fb" opacity="0.6">FastMCP · 3 Tools</text>
+    <!-- MCP -->
+    <rect x="60" y="300" width="160" height="48" rx="8" fill="#1a1a2a" stroke="#e040fb" stroke-width="1.5" filter="url(#glow-purple)" opacity="0.95"/>
+    <text x="140" y="328" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#e040fb" font-weight="700">🔌 MCP Server</text>
+    <text x="140" y="298" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#e040fb" opacity="0.8">FastMCP · 3 Tools</text>
 
-    <line x1="140" y1="298" x2="140" y2="318" stroke="#e040fb" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
+    <line x1="140" y1="348" x2="140" y2="370" stroke="#e040fb" stroke-width="1.5" marker-end="url(#arrow-purple)"/>
 
-    <!-- LangGraph Agent -->
-    <rect x="60" y="318" width="160" height="40" rx="6" fill="#1a1a2e" stroke="#448aff" stroke-width="1.5" filter="url(#glow-blue)" opacity="0.9"/>
-    <text x="140" y="342" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#448aff" font-weight="600">🤖 LangGraph Agent</text>
-    <text x="140" y="317" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#448aff" opacity="0.6">8 Nodes · Streaming UI</text>
+    <!-- Agent -->
+    <rect x="60" y="370" width="160" height="48" rx="8" fill="#1a1a2e" stroke="#448aff" stroke-width="1.5" filter="url(#glow-blue)" opacity="0.95"/>
+    <text x="140" y="398" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#448aff" font-weight="700">🤖 LangGraph Agent</text>
+    <text x="140" y="368" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#448aff" opacity="0.8">8 Nodes · Streaming UI</text>
   </g>
 
   <!-- ═══════════════════════════════════════════════ -->
-  <!-- AGENT GRAPH (left/center) -->
+  <!-- AGENT GRAPH (left/center) — bigger nodes -->
   <!-- ═══════════════════════════════════════════════ -->
 
-  <!-- NODES -->
-
   <!-- 1. Memory -->
-  <g transform="translate(80, 200)">
-    <rect x="-70" y="-18" width="140" height="36" rx="18" fill="#0d1a3a" stroke="#448aff" stroke-width="2" filter="url(#glow-blue)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#64b5f6" font-weight="700">1 · Memory</text>
+  <g transform="translate(80, 220)">
+    <rect x="-80" y="-22" width="160" height="44" rx="22" fill="#0d1a3a" stroke="#448aff" stroke-width="2.5" filter="url(#glow-blue)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#8cb8ff" font-weight="700">1 · Memory</text>
   </g>
 
   <!-- 2. Query Relevancy -->
-  <g transform="translate(320, 200)">
-    <rect x="-80" y="-18" width="160" height="36" rx="18" fill="#1a1200" stroke="#ff9100" stroke-width="2" filter="url(#glow-orange)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#ffcc80" font-weight="700">2 · Query Relevancy</text>
+  <g transform="translate(330, 220)">
+    <rect x="-95" y="-22" width="190" height="44" rx="22" fill="#1a1200" stroke="#ff9100" stroke-width="2.5" filter="url(#glow-orange)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#ffd699" font-weight="700">2 · Query Relevancy</text>
   </g>
 
   <!-- 3. Query Understanding -->
-  <g transform="translate(560, 200)">
-    <rect x="-90" y="-18" width="180" height="36" rx="18" fill="#1a1200" stroke="#ff9100" stroke-width="2" filter="url(#glow-orange)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#ffcc80" font-weight="700">3 · Query Understanding</text>
+  <g transform="translate(580, 220)">
+    <rect x="-105" y="-22" width="210" height="44" rx="22" fill="#1a1200" stroke="#ff9100" stroke-width="2.5" filter="url(#glow-orange)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#ffd699" font-weight="700">3 · Query Understanding</text>
   </g>
 
   <!-- 4. Query Routing -->
-  <g transform="translate(320, 330)">
-    <rect x="-75" y="-18" width="150" height="36" rx="18" fill="#001a0a" stroke="#00e676" stroke-width="2" filter="url(#glow-green)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#b9f6ca" font-weight="700">4 · Query Routing</text>
+  <g transform="translate(330, 360)">
+    <rect x="-85" y="-22" width="170" height="44" rx="22" fill="#001a0a" stroke="#00e676" stroke-width="2.5" filter="url(#glow-green)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#8fffc0" font-weight="700">4 · Query Routing</text>
   </g>
 
   <!-- 5. Web Search -->
-  <g transform="translate(770, 200)">
-    <rect x="-75" y="-18" width="150" height="36" rx="18" fill="#1a0020" stroke="#e040fb" stroke-width="2" filter="url(#glow-purple)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#ea80fc" font-weight="700">5 · Web Search</text>
-    <text x="0" y="30" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#e040fb" opacity="0.6">sub-graph: rewrite → search → summarize</text>
+  <g transform="translate(800, 220)">
+    <rect x="-90" y="-22" width="180" height="44" rx="22" fill="#1a0020" stroke="#e040fb" stroke-width="2.5" filter="url(#glow-purple)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#f0a0ff" font-weight="700">5 · Web Search</text>
+    <text x="0" y="36" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#e040fb" opacity="0.8">sub-graph: rewrite → search → summarize</text>
   </g>
 
   <!-- 6. Comparison Engine -->
-  <g transform="translate(560, 330)">
-    <rect x="-80" y="-18" width="160" height="36" rx="18" fill="#001a0a" stroke="#00e676" stroke-width="2" filter="url(#glow-green)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#b9f6ca" font-weight="700">6 · Comparison Engine</text>
+  <g transform="translate(580, 360)">
+    <rect x="-95" y="-22" width="190" height="44" rx="22" fill="#001a0a" stroke="#00e676" stroke-width="2.5" filter="url(#glow-green)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#8fffc0" font-weight="700">6 · Comparison Engine</text>
   </g>
 
   <!-- 7. Reflection -->
-  <g transform="translate(320, 460)">
-    <rect x="-65" y="-18" width="130" height="36" rx="18" fill="#1a0000" stroke="#ff5252" stroke-width="2" filter="url(#glow-red)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#ff8a80" font-weight="700">7 · Reflection</text>
+  <g transform="translate(330, 500)">
+    <rect x="-75" y="-22" width="150" height="44" rx="22" fill="#1a0000" stroke="#ff5252" stroke-width="2.5" filter="url(#glow-red)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#ffa0a0" font-weight="700">7 · Reflection</text>
   </g>
 
   <!-- 8. Answer Generation -->
-  <g transform="translate(560, 460)">
-    <rect x="-85" y="-18" width="170" height="36" rx="18" fill="#0d1a3a" stroke="#448aff" stroke-width="2" filter="url(#glow-blue)"/>
-    <text x="0" y="-2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="13" fill="#64b5f6" font-weight="700">8 · Answer Generation</text>
+  <g transform="translate(580, 500)">
+    <rect x="-100" y="-22" width="200" height="44" rx="22" fill="#0d1a3a" stroke="#448aff" stroke-width="2.5" filter="url(#glow-blue)"/>
+    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#8cb8ff" font-weight="700">8 · Answer Generation</text>
   </g>
 
   <!-- START -->
-  <g transform="translate(80, 130)">
-    <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#002020" stroke="#00e5ff" stroke-width="2" filter="url(#glow-cyan)"/>
-    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#00e5ff" font-weight="700">START</text>
+  <g transform="translate(80, 145)">
+    <rect x="-32" y="-16" width="64" height="32" rx="16" fill="#002020" stroke="#00e5ff" stroke-width="2.5" filter="url(#glow-cyan)"/>
+    <text x="0" y="3" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#00e5ff" font-weight="700">START</text>
   </g>
 
   <!-- END (rejection) -->
-  <g transform="translate(320, 130)">
-    <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#200000" stroke="#ff4081" stroke-width="2" filter="url(#glow-pink)"/>
-    <text x="0" y="4" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#ff4081">✕</text>
+  <g transform="translate(330, 145)">
+    <rect x="-32" y="-16" width="64" height="32" rx="16" fill="#200000" stroke="#ff4081" stroke-width="2.5" filter="url(#glow-pink)"/>
+    <text x="0" y="5" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="16" fill="#ff4081">✕</text>
   </g>
 
   <!-- END (success) -->
-  <g transform="translate(560, 560)">
-    <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#002020" stroke="#00e5ff" stroke-width="2" filter="url(#glow-cyan)"/>
-    <text x="0" y="2" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#00e5ff" font-weight="700">END</text>
+  <g transform="translate(580, 600)">
+    <rect x="-32" y="-16" width="64" height="32" rx="16" fill="#002020" stroke="#00e5ff" stroke-width="2.5" filter="url(#glow-cyan)"/>
+    <text x="0" y="3" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#00e5ff" font-weight="700">END</text>
   </g>
 
   <!-- ═══════════════════════════════════════════════ -->
-  <!-- EDGES -->
+  <!-- EDGES — larger, brighter labels -->
   <!-- ═══════════════════════════════════════════════ -->
 
   <!-- START → memory -->
-  <line x1="108" y1="144" x2="80" y2="182" stroke="#00e5ff" stroke-width="1.5" marker-end="url(#arrow-cyan)" opacity="0.8"/>
-  <text x="60" y="170" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#00e5ff" opacity="0.5">query</text>
+  <line x1="112" y1="161" x2="80" y2="198" stroke="#00e5ff" stroke-width="2" marker-end="url(#arrow-cyan)" opacity="0.8"/>
+  <text x="62" y="185" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#00e5ff" opacity="0.75">query</text>
 
   <!-- memory → relevancy -->
-  <line x1="220" y1="200" x2="240" y2="200" stroke="#448aff" stroke-width="1.5" marker-end="url(#arrow-blue)" opacity="0.8"/>
-  <text x="215" y="215" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#448aff" opacity="0.5">property query</text>
+  <line x1="240" y1="220" x2="235" y2="220" stroke="#448aff" stroke-width="2" marker-end="url(#arrow-blue)" opacity="0.8"/>
+  <text x="215" y="240" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#448aff" opacity="0.75">property query</text>
 
-  <!-- memory → answer_generation (short-circuit, curved) -->
-  <path d="M 80 236 C 80 400, 475 360, 475 460" fill="none" stroke="#448aff" stroke-width="1.2" stroke-dasharray="6,3" marker-end="url(#arrow-blue)" opacity="0.6"/>
-  <text x="100" y="350" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#448aff" opacity="0.5">greeting / meta</text>
+  <!-- memory → answer_generation (short-circuit) -->
+  <path d="M 80 264 C 80 430, 480 400, 480 500" fill="none" stroke="#448aff" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arrow-blue)" opacity="0.7"/>
+  <text x="95" y="380" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#448aff" opacity="0.75">greeting / meta</text>
 
-  <!-- relevancy → END (out of scope) -->
-  <line x1="320" y1="182" x2="320" y2="144" stroke="#ff4081" stroke-width="1.5" marker-end="url(#arrow-pink)" opacity="0.8"/>
-  <text x="328" y="160" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#ff4081" opacity="0.5">out of scope</text>
+  <!-- relevancy → END -->
+  <line x1="330" y1="198" x2="330" y2="161" stroke="#ff4081" stroke-width="2" marker-end="url(#arrow-pink)" opacity="0.8"/>
+  <text x="342" y="175" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff4081" opacity="0.75">out of scope</text>
 
   <!-- relevancy → understanding -->
-  <line x1="480" y1="200" x2="470" y2="200" stroke="#ff9100" stroke-width="1.5" marker-end="url(#arrow-orange)" opacity="0.8"/>
-  <text x="460" y="215" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#ff9100" opacity="0.5">relevant</text>
+  <line x1="520" y1="220" x2="475" y2="220" stroke="#ff9100" stroke-width="2" marker-end="url(#arrow-orange)" opacity="0.8"/>
+  <text x="475" y="240" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff9100" opacity="0.75">relevant</text>
 
   <!-- understanding → routing -->
-  <path d="M 500 218 C 500 270, 395 270, 395 312" fill="none" stroke="#ff9100" stroke-width="1.5" marker-end="url(#arrow-green)" opacity="0.8"/>
-  <text x="460" y="280" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#ff9100" opacity="0.5">find properties</text>
+  <path d="M 515 242 C 515 300, 415 300, 415 338" fill="none" stroke="#ff9100" stroke-width="2" marker-end="url(#arrow-green)" opacity="0.8"/>
+  <text x="475" y="315" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff9100" opacity="0.75">find properties</text>
 
   <!-- understanding → web_search -->
-  <line x1="650" y1="200" x2="695" y2="200" stroke="#ff9100" stroke-width="1.5" marker-end="url(#arrow-purple)" opacity="0.8"/>
-  <text x="640" y="215" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#ff9100" opacity="0.5">general question</text>
+  <line x1="685" y1="220" x2="710" y2="220" stroke="#ff9100" stroke-width="2" marker-end="url(#arrow-purple)" opacity="0.8"/>
+  <text x="670" y="240" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff9100" opacity="0.75">general question</text>
 
   <!-- routing → comparison -->
-  <line x1="400" y1="330" x2="480" y2="330" stroke="#00e676" stroke-width="1.5" marker-end="url(#arrow-green)" opacity="0.8"/>
-  <text x="420" y="320" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#00e676" opacity="0.5">has results</text>
+  <line x1="415" y1="360" x2="485" y2="360" stroke="#00e676" stroke-width="2" marker-end="url(#arrow-green)" opacity="0.8"/>
+  <text x="430" y="350" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#00e676" opacity="0.75">has results</text>
 
   <!-- comparison → reflection -->
-  <line x1="560" y1="366" x2="385" y2="442" stroke="#00e676" stroke-width="1.5" marker-end="url(#arrow-red)" opacity="0.8"/>
+  <line x1="580" y1="404" x2="405" y2="478" stroke="#00e676" stroke-width="2" marker-end="url(#arrow-red)" opacity="0.8"/>
 
   <!-- reflection → answer (passed) -->
-  <line x1="370" y1="460" x2="475" y2="460" stroke="#ff5252" stroke-width="1.5" marker-end="url(#arrow-blue)" opacity="0.8"/>
-  <text x="390" y="452" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#ff5252" opacity="0.5">passed ✓</text>
+  <line x1="405" y1="500" x2="480" y2="500" stroke="#ff5252" stroke-width="2" marker-end="url(#arrow-blue)" opacity="0.8"/>
+  <text x="415" y="490" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff5252" opacity="0.75">passed ✓</text>
 
-  <!-- reflection → routing (retry loop, curved) -->
-  <path d="M 320 442 C 250 442, 250 348, 245 348" fill="none" stroke="#ff5252" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrow-green)" opacity="0.6"/>
-  <text x="200" y="395" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#ff5252" opacity="0.5">retry 🔄</text>
+  <!-- reflection → routing (retry loop) -->
+  <path d="M 330 478 C 240 478, 240 382, 245 382" fill="none" stroke="#ff5252" stroke-width="2" stroke-dasharray="8,4" marker-end="url(#arrow-green)" opacity="0.7"/>
+  <text x="185" y="432" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff5252" opacity="0.75">retry 🔄</text>
 
   <!-- web_search → answer -->
-  <path d="M 770 236 C 770 400, 645 400, 645 442" fill="none" stroke="#e040fb" stroke-width="1.5" marker-end="url(#arrow-blue)" opacity="0.8"/>
-  <text x="750" y="350" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#e040fb" opacity="0.5">always</text>
+  <path d="M 800 264 C 800 430, 680 430, 680 478" fill="none" stroke="#e040fb" stroke-width="2" marker-end="url(#arrow-blue)" opacity="0.8"/>
+  <text x="770" y="380" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#e040fb" opacity="0.75">always</text>
 
-  <!-- routing → web_search (no results fallback) -->
-  <path d="M 395 366 C 395 430, 770 250, 770 236" fill="none" stroke="#00e676" stroke-width="1.2" stroke-dasharray="6,3" marker-end="url(#arrow-purple)" opacity="0.5"/>
-  <text x="550" y="310" font-family="'Segoe UI',system-ui,sans-serif" font-size="8" fill="#00e676" opacity="0.5">no results → fallback</text>
+  <!-- routing → web_search (fallback) -->
+  <path d="M 415 404 C 415 460, 800 270, 800 264" fill="none" stroke="#00e676" stroke-width="1.5" stroke-dasharray="8,4" marker-end="url(#arrow-purple)" opacity="0.6"/>
+  <text x="570" y="350" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#00e676" opacity="0.75">no results → fallback</text>
 
   <!-- answer → END -->
-  <line x1="560" y1="496" x2="560" y2="546" stroke="#448aff" stroke-width="1.5" marker-end="url(#arrow-cyan)" opacity="0.8"/>
+  <line x1="580" y1="544" x2="580" y2="584" stroke="#448aff" stroke-width="2" marker-end="url(#arrow-cyan)" opacity="0.8"/>
 
   <!-- ═══════════════════════════════════════════════ -->
   <!-- LEGEND -->
   <!-- ═══════════════════════════════════════════════ -->
-  <g transform="translate(80, 560)">
-    <text x="0" y="0" font-family="'Segoe UI',system-ui,sans-serif" font-size="10" fill="#6a6a8a" letter-spacing="2">LEGEND</text>
+  <g transform="translate(80, 585)">
+    <text x="0" y="0" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#8888aa" letter-spacing="3" font-weight="700">LEGEND</text>
 
-    <rect x="0" y="10" width="10" height="10" rx="2" fill="#448aff" filter="url(#glow-blue)"/>
-    <text x="16" y="19" font-family="'Segoe UI',system-ui,sans-serif" font-size="10" fill="#8a8aaa">Entry / Answer</text>
+    <rect x="0" y="12" width="12" height="12" rx="3" fill="#448aff" filter="url(#glow-blue)"/>
+    <text x="18" y="23" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#aaaacc">Entry / Answer</text>
 
-    <rect x="120" y="10" width="10" height="10" rx="2" fill="#ff9100" filter="url(#glow-orange)"/>
-    <text x="136" y="19" font-family="'Segoe UI',system-ui,sans-serif" font-size="10" fill="#8a8aaa">Analysis / Intent</text>
+    <rect x="140" y="12" width="12" height="12" rx="3" fill="#ff9100" filter="url(#glow-orange)"/>
+    <text x="158" y="23" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#aaaacc">Analysis / Intent</text>
 
-    <rect x="250" y="10" width="10" height="10" rx="2" fill="#00e676" filter="url(#glow-green)"/>
-    <text x="266" y="19" font-family="'Segoe UI',system-ui,sans-serif" font-size="10" fill="#8a8aaa">Data / Scoring</text>
+    <rect x="290" y="12" width="12" height="12" rx="3" fill="#00e676" filter="url(#glow-green)"/>
+    <text x="308" y="23" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#aaaacc">Data / Scoring</text>
 
-    <rect x="370" y="10" width="10" height="10" rx="2" fill="#e040fb" filter="url(#glow-purple)"/>
-    <text x="386" y="19" font-family="'Segoe UI',system-ui,sans-serif" font-size="10" fill="#8a8aaa">Web Search</text>
+    <rect x="430" y="12" width="12" height="12" rx="3" fill="#e040fb" filter="url(#glow-purple)"/>
+    <text x="448" y="23" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#aaaacc">Web Search</text>
 
-    <rect x="480" y="10" width="10" height="10" rx="2" fill="#ff5252" filter="url(#glow-red)"/>
-    <text x="496" y="19" font-family="'Segoe UI',system-ui,sans-serif" font-size="10" fill="#8a8aaa">Quality Audit</text>
+    <rect x="550" y="12" width="12" height="12" rx="3" fill="#ff5252" filter="url(#glow-red)"/>
+    <text x="568" y="23" font-family="'Segoe UI',system-ui,sans-serif" font-size="12" fill="#aaaacc">Quality Audit</text>
   </g>
 
-  <!-- Stats bar at bottom -->
-  <g transform="translate(0, 645)">
-    <rect x="0" y="0" width="1200" height="55" fill="#0d0d1a" opacity="0.95"/>
+  <!-- Stats bar -->
+  <g transform="translate(0, 660)">
+    <rect x="0" y="0" width="1200" height="60" fill="#0d0d1a" opacity="0.97"/>
 
-    <text x="120" y="35" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#448aff" font-weight="600">8 Nodes</text>
-    <text x="120" y="50" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#6a6a8a">LangGraph Pipeline</text>
-    <line x1="200" y1="12" x2="200" y2="43" stroke="#1a1a3a" stroke-width="1"/>
+    <text x="120" y="40" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#448aff" font-weight="700">8 Nodes</text>
+    <text x="120" y="55" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#7a7a9a">LangGraph Pipeline</text>
+    <line x1="200" y1="15" x2="200" y2="45" stroke="#1a1a3a" stroke-width="1"/>
 
-    <text x="340" y="35" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#00e676" font-weight="600">Dual-Path</text>
-    <text x="340" y="50" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#6a6a8a">Property + Web Search</text>
-    <line x1="420" y1="12" x2="420" y2="43" stroke="#1a1a3a" stroke-width="1"/>
+    <text x="340" y="40" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#00e676" font-weight="700">Dual-Path</text>
+    <text x="340" y="55" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#7a7a9a">Property + Web Search</text>
+    <line x1="420" y1="15" x2="420" y2="45" stroke="#1a1a3a" stroke-width="1"/>
 
-    <text x="560" y="35" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff5252" font-weight="600">Self-Correcting</text>
-    <text x="560" y="50" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#6a6a8a">Reflection → Retry Loop</text>
-    <line x1="640" y1="12" x2="640" y2="43" stroke="#1a1a3a" stroke-width="1"/>
+    <text x="560" y="40" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#ff5252" font-weight="700">Self-Correcting</text>
+    <text x="560" y="55" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#7a7a9a">Reflection → Retry Loop</text>
+    <line x1="640" y1="15" x2="640" y2="45" stroke="#1a1a3a" stroke-width="1"/>
 
-    <text x="780" y="35" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#ff9100" font-weight="600">Multi-Currency</text>
-    <text x="780" y="50" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#6a6a8a">Real-time FX to AED</text>
-    <line x1="860" y1="12" x2="860" y2="43" stroke="#1a1a3a" stroke-width="1"/>
+    <text x="780" y="40" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#ff9100" font-weight="700">Multi-Currency</text>
+    <text x="780" y="55" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#7a7a9a">Real-time FX to AED</text>
+    <line x1="860" y1="15" x2="860" y2="45" stroke="#1a1a3a" stroke-width="1"/>
 
-    <text x="1000" y="35" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#e040fb" font-weight="600">Multi-Provider LLM</text>
-    <text x="1000" y="50" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#6a6a8a">Groq / Ollama / vLLM / Custom</text>
-    <line x1="1080" y1="12" x2="1080" y2="43" stroke="#1a1a3a" stroke-width="1"/>
+    <text x="1000" y="40" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#e040fb" font-weight="700">Multi-Provider LLM</text>
+    <text x="1000" y="55" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#7a7a9a">Groq / Ollama / vLLM / Custom</text>
+    <line x1="1080" y1="15" x2="1080" y2="45" stroke="#1a1a3a" stroke-width="1"/>
 
-    <text x="1150" y="35" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#00e5ff" font-weight="600">Streamlit UI</text>
-    <text x="1150" y="50" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="9" fill="#6a6a8a">Token-by-Token Streaming</text>
+    <text x="1150" y="40" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="14" fill="#00e5ff" font-weight="700">Streamlit UI</text>
+    <text x="1150" y="55" text-anchor="middle" font-family="'Segoe UI',system-ui,sans-serif" font-size="11" fill="#7a7a9a">Token-by-Token Streaming</text>
   </g>
 </svg>

@@ -2,12 +2,19 @@ import os
 import sys
 import time
 import logging
+from pathlib import Path
+
+# Ensure project root is on sys.path so absolute imports work when run as __main__
+_PROJECT_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy import UniqueConstraint
-from .database import SessionLocal, engine
-from .db_tables import HistoricalListing, ActiveListing, Base
+from src.data_service.database import SessionLocal, engine
+from src.data_service.db_tables import HistoricalListing, ActiveListing, Base
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
