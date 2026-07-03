@@ -758,12 +758,8 @@
     "id": "S044",
     "query": "",
     "expected": {
-      "is_relevant": false,
-      "route": null,
-      "final_answer_contains": [
-        "question",
-        "ask"
-      ]
+      "is_relevant": true,
+      "route": "memory_greeting"
     },
     "tags": [
       "empty_query",

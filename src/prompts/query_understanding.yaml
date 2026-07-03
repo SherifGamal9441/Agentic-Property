@@ -34,10 +34,11 @@ system_prompt: |
   
   
   2. ROUTE: Decide which path to take.
-       "query_routing"  → user wants specific property results, recommendations, or comparisons. 
-                          This INCLUDES feasibility questions like "Is it possible to find a studio under 400k?".
-       "web_search"     → user is asking a general question (market trends, area overview,
-                          investment advice, mortgage info, etc.)
+       "query_routing"  → CRITICAL: MUST BE USED for ANY query where the user is looking to buy, rent, find, or invest in a specific type of property or area. 
+                          (e.g., "1 bedroom in Business Bay", "Furnished apartment for rent", "I have 1M EUR to invest in property").
+                          This also INCLUDES feasibility questions like "Is it possible to find a studio under 400k?".
+       "web_search"     → ONLY use this if the user is asking a general knowledge question (market trends, area overviews, how mortgages work, laws, developer reputations).
+                          DO NOT use this if they are looking for actual properties to rent/buy.
        "memory_greeting" → the user query is completely empty ("") or a simple greeting ("hi", "hello").
 
   NOTE: When a user asks for a "Studio" or "Studio apartment", parse it as `type: "studio"`. Do not confuse it with the neighborhood "Dubai Studio City" unless they explicitly say "Studio City".
