@@ -7,9 +7,9 @@
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --text: #c8c8d4;
+    --bg: #06060f;
+    --surface: #0d0d1a;
+    --text: #c0c0d0;
     --cyan: #00e5ff;
     --blue: #448aff;
     --orange: #ff9100;
@@ -17,7 +17,7 @@
     --purple: #e040fb;
     --pink: #ff4081;
     --red: #ff5252;
-    --border: #1e1e2e;
+    --border: #1a1a30;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -31,25 +31,56 @@
     overflow: hidden;
   }
 
-  /* ── Glow keyframes ─────────────────────────── */
-  @keyframes pulse-cyan { 0%,100% { box-shadow: 0 0 12px #00e5ff44, 0 0 24px #00e5ff22; } 50% { box-shadow: 0 0 20px #00e5ff66, 0 0 40px #00e5ff33; } }
-  @keyframes pulse-pink { 0%,100% { box-shadow: 0 0 12px #ff408144, 0 0 24px #ff408122; } 50% { box-shadow: 0 0 20px #ff408166, 0 0 40px #ff408133; } }
-  @keyframes pulse-blue { 0%,100% { box-shadow: 0 0 12px #448aff44, 0 0 24px #448aff22; } 50% { box-shadow: 0 0 20px #448aff66, 0 0 40px #448aff33; } }
-  @keyframes pulse-orange { 0%,100% { box-shadow: 0 0 12px #ff910044, 0 0 24px #ff910022; } 50% { box-shadow: 0 0 20px #ff910066, 0 0 40px #ff910033; } }
-  @keyframes pulse-green { 0%,100% { box-shadow: 0 0 12px #00e67644, 0 0 24px #00e67622; } 50% { box-shadow: 0 0 20px #00e67666, 0 0 40px #00e67633; } }
-  @keyframes pulse-purple { 0%,100% { box-shadow: 0 0 12px #e040fb44, 0 0 24px #e040fb22; } 50% { box-shadow: 0 0 20px #e040fb66, 0 0 40px #e040fb33; } }
-  @keyframes pulse-red { 0%,100% { box-shadow: 0 0 12px #ff525244, 0 0 24px #ff525222; } 50% { box-shadow: 0 0 20px #ff525266, 0 0 40px #ff525233; } }
+  /* ── Animated BG particles ──────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, #448aff44, transparent),
+      radial-gradient(1px 1px at 40% 70%, #00e5ff33, transparent),
+      radial-gradient(1px 1px at 60% 20%, #e040fb33, transparent),
+      radial-gradient(1px 1px at 80% 50%, #ff910033, transparent),
+      radial-gradient(1px 1px at 10% 80%, #00e67622, transparent),
+      radial-gradient(2px 2px at 50% 50%, #ff525222, transparent),
+      radial-gradient(1px 1px at 70% 90%, #448aff33, transparent),
+      radial-gradient(1px 1px at 30% 10%, #e040fb22, transparent);
+    animation: particle-drift 30s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  @keyframes particle-drift {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-20px, 10px); }
+    50% { transform: translate(10px, -15px); }
+    75% { transform: translate(-5px, 20px); }
+    100% { transform: translate(0, 0); }
+  }
+
+  /* ── Scanline overlay ───────────────────────── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, #00000008 2px, #00000008 4px);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Glow animations ─────────────────────────── */
+  @keyframes pulse-cyan { 0%,100% { box-shadow: 0 0 12px #00e5ff44, 0 0 24px #00e5ff22, 0 0 48px #00e5ff11; } 50% { box-shadow: 0 0 20px #00e5ff66, 0 0 40px #00e5ff33, 0 0 80px #00e5ff18; } }
+  @keyframes pulse-blue { 0%,100% { box-shadow: 0 0 12px #448aff44, 0 0 24px #448aff22, 0 0 48px #448aff11; } 50% { box-shadow: 0 0 20px #448aff66, 0 0 40px #448aff33, 0 0 80px #448aff18; } }
+  @keyframes pulse-orange { 0%,100% { box-shadow: 0 0 12px #ff910044, 0 0 24px #ff910022, 0 0 48px #ff910011; } 50% { box-shadow: 0 0 20px #ff910066, 0 0 40px #ff910033, 0 0 80px #ff910018; } }
+  @keyframes pulse-green { 0%,100% { box-shadow: 0 0 12px #00e67644, 0 0 24px #00e67622, 0 0 48px #00e67611; } 50% { box-shadow: 0 0 20px #00e67666, 0 0 40px #00e67633, 0 0 80px #00e67618; } }
+  @keyframes pulse-purple { 0%,100% { box-shadow: 0 0 12px #e040fb44, 0 0 24px #e040fb22, 0 0 48px #e040fb11; } 50% { box-shadow: 0 0 20px #e040fb66, 0 0 40px #e040fb33, 0 0 80px #e040fb18; } }
+  @keyframes pulse-red { 0%,100% { box-shadow: 0 0 12px #ff525244, 0 0 24px #ff525222, 0 0 48px #ff525211; } 50% { box-shadow: 0 0 20px #ff525266, 0 0 40px #ff525233, 0 0 80px #ff525218; } }
 
   /* ── Sidebar ─────────────────────────────────── */
   #sidebar {
-    width: 340px;
-    min-width: 340px;
+    width: 340px; min-width: 340px;
     background: var(--surface);
     border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    padding: 0;
+    display: flex; flex-direction: column;
+    overflow-y: auto; padding: 0;
+    position: relative; z-index: 2;
   }
 
   #sidebar-header {
@@ -57,63 +88,35 @@
     border-bottom: 1px solid var(--border);
   }
   #sidebar-header h1 {
-    font-size: 20px;
-    font-weight: 700;
+    font-size: 20px; font-weight: 700;
     color: #fff;
-    text-shadow: 0 0 20px #00e5ff44;
+    text-shadow: 0 0 20px #00e5ff44, 0 0 40px #00e5ff22;
   }
-  #sidebar-header p {
-    font-size: 13px;
-    color: #6a6a7a;
-    margin-top: 4px;
-  }
+  #sidebar-header p { font-size: 13px; color: #5a5a7a; margin-top: 4px; }
 
-  #node-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
-  }
+  #node-list { flex: 1; overflow-y: auto; padding: 8px 0; }
 
   .node-card {
-    margin: 4px 12px;
-    padding: 12px 16px;
-    border-radius: 8px;
-    cursor: pointer;
+    margin: 4px 12px; padding: 12px 16px;
+    border-radius: 8px; cursor: pointer;
     border: 1px solid transparent;
     transition: all 0.2s ease;
   }
-  .node-card:hover {
-    border-color: var(--border);
-    background: #1a1a24;
-  }
+  .node-card:hover { border-color: var(--border); background: #151525; }
   .node-card.active {
     border-color: var(--cyan);
-    background: #0d1a20;
-    box-shadow: 0 0 16px #00e5ff22;
+    background: #0a1820;
     animation: pulse-cyan 3s ease-in-out infinite;
   }
 
   .node-card .node-index {
-    display: inline-block;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    text-align: center;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 22px;
-    margin-right: 8px;
-    color: #fff;
+    display: inline-block; width: 22px; height: 22px;
+    border-radius: 50%; text-align: center;
+    font-size: 11px; font-weight: 700; line-height: 22px;
+    margin-right: 8px; color: #fff;
   }
-  .node-card .node-name {
-    font-weight: 600;
-    font-size: 14px;
-  }
-  .node-card .node-route {
-    font-size: 11px;
-    color: #6a6a7a;
-    margin-top: 4px;
-    line-height: 1.5;
-  }
+  .node-card .node-name { font-weight: 600; font-size: 14px; }
+  .node-card .node-route { font-size: 11px; color: #5a5a7a; margin-top: 4px; line-height: 1.5; }
 
   .color-memory { background: var(--blue); }
   .color-relevancy, .color-understanding { background: var(--orange); color: #000 !important; }
@@ -124,117 +127,53 @@
 
   /* ── Detail panel ────────────────────────────── */
   #detail-panel {
-    padding: 16px 24px;
-    border-top: 1px solid var(--border);
-    min-height: 180px;
-    max-height: 300px;
-    overflow-y: auto;
+    padding: 16px 24px; border-top: 1px solid var(--border);
+    min-height: 180px; max-height: 300px; overflow-y: auto;
   }
-  #detail-panel h3 {
-    font-size: 16px;
-    color: #fff;
-    margin-bottom: 4px;
-  }
-  #detail-panel .detail-index {
-    font-size: 12px;
-    color: var(--cyan);
-    margin-bottom: 8px;
-  }
-  #detail-panel .detail-desc {
-    font-size: 13px;
-    line-height: 1.6;
-    color: #9a9aac;
-  }
-  #detail-panel .detail-reads, #detail-panel .detail-writes {
-    margin-top: 10px;
-    font-size: 12px;
-  }
-  #detail-panel .detail-reads strong, #detail-panel .detail-writes strong {
-    color: var(--orange);
-  }
+  #detail-panel h3 { font-size: 16px; color: #fff; margin-bottom: 4px; }
+  #detail-panel .detail-index { font-size: 12px; color: var(--cyan); margin-bottom: 8px; }
+  #detail-panel .detail-desc { font-size: 13px; line-height: 1.6; color: #8a8aaa; }
+  #detail-panel .detail-reads, #detail-panel .detail-writes { margin-top: 10px; font-size: 12px; }
+  #detail-panel .detail-reads strong, #detail-panel .detail-writes strong { color: var(--orange); }
   #detail-panel code {
-    font-family: 'Consolas', 'JetBrains Mono', monospace;
-    font-size: 11px;
-    background: #1a1a24;
-    padding: 1px 5px;
-    border-radius: 3px;
-    color: var(--green);
+    font-family: 'Consolas','JetBrains Mono',monospace; font-size: 11px;
+    background: #151525; padding: 1px 5px; border-radius: 3px; color: var(--green);
   }
-  #detail-hint {
-    font-size: 12px;
-    color: #4a4a5a;
-    text-align: center;
-    padding: 32px 0;
-  }
+  #detail-hint { font-size: 12px; color: #3a3a5a; text-align: center; padding: 32px 0; }
 
   /* ── Main graph area ─────────────────────────── */
-  #graph-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
+  #graph-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 2; }
 
   #toolbar {
-    padding: 8px 16px;
-    background: var(--surface);
+    padding: 8px 16px; background: var(--surface);
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
   }
   #toolbar button {
-    background: #1a1a24;
-    color: var(--text);
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
+    background: #151525; color: var(--text);
+    border: 1px solid var(--border); padding: 6px 12px;
+    border-radius: 6px; cursor: pointer; font-size: 13px;
     transition: all 0.15s;
   }
   #toolbar button:hover {
-    background: #22223a;
-    border-color: var(--cyan);
+    background: #1e1e35; border-color: var(--cyan);
     box-shadow: 0 0 8px #00e5ff22;
   }
   #toolbar .legend-dot {
-    display: inline-block;
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    margin-right: 4px;
-    box-shadow: 0 0 6px currentColor;
+    display: inline-block; width: 10px; height: 10px;
+    border-radius: 50%; margin-right: 4px;
+    box-shadow: 0 0 8px currentColor;
   }
-  .legend-item {
-    font-size: 12px;
-    color: #6a6a7a;
-    margin-left: 12px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
+  .legend-item { font-size: 12px; color: #5a5a7a; margin-left: 12px; display: flex; align-items: center; gap: 4px; }
   .spacer { flex: 1; }
 
   #mermaid-wrapper {
-    flex: 1;
-    overflow: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex: 1; overflow: auto;
+    display: flex; align-items: center; justify-content: center;
     padding: 16px;
   }
-  #mermaid-output {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #mermaid-output svg {
-    max-width: 100%;
-    max-height: 100%;
-  }
+  #mermaid-output { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  #mermaid-output svg { max-width: 100%; max-height: 100%; }
 
   /* ── Responsive ──────────────────────────────── */
   @media (max-width: 768px) {
@@ -245,8 +184,6 @@
 </style>
 </head>
 <body>
-
-<!-- Sidebar -->
 <div id="sidebar">
   <div id="sidebar-header">
     <h1>🏠 Agentic Property</h1>
@@ -258,7 +195,6 @@
   </div>
 </div>
 
-<!-- Graph -->
 <div id="graph-container">
   <div id="toolbar">
     <button onclick="resetZoom()">🔍 Reset</button>
@@ -277,99 +213,41 @@
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════
-// Node data
-// ═══════════════════════════════════════════════════
-const nodes = [{
-  id: "memory", index: 1, name: "Memory",
-  colorClass: "color-memory", color: "#448aff",
-  glow: "pulse-blue",
-  reads: "conversation_history, query",
-  writes: "conversation_context, route",
-  desc: "Runs first. Builds conversation context from chat history and classifies every query: greeting, meta-question, or property query. Greetings and meta-questions short-circuit directly to answer_generation — skipping the entire property pipeline.",
-  routes: [
-    { label: "greeting / meta question", to: "answer_generation" },
-    { label: "property query", to: "query_relevancy" }
-  ]
-},{
-  id: "query_relevancy", index: 2, name: "Query Relevancy",
-  colorClass: "color-relevancy", color: "#ff9100",
-  glow: "pulse-orange",
-  reads: "query, conversation_context",
-  writes: "is_relevant, final_answer (when rejected)",
-  desc: "First gate in the pipeline. Two hard checks: (1) Is the question about Dubai? (2) Is it about real estate? If either fails, the graph ends immediately with a warm rejection message. Fail-safe: defaults to 'allow' on parse failure so valid users aren't blocked.",
-  routes: [
-    { label: "out of scope ❌", to: "END" },
-    { label: "relevant ✓", to: "query_understanding" }
-  ]
-},{
-  id: "query_understanding", index: 3, name: "Query Understanding",
-  colorClass: "color-understanding", color: "#ff9100",
-  glow: "pulse-orange",
-  reads: "query, conversation_context",
-  writes: "parsed_query, route",
-  desc: "Two responsibilities in one LLM call: (1) Parse user intent into structured criteria — location, budget, bedrooms, amenities, property type, currency. (2) Decide the route: query_routing for property searches, web_search for general questions about Dubai real estate.",
-  routes: [
-    { label: "find properties", to: "query_routing" },
-    { label: "general question", to: "web_search" }
-  ]
-},{
-  id: "query_routing", index: 4, name: "Query Routing",
-  colorClass: "color-routing", color: "#00e676",
-  glow: "pulse-green",
-  reads: "parsed_query, retry_count",
-  writes: "retrieved_properties, data_source, data_intent, currency, exchange_rate",
-  desc: "Fetches properties from the DLD (Dubai Land Department) MCP server. Two-tier strategy: Tier 1 — active listings (data_intent='recommend'). Tier 2 — historical transactions (data_intent='insights_only'). Handles currency conversion to AED. Falls back to web_search when both tiers return empty.",
-  routes: [
-    { label: "has results", to: "comparison_engine" },
-    { label: "no results → fallback", to: "web_search" }
-  ]
-},{
-  id: "web_search", index: 5, name: "Web Search",
-  colorClass: "color-web", color: "#e040fb",
-  glow: "pulse-purple",
-  reads: "query, parsed_query",
-  writes: "web_search_query, web_search_results, web_search_summary",
-  desc: "Sub-graph (internal StateGraph). Searches the web via DuckDuckGo for Dubai real estate information, then summarizes results with an LLM. Used both as a primary path (general questions) and as a fallback when query_routing returns no matching properties.",
-  routes: [
-    { label: "always", to: "answer_generation" }
-  ]
-},{
-  id: "comparison_engine", index: 6, name: "Comparison Engine",
-  colorClass: "color-comparison", color: "#00e676",
-  glow: "pulse-green",
-  reads: "retrieved_properties, parsed_query, data_intent",
-  writes: "comparison_result",
-  desc: "Scores every retrieved property against the user's criteria. Outputs per-property: fit_score (0.0–1.0), matched_criteria, unmatched_criteria, and price_assessment (below_market / fair / above_market). When data_intent='insights_only', operates in market analysis mode.",
-  routes: [
-    { label: "always", to: "reflection" }
-  ]
-},{
-  id: "reflection", index: 7, name: "Reflection",
-  colorClass: "color-reflection", color: "#ff5252",
-  glow: "pulse-red",
-  reads: "comparison_result, retry_count",
-  writes: "reflection_output, needs_retry, retry_count",
-  desc: "Quality audit node. Audits the comparison engine's output — not the raw data or user intent. Asks: is this comparison accurate, complete, and internally consistent? If the audit fails and retries remain (max_retries, default 3), routes back to query_routing to try the next tool tier.",
-  routes: [
-    { label: "passed ✓", to: "answer_generation" },
-    { label: "needs retry 🔄", to: "query_routing" }
-  ]
-},{
-  id: "answer_generation", index: 8, name: "Answer Generation",
-  colorClass: "color-answer", color: "#448aff",
-  glow: "pulse-blue",
-  reads: "comparison_result, reflection_output, web_search_summary, query, data_intent, currency",
-  writes: "final_answer, conversation_history",
-  desc: "Single convergence point for ALL paths. Inspects state and generates the right response: property recommendations (with fit scores), market insights (price ranges, trends), general Q&A, or warm greetings. The Streamlit UI and CLI always read final_answer — one field, every path.",
-  routes: [
-    { label: "always", to: "END" }
-  ]
-}];
+const nodes = [
+  { id:"memory", index:1, name:"Memory", colorClass:"color-memory", color:"#448aff", glow:"pulse-blue",
+    reads:"conversation_history, query", writes:"conversation_context, route",
+    desc:"Runs first. Builds conversation context from chat history and classifies every query: greeting, meta-question, or property query. Greetings and meta-questions short-circuit directly to answer_generation — skipping the entire property pipeline.",
+    routes:[{label:"greeting / meta question",to:"answer_generation"},{label:"property query",to:"query_relevancy"}] },
+  { id:"query_relevancy", index:2, name:"Query Relevancy", colorClass:"color-relevancy", color:"#ff9100", glow:"pulse-orange",
+    reads:"query, conversation_context", writes:"is_relevant, final_answer (when rejected)",
+    desc:"First gate. Two hard checks: (1) Is it about Dubai? (2) Is it about real estate? Rejects out-of-scope queries immediately. Fail-safe: defaults to 'allow' on parse failure — never blocks a valid user.",
+    routes:[{label:"out of scope ❌",to:"END"},{label:"relevant ✓",to:"query_understanding"}] },
+  { id:"query_understanding", index:3, name:"Query Understanding", colorClass:"color-understanding", color:"#ff9100", glow:"pulse-orange",
+    reads:"query, conversation_context", writes:"parsed_query, route",
+    desc:"Two responsibilities in one LLM call: (1) Parse user intent into structured criteria — location, budget, bedrooms, amenities, property type, currency. (2) Decide route: query_routing for property searches, web_search for general Q&A. Handles thinking-model output (strips <think> tags), retries on empty responses.",
+    routes:[{label:"find properties",to:"query_routing"},{label:"general question",to:"web_search"}] },
+  { id:"query_routing", index:4, name:"Query Routing", colorClass:"color-routing", color:"#00e676", glow:"pulse-green",
+    reads:"parsed_query, retry_count", writes:"retrieved_properties, data_source, data_intent, currency, exchange_rate",
+    desc:"Fetches properties from DLD MCP server. Two-tier strategy: Tier 1 — active listings (data_intent='recommend'). Tier 2 — historical transactions (data_intent='insights_only'). Converts non-AED currencies via exchangerate.host before querying. Falls back to web_search when both tiers return empty.",
+    routes:[{label:"has results",to:"comparison_engine"},{label:"no results → fallback",to:"web_search"}] },
+  { id:"web_search", index:5, name:"Web Search", colorClass:"color-web", color:"#e040fb", glow:"pulse-purple",
+    reads:"query, parsed_query", writes:"web_search_query, web_search_results, web_search_summary",
+    desc:"Sub-graph (3 internal nodes): query rewriting → DuckDuckGo search (with Tavily fallback) → LLM summarization. Used as primary path for general questions AND as fallback when no properties match.",
+    routes:[{label:"always",to:"answer_generation"}] },
+  { id:"comparison_engine", index:6, name:"Comparison Engine", colorClass:"color-comparison", color:"#00e676", glow:"pulse-green",
+    reads:"retrieved_properties, parsed_query, data_intent", writes:"comparison_result",
+    desc:"Scores every retrieved property against user criteria. Outputs per-property: fit_score (0.0–1.0), matched/unmatched criteria, and price_assessment (below_market/fair/above_market). Caps at 5 properties for small-model reliability. Operates in insights-only mode when data is historical.",
+    routes:[{label:"always",to:"reflection"}] },
+  { id:"reflection", index:7, name:"Reflection", colorClass:"color-reflection", color:"#ff5252", glow:"pulse-red",
+    reads:"comparison_result, retry_count", writes:"reflection_output, needs_retry, retry_count",
+    desc:"Quality auditor. Audits comparison engine output — not raw data, not user intent. If audit fails and retries remain (max 3), routes BACK to query_routing to try next tool tier. Self-correcting loop: this is what makes the agent agentic.",
+    routes:[{label:"passed ✓",to:"answer_generation"},{label:"needs retry 🔄",to:"query_routing"}] },
+  { id:"answer_generation", index:8, name:"Answer Generation", colorClass:"color-answer", color:"#448aff", glow:"pulse-blue",
+    reads:"comparison_result, reflection_output, web_search_summary, query, data_intent, currency", writes:"final_answer, conversation_history",
+    desc:"Single convergence point for ALL paths — 5 distinct prompt templates, 1 node. Generates: property recommendations (fit scores + reasoning), market insights (price ranges, trends), general Q&A, warm greetings, meta-question answers. UI and CLI always read final_answer.",
+    routes:[{label:"always",to:"END"}] }
+];
 
-// ═══════════════════════════════════════════════════
-// Mermaid diagram — NEON palette
-// ═══════════════════════════════════════════════════
 const mermaidDef = `
 flowchart TD
     START((<span style="color:#00e5ff">START</span>)) --> memory
@@ -395,126 +273,74 @@ flowchart TD
 
     style START fill:#00e5ff,color:#000,stroke:#00b8d4,stroke-width:2px
     style END fill:#ff4081,color:#fff,stroke:#f50057,stroke-width:2px
-    style memory fill:#1a237e,color:#64b5f6,stroke:#448aff,stroke-width:2px
-    style query_relevancy fill:#3e2723,color:#ffcc80,stroke:#ff9100,stroke-width:2px
-    style query_understanding fill:#3e2723,color:#ffcc80,stroke:#ff9100,stroke-width:2px
-    style query_routing fill:#1b5e20,color:#b9f6ca,stroke:#00e676,stroke-width:2px
-    style web_search fill:#4a148c,color:#ea80fc,stroke:#e040fb,stroke-width:2px
-    style comparison_engine fill:#1b5e20,color:#b9f6ca,stroke:#00e676,stroke-width:2px
-    style reflection fill:#b71c1c,color:#ff8a80,stroke:#ff5252,stroke-width:2px
-    style answer_generation fill:#1a237e,color:#64b5f6,stroke:#448aff,stroke-width:2px
+    style memory fill:#0d1a3a,color:#64b5f6,stroke:#448aff,stroke-width:2px
+    style query_relevancy fill:#1a1200,color:#ffcc80,stroke:#ff9100,stroke-width:2px
+    style query_understanding fill:#1a1200,color:#ffcc80,stroke:#ff9100,stroke-width:2px
+    style query_routing fill:#001a0a,color:#b9f6ca,stroke:#00e676,stroke-width:2px
+    style web_search fill:#1a0020,color:#ea80fc,stroke:#e040fb,stroke-width:2px
+    style comparison_engine fill:#001a0a,color:#b9f6ca,stroke:#00e676,stroke-width:2px
+    style reflection fill:#1a0000,color:#ff8a80,stroke:#ff5252,stroke-width:2px
+    style answer_generation fill:#0d1a3a,color:#64b5f6,stroke:#448aff,stroke-width:2px
 `;
 
-// ═══════════════════════════════════════════════════
-// Sidebar population
-// ═══════════════════════════════════════════════════
-const nodeListEl = document.getElementById('node-list');
-nodes.forEach(n => {
-  const div = document.createElement('div');
-  div.className = 'node-card';
-  div.setAttribute('data-node-id', n.id);
-  div.onclick = () => selectNode(n.id);
-  div.innerHTML =
-    `<span class="node-index ${n.colorClass}">${n.index}</span>` +
-    `<span class="node-name">${n.name}</span>` +
-    `<div class="node-route">${n.routes.map(r => r.label + ' → ' + r.to).join('<br>')}</div>`;
-  nodeListEl.appendChild(div);
-});
-
-// ═══════════════════════════════════════════════════
-// Mermaid render
-// ═══════════════════════════════════════════════════
 mermaid.initialize({
-  startOnLoad: true,
-  theme: 'dark',
-  flowchart: {
-    useMaxWidth: true, htmlLabels: true,
-    curve: 'basis', padding: 20,
-    nodeSpacing: 50, rankSpacing: 60,
-  },
-  securityLevel: 'loose',
+  startOnLoad:true, theme:'dark',
+  flowchart:{ useMaxWidth:true, htmlLabels:true, curve:'basis', padding:20, nodeSpacing:50, rankSpacing:60 },
+  securityLevel:'loose',
 });
 
-let currentScale = 1, currentPanX = 0, currentPanY = 0;
-const outputEl = document.getElementById('mermaid-output');
+let currentScale=1, currentPanX=0, currentPanY=0;
+const outputEl=document.getElementById('mermaid-output');
 
-async function renderGraph() {
-  outputEl.innerHTML = '';
-  const { svg } = await mermaid.render('ag-prop-neon-graph', mermaidDef);
-  outputEl.innerHTML = svg;
-  const svgEl = outputEl.querySelector('svg');
-  if (svgEl) {
-    svgEl.style.cursor = 'grab';
-    attachNodeClickHandlers();
-    attachPanZoom();
-  }
+async function renderGraph(){
+  outputEl.innerHTML='';
+  const {svg}=await mermaid.render('ag-prop-neon', mermaidDef);
+  outputEl.innerHTML=svg;
+  const s=outputEl.querySelector('svg');
+  if(s){ s.style.cursor='grab'; attachNodeClickHandlers(); attachPanZoom(); }
 }
 
-function attachNodeClickHandlers() {
-  const svg = outputEl.querySelector('svg');
-  if (!svg) return;
-  svg.querySelectorAll('.node').forEach(el => {
-    const text = el.textContent || '';
-    const match = nodes.find(n => text.toLowerCase().includes(n.id.toLowerCase()));
-    if (match) {
-      el.style.cursor = 'pointer';
-      el.addEventListener('click', (e) => { e.stopPropagation(); selectNode(match.id); });
-    }
+function attachNodeClickHandlers(){
+  const svg=outputEl.querySelector('svg'); if(!svg)return;
+  svg.querySelectorAll('.node').forEach(el=>{
+    const t=(el.textContent||'').toLowerCase();
+    const m=nodes.find(n=>t.includes(n.id.toLowerCase()));
+    if(m){ el.style.cursor='pointer'; el.addEventListener('click',e=>{e.stopPropagation();selectNode(m.id);}); }
   });
 }
 
-function attachPanZoom() {
-  const wrapper = document.getElementById('mermaid-wrapper');
-  wrapper.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    currentScale = Math.max(0.3, Math.min(3, currentScale * (e.deltaY > 0 ? 0.9 : 1.1)));
-    applyTransform();
-  });
-
-  let isPanning = false, startX, startY;
-  wrapper.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.node') || e.target.closest('.edgeLabel')) return;
-    isPanning = true; startX = e.clientX - currentPanX; startY = e.clientY - currentPanY;
-    wrapper.style.cursor = 'grabbing';
-  });
-  window.addEventListener('mouseup', () => { isPanning = false; wrapper.style.cursor = 'grab'; });
-  window.addEventListener('mousemove', (e) => {
-    if (!isPanning) return;
-    currentPanX = e.clientX - startX; currentPanY = e.clientY - startY;
-    applyTransform();
-  });
+function attachPanZoom(){
+  const w=document.getElementById('mermaid-wrapper');
+  w.addEventListener('wheel',e=>{e.preventDefault();currentScale=Math.max(.3,Math.min(3,currentScale*(e.deltaY>0?.9:1.1)));applyTransform();});
+  let panning=false, sx,sy;
+  w.addEventListener('mousedown',e=>{if(e.target.closest('.node')||e.target.closest('.edgeLabel'))return;panning=true;sx=e.clientX-currentPanX;sy=e.clientY-currentPanY;w.style.cursor='grabbing';});
+  window.addEventListener('mouseup',()=>{panning=false;w.style.cursor='grab';});
+  window.addEventListener('mousemove',e=>{if(!panning)return;currentPanX=e.clientX-sx;currentPanY=e.clientY-sy;applyTransform();});
 }
+function applyTransform(){ const s=outputEl.querySelector('svg'); if(s)s.style.transform=`translate(${currentPanX}px,${currentPanY}px) scale(${currentScale})`; }
+function resetZoom(){currentScale=1;currentPanX=0;currentPanY=0;applyTransform();}
+function zoomIn(){currentScale=Math.min(3,currentScale*1.2);applyTransform();}
+function zoomOut(){currentScale=Math.max(.3,currentScale/1.2);applyTransform();}
 
-function applyTransform() {
-  const svg = outputEl.querySelector('svg');
-  if (svg) svg.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scale(${currentScale})`;
+// Sidebar
+const listEl=document.getElementById('node-list');
+nodes.forEach(n=>{
+  const d=document.createElement('div');
+  d.className='node-card'; d.setAttribute('data-node-id',n.id);
+  d.onclick=()=>selectNode(n.id);
+  d.innerHTML=`<span class="node-index ${n.colorClass}">${n.index}</span><span class="node-name">${n.name}</span><div class="node-route">${n.routes.map(r=>r.label+' → '+r.to).join('<br>')}</div>`;
+  listEl.appendChild(d);
+});
+
+function selectNode(id){
+  document.querySelectorAll('.node-card').forEach(c=>c.classList.remove('active'));
+  const card=document.querySelector(`[data-node-id="${id}"]`); if(card)card.classList.add('active');
+  const n=nodes.find(x=>x.id===id); if(!n)return;
+  document.getElementById('detail-panel').innerHTML=
+    `<h3>${n.name}</h3><div class="detail-index">Node ${n.index} — reads: <code>${n.reads}</code> → writes: <code>${n.writes}</code></div>`+
+    `<div class="detail-desc">${n.desc}</div><div class="detail-reads"><strong>Routes:</strong></div>`+
+    n.routes.map(r=>`<div style="font-size:12px;color:#7a7a9a;margin-left:8px">${r.label} → <code>${r.to}</code></div>`).join('');
 }
-
-function resetZoom() { currentScale = 1; currentPanX = 0; currentPanY = 0; applyTransform(); }
-function zoomIn() { currentScale = Math.min(3, currentScale * 1.2); applyTransform(); }
-function zoomOut() { currentScale = Math.max(0.3, currentScale / 1.2); applyTransform(); }
-
-// ═══════════════════════════════════════════════════
-// Node selection
-// ═══════════════════════════════════════════════════
-function selectNode(nodeId) {
-  // Sidebar highlight
-  document.querySelectorAll('.node-card').forEach(c => c.classList.remove('active'));
-  const card = document.querySelector(`[data-node-id="${nodeId}"]`);
-  if (card) card.classList.add('active');
-
-  // Detail panel
-  const n = nodes.find(x => x.id === nodeId);
-  if (!n) return;
-  const panel = document.getElementById('detail-panel');
-  panel.innerHTML =
-    `<h3>${n.name}</h3>` +
-    `<div class="detail-index">Node ${n.index} — reads: <code>${n.reads}</code> → writes: <code>${n.writes}</code></div>` +
-    `<div class="detail-desc">${n.desc}</div>` +
-    `<div class="detail-reads"><strong>Routes:</strong></div>` +
-    n.routes.map(r => `<div style="font-size:12px;color:#8a8a9a;margin-left:8px">${r.label} → <code>${r.to}</code></div>`).join('');
-}
-
 renderGraph();
 </script>
 </body>
