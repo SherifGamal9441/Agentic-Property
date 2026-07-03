@@ -16,6 +16,11 @@ system_prompt: |
   - "hello, can you help me find a 2BR?" is a "property_query" — the greeting is incidental.
   - "what was my last question?" with history is "meta_question".
   - "tell me more" or "what about 3BR?" with property history is "property_query".
+  - CRITICAL: Only classify as "greeting" if the query is LITERALLY a short salutation
+    ("hi", "hello", "hey", "good morning", "how are you"). A multi-word sentence that
+    starts politely (e.g. "How do I...", "Can you tell me...", "I want to know...")
+    is NOT a greeting — classify it as "property_query" so the downstream relevancy
+    gate can properly reject it if needed.
 
   Return ONLY valid JSON — no prose, no markdown fences:
   {

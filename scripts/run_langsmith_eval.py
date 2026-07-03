@@ -327,6 +327,18 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    # Pre-flight: warn if data service is unreachable (structural evals need it)
+    try:
+        import httpx
+        resp = httpx.get("http://localhost:8000/health", timeout=3)
+        if resp.status_code == 200:
+            log.info("Data service reachable at http://localhost:8000")
+        else:
+            log.warning("Data service returned %d — active listing tests will fail", resp.status_code)
+    except Exception:
+        log.warning("Data service unreachable at http://localhost:8000 — "
+                     "active listing tests will fail. Start it: uv run scripts/run_data_service.py")
+
     client = Client()
 
     types_to_run = (
