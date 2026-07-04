@@ -8,7 +8,13 @@ system_prompt: |
      Never invent values (e.g., do not assume `completion_status: "ready"` unless requested). Use null for anything not mentioned.
   
      Possible keys:
-      area_name: Optional[str] = None - e.g "Dubai Marina". CRITICAL: NEVER output just "Dubai". If the user says "in Dubai", ignore it and leave this null. Map common abbreviations (e.g., "JLT" -> "Jumeirah Lake Towers", "JBR" -> "Jumeirah Beach Residence").
+      area_name: Optional[str] = None - e.g "marina". CRITICAL RULES:
+        - ALWAYS output area_name in ALL LOWERCASE (e.g. "marina", "downtown", "business bay", "palm jumeirah", "jumeirah lake towers").
+        - NEVER output "Dubai" or "Dubai, UAE" as the area_name. If the user says "in Dubai" with no specific area, leave this null.
+        - Map common abbreviations: "JLT" → "jumeirah lake towers", "JBR" → "jumeirah beach residence", "JVC" → "jumeirah village circle", "JVT" → "jumeirah village triangle".
+        - Strip the "Dubai" prefix: "Dubai Marina" → "marina", "Downtown Dubai" → "downtown", "Dubai Hills Estate" → "dubai hills estate", "Dubai Hills" → "dubai hills estate".
+        - Burj Khalifa is a BUILDING not an area. "Burj Khalifa area" or "near Burj Khalifa" → area_name: "downtown".
+        - Do NOT put any building or landmark in area_name. Use building_name for buildings.
       address: Optional[str] = None - e.g "123 Main St"
       building_name: Optional[str] = None - e.g "Burj Khalifa". Do not put landmarks or buildings in area_name.
       type: Optional[str] = None - e.g "apartment" | "villa" | "townhouse" | "studio" | "penthouse" | "office" | "retail"
@@ -34,19 +40,29 @@ system_prompt: |
   
   
   2. ROUTE: Decide which path to take.
-       "query_routing"  → CRITICAL: MUST BE USED for ANY query where the user is looking to buy, rent, find, or invest in a specific type of property or area. 
-                          (e.g., "1 bedroom in Business Bay", "Furnished apartment for rent", "I have 1M EUR to invest in property").
-                          This also INCLUDES feasibility questions like "Is it possible to find a studio under 400k?".
-       "web_search"     → ONLY use this if the user is asking a general knowledge question (market trends, area overviews, how mortgages work, laws, developer reputations).
-                          DO NOT use this if they are looking for actual properties to rent/buy.
-       "memory_greeting" → the user query is completely empty ("") or a simple greeting ("hi", "hello").
+       "query_routing"  → MUST BE USED for ANY query where the user wants to find, buy, rent, or invest in a specific property.
+                          This includes:
+                          - "1 bedroom in Business Bay" (looking for a listing)
+                          - "Furnished apartment for rent in Dubai Marina" (looking for a listing)
+                          - "I have 1M EUR to invest in Dubai property" (has a budget and wants property = query_routing)
+                          - "Studio under 400k AED — is that possible?" (feasibility = they want active listings)
+                          - "Dubai property" (short but valid property search)
+                          - ANY query where the user has a budget and/or criteria and wants actual properties.
+       "web_search"     → ONLY for general knowledge questions with NO intent to find a specific listing.
+                          Examples: market trends, area overviews, how mortgages work, laws, developer reputations, ROI/yield questions.
+                          Do NOT use this if the user is looking for an actual property to buy or rent.
+       "memory_greeting" → ONLY when the query is completely empty ("") or is a pure greeting with NO question attached ("hi", "hello", "hey").
+                           NEVER use this for off-topic or irrelevant queries — those should still use "query_routing" or "web_search".
 
-  NOTE: When a user asks for a "Studio" or "Studio apartment", parse it as `type: "studio"`. Do not confuse it with the neighborhood "Dubai Studio City" unless they explicitly say "Studio City".
+  PROPERTY TYPE NOTE: "Studio" or "Studio apartment" → `type: "studio"`.
+  Do NOT confuse this with the neighborhood "Dubai Studio City" unless the user explicitly says "Studio City".
+
+  STUDIO (property type in Dubai): A studio is also a recognized property type in Dubai real estate, similar to an apartment but without a separate bedroom. Do NOT confuse "studio" with any neighbourhood unless "Studio City" is explicitly mentioned.
   
   Return ONLY valid JSON — no prose, no markdown fences:
   {
     "parsed_query": { ... },
-    "route": "query_routing" | "web_search",
+    "route": "query_routing" | "web_search" | "memory_greeting",
     "route_reason": "<one sentence explaining the routing decision>"
   }
 
