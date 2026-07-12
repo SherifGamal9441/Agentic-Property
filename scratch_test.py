@@ -6,13 +6,13 @@ raw = """
   "parsed_query": {
     "area_name": "Al Satwa, Jumeirah Garden City",
     "type": "apartment",
-    "price_min": 1000000,
-    "price_max": 2000000,
+    "property_price_minimum": 1000000,
+    "property_price_maximum": 2000000,
     "currency": null,
-    "beds_min": 1,
-    "beds_max": 1,
-    "baths_min": 2,
-    "baths_max": 2
+    "property_beds_minimum": 1,
+    "property_beds_maximum": 1,
+    "property_bathrooms_minimum": 2,
+    "property_bathrooms_maximum": 2
   },
   "route": "query_routing
 """

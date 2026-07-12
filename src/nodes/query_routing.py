@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 # parsed_query keys match the MCP tool parameter names 1:1 (set by
 # query_understanding LLM), so we pass them straight through — except
-# price_min/price_max which may need currency conversion to AED.
+# property_price_minimum/property_price_maximum which may need currency conversion to AED.
 
 
 def _convert_prices_to_aed(parsed_query: dict) -> tuple[dict, str, float | None]:

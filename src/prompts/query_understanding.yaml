@@ -29,14 +29,14 @@ system_prompt: |
       property_beds_maximum: Optional[int] = None - maximum bedrooms. For exact count "3 bedroom" → property_beds_minimum: 3 AND property_beds_maximum: 3.
       property_bathrooms_minimum: Optional[int] = None - minimum number of bathrooms
       property_bathrooms_maximum: Optional[int] = None - maximum number of bathrooms
-      year_of_completion_min: Optional[int] = None - "built after 2020" → 2020 (inclusive)
-      year_of_completion_max: Optional[int] = None - maximum year of completion
+      year_of_completion_minimum: Optional[int] = None - "built after 2020" → 2020 (inclusive)
+      year_of_completion_maximum: Optional[int] = None - maximum year of completion
       parking_spaces_minimum: Optional[int] = None - minimum number of parking spaces
       parking_spaces_maximum: Optional[int] = None - maximum number of parking spaces
-      total_floors_min: Optional[int] = None - minimum number of floors
-      total_floors_max: Optional[int] = None - maximum number of floors
-      total_building_area_sqft_min: Optional[float] = None - minimum total building area in sqft
-      total_building_area_sqft_max: Optional[float] = None - maximum total building area in sqft
+      total_floors_minimum: Optional[int] = None - minimum number of floors
+      total_floors_maximum: Optional[int] = None - maximum number of floors
+      total_building_area_sqft_minimum: Optional[float] = None - minimum total building area in sqft
+      total_building_area_sqft_maximum: Optional[float] = None - maximum total building area in sqft
       post_date_minimum: Optional[str] = None - minimum post date
       post_date_maximum: Optional[str] = None - maximum post date
   

@@ -15,7 +15,7 @@ from .db_tables import HistoricalListing, ActiveListing
 # ---------------------------------------------------------------------------
 
 class HistoricalSearchRequest(HistoricalFilters):
-    @validator('post_date_min', 'post_date_max', pre=True)
+    @validator('post_date_minimum', 'post_date_maximum', pre=True)
     def parse_date(cls, v):
         if isinstance(v, str):
             try:
@@ -88,13 +88,13 @@ def apply_filters(query, model, filters: BasePropertyFilters):
 
     # Range filters (numeric)
     range_fields = [
-        ('price', 'price_min', 'price_max'),
-        ('beds', 'beds_min', 'beds_max'),
-        ('baths', 'baths_min', 'baths_max'),
-        ('year_of_completion', 'year_of_completion_min', 'year_of_completion_max'),
-        ('total_parking_spaces', 'total_parking_spaces_min', 'total_parking_spaces_max'),
-        ('total_floors', 'total_floors_min', 'total_floors_max'),
-        ('total_building_area_sqft', 'total_building_area_sqft_min', 'total_building_area_sqft_max'),
+        ('price', 'property_price_minimum', 'property_price_maximum'),
+        ('beds', 'property_beds_minimum', 'property_beds_maximum'),
+        ('baths', 'property_bathrooms_minimum', 'property_bathrooms_maximum'),
+        ('year_of_completion', 'year_of_completion_minimum', 'year_of_completion_maximum'),
+        ('total_parking_spaces', 'parking_spaces_minimum', 'parking_spaces_maximum'),
+        ('total_floors', 'total_floors_minimum', 'total_floors_maximum'),
+        ('total_building_area_sqft', 'total_building_area_sqft_minimum', 'total_building_area_sqft_maximum'),
     ]
     for col, min_attr, max_attr in range_fields:
         min_val = getattr(filters, min_attr, None)
@@ -105,10 +105,10 @@ def apply_filters(query, model, filters: BasePropertyFilters):
             query = query.filter(getattr(model, col) <= max_val)
 
     # Date range for historical (handled separately)
-    if hasattr(filters, 'post_date_min') and filters.post_date_min is not None:
-        query = query.filter(model.post_date >= filters.post_date_min)
-    if hasattr(filters, 'post_date_max') and filters.post_date_max is not None:
-        query = query.filter(model.post_date <= filters.post_date_max)
+    if hasattr(filters, 'post_date_minimum') and filters.post_date_minimum is not None:
+        query = query.filter(model.post_date >= filters.post_date_minimum)
+    if hasattr(filters, 'post_date_maximum') and filters.post_date_maximum is not None:
+        query = query.filter(model.post_date <= filters.post_date_maximum)
 
     return query
 
