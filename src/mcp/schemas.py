@@ -20,7 +20,6 @@ class BasePropertyFilters(BaseModel):
             "Property type. Use: 'Apartment', 'Villa', 'Townhouse', 'Penthouse', "
             "'Hotel Apartment', 'Residential Building', 'Residential Floor', "
             "'Residential Plot', 'Villa Compound'. "
-            "Partial matching is used, so 'Apartment' will also match active listings."
         )
     )
     furnishing: Optional[str] = Field(
@@ -32,7 +31,6 @@ class BasePropertyFilters(BaseModel):
         description=(
             "Build status. Use 'Ready' for completed/built properties, "
             "or 'Off-Plan' for properties under construction. "
-            "'Ready' maps to 'completed' in active listings automatically."
         )
     )
     property_price_minimum: Optional[float] = Field(
