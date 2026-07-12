@@ -7,10 +7,15 @@
       "Answer states the price and location clearly",
       "Answer is written in clear, helpful language",
       "Answer does NOT expose internal fields like fit_score or JSON keys",
-      "Answer includes at least one caveat or limitation if data is incomplete"
+      "Answer includes at least one caveat or limitation if data is incomplete",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.6,
-    "tags": ["basic", "recommendation", "apartment"]
+    "tags": [
+      "basic",
+      "recommendation",
+      "apartment"
+    ]
   },
   {
     "id": "Q002",
@@ -22,7 +27,11 @@
       "Answer does NOT expose internal fit_score or JSON data"
     ],
     "min_score": 0.6,
-    "tags": ["comparison", "recommendation", "investment"]
+    "tags": [
+      "comparison",
+      "recommendation",
+      "investment"
+    ]
   },
   {
     "id": "Q003",
@@ -34,18 +43,25 @@
       "Answer does NOT recommend specific active properties"
     ],
     "min_score": 0.6,
-    "tags": ["general", "web_search", "investment"]
+    "tags": [
+      "general",
+      "web_search",
+      "investment"
+    ]
   },
   {
     "id": "Q004",
     "query": "كم تكلفة شقة في دبي مارينا؟",
     "criteria": [
-      "Answer is primarily in Arabic or the user's language",
-      "Answer provides useful price information about Dubai Marina apartments",
-      "Answer is helpful and complete"
+      "Answer should not be provided in any language other than English",
+      "Answer should not be provided for any query in Arabic"
     ],
     "min_score": 0.5,
-    "tags": ["arabic", "language", "pricing"]
+    "tags": [
+      "arabic",
+      "language",
+      "pricing"
+    ]
   },
   {
     "id": "Q005",
@@ -57,7 +73,11 @@
       "Mentions the exchange rate used"
     ],
     "min_score": 0.6,
-    "tags": ["currency", "conversion", "budget"]
+    "tags": [
+      "currency",
+      "conversion",
+      "budget"
+    ]
   },
   {
     "id": "Q006",
@@ -69,7 +89,11 @@
       "Answer is a reasonable length for the topic"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "history"]
+    "tags": [
+      "web_search",
+      "general",
+      "history"
+    ]
   },
   {
     "id": "Q007",
@@ -79,10 +103,16 @@
       "Answer provides price and location details",
       "Answer evaluates how well the property matches the request",
       "Answer is honest about any limitations in the data",
-      "Answer is formatted in clear readable paragraphs"
+      "Answer is formatted in clear readable paragraphs",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.6,
-    "tags": ["basic", "villa", "luxury", "recommendation"]
+    "tags": [
+      "basic",
+      "villa",
+      "luxury",
+      "recommendation"
+    ]
   },
   {
     "id": "Q008",
@@ -94,7 +124,11 @@
       "If exact data unavailable answer explains why and offers alternatives"
     ],
     "min_score": 0.5,
-    "tags": ["general", "web_search", "pricing"]
+    "tags": [
+      "general",
+      "web_search",
+      "pricing"
+    ]
   },
   {
     "id": "Q009",
@@ -106,7 +140,11 @@
       "If no results the answer suggests adjustments to criteria"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "studio", "budget"]
+    "tags": [
+      "basic",
+      "studio",
+      "budget"
+    ]
   },
   {
     "id": "Q010",
@@ -118,19 +156,26 @@
       "Answer is honest about limitations of the information"
     ],
     "min_score": 0.5,
-    "tags": ["general", "web_search", "mortgage", "legal"]
+    "tags": [
+      "general",
+      "web_search",
+      "mortgage",
+      "legal"
+    ]
   },
   {
     "id": "Q011",
     "query": "أبحث عن فيلا في نخلة جميرا ب 4 غرف نوم",
     "criteria": [
-      "Answer responds primarily in Arabic",
-      "Answer provides specific property details or search results",
-      "Answer is relevant to the query about Palm Jumeirah villas",
-      "Answer is helpful and complete"
+      "Answer should not be provided in any language other than English",
+      "Answer should not be provided for any query in Arabic"
     ],
     "min_score": 0.5,
-    "tags": ["arabic", "language", "villa"]
+    "tags": [
+      "arabic",
+      "language",
+      "villa"
+    ]
   },
   {
     "id": "Q012",
@@ -142,7 +187,11 @@
       "Answer is well-structured and informative"
     ],
     "min_score": 0.5,
-    "tags": ["general", "off-plan", "investment"]
+    "tags": [
+      "general",
+      "off-plan",
+      "investment"
+    ]
   },
   {
     "id": "Q013",
@@ -151,10 +200,15 @@
       "Answer mentions specific apartment buildings or properties",
       "Answer includes price and floor/location details",
       "Answer discusses how well each option matches the criteria",
-      "Answer is well-formatted and easy to read"
+      "Answer is well-formatted and easy to read",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.6,
-    "tags": ["basic", "apartment", "downtown"]
+    "tags": [
+      "basic",
+      "apartment",
+      "downtown"
+    ]
   },
   {
     "id": "Q014",
@@ -166,7 +220,12 @@
       "If exact data unavailable answer explains why"
     ],
     "min_score": 0.5,
-    "tags": ["general", "web_search", "ROI", "investment"]
+    "tags": [
+      "general",
+      "web_search",
+      "ROI",
+      "investment"
+    ]
   },
   {
     "id": "Q015",
@@ -175,10 +234,15 @@
       "Answer mentions specific penthouse properties",
       "Answer includes price and location details",
       "Answer evaluates how well properties match the request",
-      "Answer is honest about limitations in the data"
+      "Answer is honest about limitations in the data",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "luxury", "penthouse"]
+    "tags": [
+      "basic",
+      "luxury",
+      "penthouse"
+    ]
   },
   {
     "id": "Q016",
@@ -190,7 +254,11 @@
       "Answer references credible sources or data"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "market"]
+    "tags": [
+      "web_search",
+      "general",
+      "market"
+    ]
   },
   {
     "id": "Q017",
@@ -202,7 +270,11 @@
       "Answer provides specific information about the budget segment"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "budget", "edge_case"]
+    "tags": [
+      "basic",
+      "budget",
+      "edge_case"
+    ]
   },
   {
     "id": "Q018",
@@ -214,7 +286,11 @@
       "Answer helps the user make an informed decision"
     ],
     "min_score": 0.6,
-    "tags": ["comparison", "lifestyle", "areas"]
+    "tags": [
+      "comparison",
+      "lifestyle",
+      "areas"
+    ]
   },
   {
     "id": "Q019",
@@ -226,7 +302,12 @@
       "Answer includes relevant caveats about legal aspects"
     ],
     "min_score": 0.5,
-    "tags": ["general", "web_search", "process", "legal"]
+    "tags": [
+      "general",
+      "web_search",
+      "process",
+      "legal"
+    ]
   },
   {
     "id": "Q020",
@@ -235,22 +316,29 @@
       "Answer mentions specific townhouse properties or communities",
       "Answer provides price and location details",
       "Answer evaluates how well properties match the criteria",
-      "Answer is clear and actionable"
+      "Answer is clear and actionable",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.6,
-    "tags": ["basic", "townhouse", "recommendation"]
+    "tags": [
+      "basic",
+      "townhouse",
+      "recommendation"
+    ]
   },
   {
     "id": "Q021",
-    "query": "و我从迪拜房地产投资中能期待多少回报？",
+    "query": "我从迪拜房地产投资中能期待多少回报？",
     "criteria": [
-      "Answer responds in Chinese or the user's language",
-      "Answer provides useful information about Dubai real estate returns",
-      "Answer is informative and addresses the investment question",
-      "Answer is helpful and complete"
+      "Answer should not be provided in any language other than English",
+      "Answer should not be provided for any query in Chinese"
     ],
     "min_score": 0.4,
-    "tags": ["chinese", "language", "investment"]
+    "tags": [
+      "chinese",
+      "language",
+      "investment"
+    ]
   },
   {
     "id": "Q022",
@@ -262,7 +350,11 @@
       "If information is incomplete answer acknowledges this honestly"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "developments"]
+    "tags": [
+      "web_search",
+      "general",
+      "developments"
+    ]
   },
   {
     "id": "Q023",
@@ -271,10 +363,15 @@
       "Answer mentions specific apartment buildings or properties",
       "Answer includes price and view details",
       "Answer evaluates how well properties match the criteria",
-      "Answer is well-formatted with clear property summaries"
+      "Answer is well-formatted with clear property summaries",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.6,
-    "tags": ["basic", "furnished", "beach"]
+    "tags": [
+      "basic",
+      "furnished",
+      "beach"
+    ]
   },
   {
     "id": "Q024",
@@ -286,7 +383,11 @@
       "Answer does NOT make unrealistic promises about returns"
     ],
     "min_score": 0.5,
-    "tags": ["general", "web_search", "investment"]
+    "tags": [
+      "general",
+      "web_search",
+      "investment"
+    ]
   },
   {
     "id": "Q025",
@@ -295,10 +396,15 @@
       "Answer mentions specific large properties or communities",
       "Answer includes price and size details",
       "Answer evaluates suitability for the user's needs",
-      "Answer is clear and actionable"
+      "Answer is clear and actionable",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "large", "luxury"]
+    "tags": [
+      "basic",
+      "large",
+      "luxury"
+    ]
   },
   {
     "id": "Q026",
@@ -310,19 +416,25 @@
       "Answer does NOT give false certainty about market timing"
     ],
     "min_score": 0.5,
-    "tags": ["general", "web_search", "advice"]
+    "tags": [
+      "general",
+      "web_search",
+      "advice"
+    ]
   },
   {
     "id": "Q027",
     "query": "Quels sont les meilleurs quartiers pour investir à Dubaï?",
     "criteria": [
-      "Answer responds in French or the user's language",
-      "Answer provides specific area recommendations with reasoning",
-      "Answer discusses investment potential for each area",
-      "Answer is informative and well-structured"
+      "Answer should not be provided in any language other than English",
+      "Answer should not be provided for any query in French"
     ],
     "min_score": 0.4,
-    "tags": ["french", "language", "investment"]
+    "tags": [
+      "french",
+      "language",
+      "investment"
+    ]
   },
   {
     "id": "Q028",
@@ -334,7 +446,11 @@
       "Answer is helpful and not dismissive of the budget"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "budget", "edge_case"]
+    "tags": [
+      "basic",
+      "budget",
+      "edge_case"
+    ]
   },
   {
     "id": "Q029",
@@ -346,7 +462,11 @@
       "If information is incomplete answer acknowledges this"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "lifestyle"]
+    "tags": [
+      "web_search",
+      "general",
+      "lifestyle"
+    ]
   },
   {
     "id": "Q030",
@@ -355,10 +475,15 @@
       "Answer mentions specific luxury properties in Downtown Dubai",
       "Answer discusses investment potential and ROI",
       "Answer includes price ranges and property features",
-      "Answer is well-structured and informative"
+      "Answer is well-structured and informative",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.6,
-    "tags": ["basic", "luxury", "investment"]
+    "tags": [
+      "basic",
+      "luxury",
+      "investment"
+    ]
   },
   {
     "id": "Q031",
@@ -370,7 +495,11 @@
       "If data is approximate answer makes this clear"
     ],
     "min_score": 0.5,
-    "tags": ["general", "web_search", "lifestyle"]
+    "tags": [
+      "general",
+      "web_search",
+      "lifestyle"
+    ]
   },
   {
     "id": "Q032",
@@ -379,10 +508,15 @@
       "Answer mentions specific off-plan projects or communities",
       "Answer provides pricing and completion timeline details",
       "Answer discusses the investment potential",
-      "Answer includes relevant caveats about off-plan purchases"
+      "Answer includes relevant caveats about off-plan purchases",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "off-plan", "townhouse"]
+    "tags": [
+      "basic",
+      "off-plan",
+      "townhouse"
+    ]
   },
   {
     "id": "Q033",
@@ -394,7 +528,11 @@
       "Answer helps the user make an informed decision"
     ],
     "min_score": 0.6,
-    "tags": ["comparison", "family", "communities"]
+    "tags": [
+      "comparison",
+      "family",
+      "communities"
+    ]
   },
   {
     "id": "Q034",
@@ -406,19 +544,25 @@
       "Answer does NOT make definitive predictions"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "market"]
+    "tags": [
+      "web_search",
+      "general",
+      "market"
+    ]
   },
   {
     "id": "Q035",
     "query": "Encuentra un apartamento en Dubai Marina por menos de 2M AED",
     "criteria": [
-      "Answer responds primarily in Spanish",
-      "Answer provides specific apartment details or search results",
-      "Answer includes price and location information",
-      "Answer is helpful and complete"
+      "Answer should not be provided in any language other than English",
+      "Answer should not be provided for any query in Spanish"
     ],
     "min_score": 0.4,
-    "tags": ["spanish", "language", "apartment"]
+    "tags": [
+      "spanish",
+      "language",
+      "apartment"
+    ]
   },
   {
     "id": "Q036",
@@ -430,7 +574,11 @@
       "If exact data unavailable answer explains why"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "costs"]
+    "tags": [
+      "web_search",
+      "general",
+      "costs"
+    ]
   },
   {
     "id": "Q037",
@@ -442,7 +590,11 @@
       "Answer is well-structured and actionable"
     ],
     "min_score": 0.5,
-    "tags": ["general", "investment", "ROI"]
+    "tags": [
+      "general",
+      "investment",
+      "ROI"
+    ]
   },
   {
     "id": "Q038",
@@ -451,10 +603,15 @@
       "Answer mentions specific villa properties or communities",
       "Answer includes price location and feature details",
       "Answer evaluates how well properties match the request",
-      "Answer is clear and well-formatted"
+      "Answer is clear and well-formatted",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.6,
-    "tags": ["basic", "villa", "luxury"]
+    "tags": [
+      "basic",
+      "villa",
+      "luxury"
+    ]
   },
   {
     "id": "Q039",
@@ -466,7 +623,11 @@
       "Answer is practical and actionable"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "legal"]
+    "tags": [
+      "web_search",
+      "general",
+      "legal"
+    ]
   },
   {
     "id": "Q040",
@@ -475,10 +636,15 @@
       "Answer mentions specific penthouse properties",
       "Answer includes price and premium feature details",
       "Answer evaluates how well properties match the criteria",
-      "Answer is well-structured with clear property highlights"
+      "Answer is well-structured with clear property highlights",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "luxury", "penthouse"]
+    "tags": [
+      "basic",
+      "luxury",
+      "penthouse"
+    ]
   },
   {
     "id": "Q041",
@@ -490,7 +656,11 @@
       "Answer references specific details from the plan"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "future"]
+    "tags": [
+      "web_search",
+      "general",
+      "future"
+    ]
   },
   {
     "id": "Q042",
@@ -499,10 +669,15 @@
       "Answer mentions specific properties with these features",
       "Answer includes price and location details",
       "Answer evaluates suitability for the user's preferences",
-      "Answer is helpful and specific"
+      "Answer is helpful and specific",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "apartment", "features"]
+    "tags": [
+      "basic",
+      "apartment",
+      "features"
+    ]
   },
   {
     "id": "Q043",
@@ -514,7 +689,11 @@
       "Answer is informative and practical"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "rental"]
+    "tags": [
+      "web_search",
+      "general",
+      "rental"
+    ]
   },
   {
     "id": "Q044",
@@ -526,19 +705,25 @@
       "Answer is encouraging and informative"
     ],
     "min_score": 0.5,
-    "tags": ["general", "first_time", "advice"]
+    "tags": [
+      "general",
+      "first_time",
+      "advice"
+    ]
   },
   {
     "id": "Q045",
     "query": "Недвижимость в Дубае для инвестиций",
     "criteria": [
-      "Answer responds primarily in Russian",
-      "Answer provides useful investment information about Dubai real estate",
-      "Answer discusses areas and property types for investment",
-      "Answer is informative and complete"
+      "Answer should not be provided in any language other than English",
+      "Answer should not be provided for any query in Russian"
     ],
     "min_score": 0.4,
-    "tags": ["russian", "language", "investment"]
+    "tags": [
+      "russian",
+      "language",
+      "investment"
+    ]
   },
   {
     "id": "Q046",
@@ -550,7 +735,11 @@
       "Answer is accurate and practical"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "costs"]
+    "tags": [
+      "web_search",
+      "general",
+      "costs"
+    ]
   },
   {
     "id": "Q047",
@@ -559,10 +748,15 @@
       "Answer mentions specific properties with these amenities",
       "Answer includes price location and amenity details",
       "Answer evaluates how well properties match the criteria",
-      "Answer is clear and well-formatted"
+      "Answer is clear and well-formatted",
+      "If no matching properties found, answer honestly states this and suggests alternatives or adjustments"
     ],
     "min_score": 0.5,
-    "tags": ["basic", "apartment", "amenities"]
+    "tags": [
+      "basic",
+      "apartment",
+      "amenities"
+    ]
   },
   {
     "id": "Q048",
@@ -574,7 +768,11 @@
       "Answer is informative and well-structured"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "areas"]
+    "tags": [
+      "web_search",
+      "general",
+      "areas"
+    ]
   },
   {
     "id": "Q049",
@@ -587,7 +785,12 @@
       "Answer is practical and actionable"
     ],
     "min_score": 0.6,
-    "tags": ["currency", "conversion", "investment", "recommendation"]
+    "tags": [
+      "currency",
+      "conversion",
+      "investment",
+      "recommendation"
+    ]
   },
   {
     "id": "Q050",
@@ -599,6 +802,10 @@
       "Answer covers relevant environmental initiatives"
     ],
     "min_score": 0.5,
-    "tags": ["web_search", "general", "sustainability"]
+    "tags": [
+      "web_search",
+      "general",
+      "sustainability"
+    ]
   }
 ]
