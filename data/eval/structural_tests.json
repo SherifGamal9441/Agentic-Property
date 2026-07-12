@@ -16,8 +16,8 @@
       "parsed_query": {
         "area_name": "marina",
         "type": "apartment",
-        "beds_min": 2,
-        "price_max": 3000000
+        "property_beds_minimum": 2,
+        "property_price_maximum": 3000000
       }
     },
     "tags": [
@@ -43,7 +43,7 @@
       "parsed_query": {
         "area_name": "palm jumeirah",
         "type": "villa",
-        "beds_min": 4
+        "property_beds_minimum": 4
       }
     },
     "tags": [
@@ -70,7 +70,7 @@
       "parsed_query": {
         "area_name": "jumeirah lake towers",
         "type": "studio",
-        "price_max": 800000
+        "property_price_maximum": 800000
       }
     },
     "tags": [
@@ -96,8 +96,8 @@
       "parsed_query": {
         "area_name": "arabian ranches",
         "type": "townhouse",
-        "beds_min": 3,
-        "price_max": 2500000
+        "property_beds_minimum": 3,
+        "property_price_maximum": 2500000
       }
     },
     "tags": [
@@ -333,7 +333,7 @@
       "parsed_query": {
         "type": "apartment",
         "completion_status": "off-plan",
-        "price_max": 1000000
+        "property_price_maximum": 1000000
       }
     },
     "tags": [
@@ -412,8 +412,8 @@
       "parsed_query": {
         "area_name": "business bay",
         "type": "apartment",
-        "beds_min": 1,
-        "beds_max": 1,
+        "property_beds_minimum": 1,
+        "property_beds_maximum": 1,
         "furnishing": "unfurnished"
       }
     },
@@ -498,7 +498,7 @@
         "insights_only"
       ],
       "parsed_query": {
-        "price_max": 500000
+        "property_price_maximum": 500000
       }
     },
     "tags": [
@@ -524,7 +524,7 @@
       "parsed_query": {
         "area_name": "palm jumeirah",
         "type": "penthouse",
-        "price_min": 20000000
+        "property_price_minimum": 20000000
       }
     },
     "tags": [
@@ -604,8 +604,8 @@
       "parsed_query": {
         "area_name": "jumeirah beach residence",
         "type": "apartment",
-        "beds_min": 1,
-        "beds_max": 1
+        "property_beds_minimum": 1,
+        "property_beds_maximum": 1
       }
     },
     "tags": [
@@ -630,7 +630,7 @@
       ],
       "parsed_query": {
         "currency": "USD",
-        "price_max": 250000
+        "property_price_maximum": 250000
       }
     },
     "tags": [
@@ -655,7 +655,7 @@
       ],
       "parsed_query": {
         "currency": "EUR",
-        "price_max": 1000000
+        "property_price_maximum": 1000000
       }
     },
     "tags": [
@@ -680,8 +680,8 @@
       ],
       "parsed_query": {
         "area_name": "marina",
-        "price_min": 2000000,
-        "price_max": 3000000
+        "property_price_minimum": 2000000,
+        "property_price_maximum": 3000000
       }
     },
     "tags": [
@@ -824,7 +824,7 @@
         "insights_only"
       ],
       "parsed_query": {
-        "beds_min": 5
+        "property_beds_minimum": 5
       }
     },
     "tags": [
@@ -849,7 +849,7 @@
       ],
       "parsed_query": {
         "type": "studio",
-        "price_max": 400000
+        "property_price_maximum": 400000
       }
     },
     "tags": [
@@ -908,8 +908,8 @@
       "parsed_query": {
         "area_name": "marina",
         "type": "apartment",
-        "beds_min": 2,
-        "price_max": 2500000,
+        "property_beds_minimum": 2,
+        "property_price_maximum": 2500000,
         "furnishing": "furnished",
         "year_of_completion_min": [
           2020,
@@ -955,8 +955,8 @@
       "parsed_query": {
         "area_name": "downtown",
         "type": "apartment",
-        "beds_min": 3,
-        "beds_max": 3
+        "property_beds_minimum": 3,
+        "property_beds_maximum": 3
       }
     },
     "tags": [

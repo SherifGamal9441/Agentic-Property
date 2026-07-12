@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def _convert_prices_to_aed(parsed_query: dict) -> tuple[dict, str, float | None]:
-    """If user specified a non-AED currency, convert price_min/price_max to AED.
+    """If user specified a non-AED currency, convert property_price_minimum/property_price_maximum to AED.
 
     Returns (updated_query, currency, exchange_rate).
     exchange_rate is None when no conversion was needed.
@@ -61,7 +61,7 @@ def _convert_prices_to_aed(parsed_query: dict) -> tuple[dict, str, float | None]
     )
 
     query = dict(parsed_query)
-    for key in ("price_min", "price_max"):
+    for key in ("property_price_minimum", "property_price_maximum"):
         if key in query and query[key] is not None:
             query[key] = round(query[key] * rate, 2)
 

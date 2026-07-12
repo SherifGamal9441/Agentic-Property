@@ -12,7 +12,10 @@ import logging
 import re
 from langgraph.graph import END, StateGraph
 
-from src.prompts.loader import load_prompt
+from pathlib import Path as _Path2
+import yaml
+
+_PROMPTS_DIR2 = _Path2(__file__).parent.parent / "prompts"
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +40,7 @@ def _strip_think(content: str) -> str:
 def rewrite_to_search_query(state: AgentState) -> dict:
     """Rewrite the user query to a more specific web search query."""
     logger.info("Original query: %s", state.query)
-    _PROMPTS = load_prompt("web_search.yaml")
+    _PROMPTS = yaml.safe_load((_PROMPTS_DIR2 / "web_search.yaml").read_text(encoding="utf-8"))
     rewritten = _strip_think(LLM.invoke([
         {"role": "system", "content": _PROMPTS["rewrite_system"]},
         {"role": "user", "content": _PROMPTS["rewrite_user"].format(query=state.query)},
@@ -84,7 +87,7 @@ def web_search(state: AgentState) -> dict:
 def summarize_web_search_results(state: AgentState) -> dict:
     """Summarize web search results given the user question."""
     logger.info("Summarizing web search results")
-    _PROMPTS = load_prompt("web_search.yaml")
+    _PROMPTS = yaml.safe_load((_PROMPTS_DIR2 / "web_search.yaml").read_text(encoding="utf-8"))
     summary = _strip_think(LLM.invoke([
         {"role": "system", "content": _PROMPTS["summarize_system"]},
         {"role": "user", "content": _PROMPTS["summarize_user"].format(

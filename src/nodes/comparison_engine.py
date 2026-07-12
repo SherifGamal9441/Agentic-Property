@@ -31,11 +31,13 @@ logger = logging.getLogger(__name__)
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
 
-from src.prompts.loader import load_prompt
+from pathlib import Path as _Path
+import yaml as _yaml
 
-_PROMPTS = load_prompt("comparison_engine.yaml")
-_SYSTEM_PROMPT_RECOMMEND = _PROMPTS["system_prompt_recommend"]
-_SYSTEM_PROMPT_INSIGHTS = _PROMPTS["system_prompt_insights"]
+_PROMPTS_DIR = _Path(__file__).parent.parent / "prompts"
+
+_PROMPTS = _yaml.safe_load((_PROMPTS_DIR / "comparison_engine.yaml").read_text(encoding="utf-8"))
+_SYSTEM_PROMPT = _PROMPTS["system_prompt"]
 _USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
 
 
@@ -66,7 +68,12 @@ def comparison_engine_node(state: AgentState) -> dict:
         conversation_context=state.conversation_context,
     )
 
-    sys_prompt = _SYSTEM_PROMPT_INSIGHTS if state.data_intent == "insights_only" else _SYSTEM_PROMPT_RECOMMEND
+    data_intent_note = (
+        "You are evaluating HISTORICAL data. These properties may already be sold. "
+        "Your job is to evaluate them to derive market insights, not to recommend them as active listings."
+        if state.data_intent == "insights_only" else ""
+    )
+    sys_prompt = _SYSTEM_PROMPT.format(data_intent_note=data_intent_note)
 
     messages = [
         SystemMessage(content=sys_prompt),

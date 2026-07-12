@@ -27,9 +27,12 @@ logger = logging.getLogger(__name__)
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
 
-from src.prompts.loader import load_prompt
+from pathlib import Path as _Path
+import yaml as _yaml
 
-_PROMPTS = load_prompt("query_relevancy.yaml")
+_PROMPTS_DIR = _Path(__file__).parent.parent / "prompts"
+
+_PROMPTS = _yaml.safe_load((_PROMPTS_DIR / "query_relevancy.yaml").read_text(encoding="utf-8"))
 _SYSTEM_PROMPT = _PROMPTS["system_prompt"]
 _USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
 _SCOPE_LIST = _PROMPTS["scope_list"]
