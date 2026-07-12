@@ -26,6 +26,7 @@ import re
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
+from src.area_matcher import fuzzy_match_area
 from src.llm.factory import get_llm
 from src.utils import parse_llm_json
 
@@ -99,14 +100,21 @@ def _normalize_parsed_query(parsed_query: dict) -> dict:
     area = pq.get("area_name")
     if isinstance(area, str):
         area_lower = area.strip().lower()
-        if area_lower in _AREA_ALIAS_MAP:
-            pq["area_name"] = _AREA_ALIAS_MAP[area_lower]
+
+        # City-level values → null (no specific area)
+        if area_lower in ("dubai", "dubai, uae", "uae"):
+            pq["area_name"] = None
+            logger.debug("normalize: area_name %r → None (city-level)", area)
+        else:
+            # Fuzzy match against canonical CSV area names, then apply alias map
+            matched = fuzzy_match_area(area)
+            if matched is not None:
+                pq["area_name"] = _AREA_ALIAS_MAP.get(matched, matched)
+            else:
+                pq["area_name"] = None
             logger.debug(
                 "normalize: area_name %r → %r", area, pq["area_name"]
             )
-        else:
-            # Just ensure lowercase even when not in the map
-            pq["area_name"] = area_lower
 
     # ── 2. type normalisation ─────────────────────────────────────────────────
     prop_type = pq.get("type")
