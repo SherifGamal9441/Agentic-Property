@@ -129,7 +129,11 @@ def parsed_query_eval(outputs: dict, reference_outputs: dict) -> dict:
     mismatches = []
     for key, expected_val in expected_pq.items():
         actual_val = actual_pq.get(key)
-        if actual_val != expected_val:
+        # Support list-valued expectations (any-of matching)
+        if isinstance(expected_val, list):
+            if actual_val not in expected_val:
+                mismatches.append(f"{key}: expected one of {expected_val}, got={actual_val}")
+        elif actual_val != expected_val:
             mismatches.append(f"{key}: expected={expected_val}, got={actual_val}")
     if not mismatches:
         return {"key": "parsed_query", "score": 1.0, "comment": "All fields match"}

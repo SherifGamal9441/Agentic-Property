@@ -5,8 +5,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "marina",
         "type": "apartment",
@@ -26,8 +32,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "palm jumeirah",
         "type": "villa",
@@ -47,8 +59,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "jumeirah lake towers",
         "type": "studio",
@@ -109,8 +127,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend"
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ]
     },
     "tags": [
       "comparison",
@@ -273,8 +297,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "downtown",
         "type": "penthouse"
@@ -318,8 +348,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "emirates hills",
         "type": "villa",
@@ -339,8 +375,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "marina",
         "type": "apartment",
@@ -359,8 +401,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "business bay",
         "type": "apartment",
@@ -441,8 +489,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "price_max": 500000
       }
@@ -459,8 +513,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "palm jumeirah",
         "type": "penthouse",
@@ -510,8 +570,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "damac hills"
       }
@@ -527,8 +593,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "jumeirah beach residence",
         "type": "apartment",
@@ -548,8 +620,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "currency": "USD",
         "price_max": 250000
@@ -567,8 +645,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "currency": "EUR",
         "price_max": 1000000
@@ -586,8 +670,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "marina",
         "price_min": 2000000,
@@ -620,8 +710,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend"
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ]
     },
     "tags": [
       "basic",
@@ -719,8 +815,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "beds_min": 5
       }
@@ -762,8 +864,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend"
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ]
     },
     "tags": [
       "basic",
@@ -789,15 +897,24 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "marina",
         "type": "apartment",
         "beds_min": 2,
         "price_max": 2500000,
         "furnishing": "furnished",
-        "year_of_completion_min": 2020
+        "year_of_completion_min": [
+          2020,
+          2021
+        ]
       }
     },
     "tags": [
@@ -827,8 +944,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "downtown",
         "type": "apartment",
@@ -848,8 +971,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "historical",
-      "data_intent": "insights_only",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "area_name": "jumeirah village circle"
       }
@@ -866,8 +995,14 @@
     "expected": {
       "is_relevant": true,
       "route": "query_routing",
-      "data_source": "active",
-      "data_intent": "recommend",
+      "data_source": [
+        "active",
+        "historical"
+      ],
+      "data_intent": [
+        "recommend",
+        "insights_only"
+      ],
       "parsed_query": {
         "type": "apartment"
       }

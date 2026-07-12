@@ -40,6 +40,92 @@ _SYSTEM_PROMPT = _PROMPTS["system_prompt"]
 _USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
 
 
+# ── Area name normalizer ──────────────────────────────────────────────────────
+
+# Maps any LLM-produced area name variant → canonical lowercase DB value.
+# Order matters: more specific entries must come before shorter prefixes.
+_AREA_ALIAS_MAP: dict[str, str] = {
+    # Dubai prefix stripping
+    "dubai marina": "marina",
+    "dubai hills estate": "dubai hills estate",  # keep as-is (already correct)
+    "dubai hills": "dubai hills estate",
+    "dubai silicon oasis": "silicon oasis",
+    "dubai sports city": "sports city",
+    "dubai production city": "production city",
+    "dubai investment park": "dubai investment park",
+    "dubai creek harbour": "dubai creek harbour",
+    "dubai south": "dubai south",
+    # Abbreviation expansions (in case prompt misses them)
+    "jlt": "jumeirah lake towers",
+    "jbr": "jumeirah beach residence",
+    "jvc": "jumeirah village circle",
+    "jvt": "jumeirah village triangle",
+    # Common variants
+    "downtown dubai": "downtown",
+    "downtown, dubai": "downtown",
+    "palm jumeirah, dubai": "palm jumeirah",
+    "business bay, dubai": "business bay",
+    # DAMAC Hills sub-community
+    "damac hills estate": "damac hills",
+    "damac hills 2": "damac hills",          # building, not area
+    "arabian ranches 2": "arabian ranches",  # sub-community
+    "arabian ranches 3": "arabian ranches",
+    # City-level values that should be null
+    "dubai": None,
+    "dubai, uae": None,
+    "uae": None,
+}
+
+
+def _normalize_parsed_query(parsed_query: dict) -> dict:
+    """
+    Apply deterministic post-processing fixes to the LLM-produced parsed_query:
+
+    1. area_name  — lowercase + alias map (strips "Dubai " prefix variants, etc.)
+    2. type       — collapse "studio apartment" → "studio"
+    3. currency   — uppercase; drop if AED (it's the default)
+
+    Returns a new dict (does not mutate the input).
+    """
+    if not isinstance(parsed_query, dict):
+        return parsed_query
+
+    pq = dict(parsed_query)
+
+    # ── 1. area_name normalisation ────────────────────────────────────────────
+    area = pq.get("area_name")
+    if isinstance(area, str):
+        area_lower = area.strip().lower()
+        if area_lower in _AREA_ALIAS_MAP:
+            pq["area_name"] = _AREA_ALIAS_MAP[area_lower]
+            logger.debug(
+                "normalize: area_name %r → %r", area, pq["area_name"]
+            )
+        else:
+            # Just ensure lowercase even when not in the map
+            pq["area_name"] = area_lower
+
+    # ── 2. type normalisation ─────────────────────────────────────────────────
+    prop_type = pq.get("type")
+    if isinstance(prop_type, str):
+        t = prop_type.strip().lower()
+        if t == "studio apartment":
+            pq["type"] = "studio"
+        else:
+            pq["type"] = t
+
+    # ── 3. currency normalisation ─────────────────────────────────────────────
+    currency = pq.get("currency")
+    if isinstance(currency, str):
+        currency_upper = currency.strip().upper()
+        if currency_upper == "AED":
+            pq["currency"] = None   # AED is implicit; drop to avoid confusion
+        else:
+            pq["currency"] = currency_upper
+
+    return pq
+
+
 # ── Node function ─────────────────────────────────────────────────────────────
 
 
@@ -92,6 +178,9 @@ def query_understanding_node(state: AgentState) -> dict:
 
     parsed_query: dict = result.get("parsed_query", {})
     route: str = result.get("route", "web_search")
+
+    # Apply deterministic post-processing to fix known LLM inconsistencies
+    parsed_query = _normalize_parsed_query(parsed_query)
 
     logger.info(
         "query_understanding: route=%s | parsed=%s | reason=%s",
