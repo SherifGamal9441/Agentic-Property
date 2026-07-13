@@ -94,8 +94,14 @@ def data_source_eval(outputs: dict, reference_outputs: dict) -> dict:
     if expected is None:
         return {"key": "data_source", "score": None, "comment": "No assertion for this field"}
     actual = _safe_get(outputs, "data_source")
-    passed = actual == expected
-    return {"key": "data_source", "score": float(passed), "comment": f"expected={expected}, got={actual}"}
+    # Accept a list (any-of) or a single value (exact match)
+    if isinstance(expected, list):
+        passed = actual in expected
+        comment = f"expected one of {expected}, got={actual}"
+    else:
+        passed = actual == expected
+        comment = f"expected={expected}, got={actual}"
+    return {"key": "data_source", "score": float(passed), "comment": comment}
 
 
 def data_intent_eval(outputs: dict, reference_outputs: dict) -> dict:
@@ -103,8 +109,14 @@ def data_intent_eval(outputs: dict, reference_outputs: dict) -> dict:
     if expected is None:
         return {"key": "data_intent", "score": None, "comment": "No assertion for this field"}
     actual = _safe_get(outputs, "data_intent")
-    passed = actual == expected
-    return {"key": "data_intent", "score": float(passed), "comment": f"expected={expected}, got={actual}"}
+    # Accept a list (any-of) or a single value (exact match)
+    if isinstance(expected, list):
+        passed = actual in expected
+        comment = f"expected one of {expected}, got={actual}"
+    else:
+        passed = actual == expected
+        comment = f"expected={expected}, got={actual}"
+    return {"key": "data_intent", "score": float(passed), "comment": comment}
 
 
 def parsed_query_eval(outputs: dict, reference_outputs: dict) -> dict:
@@ -117,7 +129,11 @@ def parsed_query_eval(outputs: dict, reference_outputs: dict) -> dict:
     mismatches = []
     for key, expected_val in expected_pq.items():
         actual_val = actual_pq.get(key)
-        if actual_val != expected_val:
+        # Support list-valued expectations (any-of matching)
+        if isinstance(expected_val, list):
+            if actual_val not in expected_val:
+                mismatches.append(f"{key}: expected one of {expected_val}, got={actual_val}")
+        elif actual_val != expected_val:
             mismatches.append(f"{key}: expected={expected_val}, got={actual_val}")
     if not mismatches:
         return {"key": "parsed_query", "score": 1.0, "comment": "All fields match"}

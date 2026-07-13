@@ -3,7 +3,7 @@ Memory Node
 
 Runs FIRST in the graph pipeline. Three responsibilities:
   1. Build conversation_context from conversation_history for downstream nodes.
-  2. Classify every query as property_query, greeting, or meta_question.
+  2. Classify every query as general_query, greeting, or meta_question.
   3. Short-circuit greetings and meta-questions directly to answer_generation,
      skipping the entire property pipeline.
 
@@ -23,9 +23,12 @@ from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
-from src.prompts.loader import load_prompt
+from pathlib import Path as _Path
+import yaml as _yaml
 
-_PROMPTS = load_prompt("memory.yaml")
+_PROMPTS_DIR = _Path(__file__).parent.parent / "prompts"
+
+_PROMPTS = _yaml.safe_load((_PROMPTS_DIR / "memory.yaml").read_text(encoding="utf-8"))
 _SYSTEM_PROMPT = _PROMPTS["system_prompt"]
 _USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
 
@@ -55,8 +58,8 @@ def _parse_llm_response(raw: str) -> dict:
     try:
         return parse_llm_json(raw)
     except json.JSONDecodeError:
-        logger.warning("memory: could not parse LLM response, defaulting to property_query")
-        return {"category": "property_query"}
+        logger.warning("memory: could not parse LLM response, defaulting to general_query")
+        return {"category": "general_query"}
 
 
 def memory_node(state: AgentState) -> dict:
@@ -90,7 +93,7 @@ def memory_node(state: AgentState) -> dict:
     raw = response.content.strip()
     result = _parse_llm_response(raw)
 
-    category = result.get("category", "property_query")
+    category = result.get("category", "general_query")
     logger.info("memory: classified as %s (reason: %s)", category, result.get("reason", "?"))
 
     if category == "greeting":

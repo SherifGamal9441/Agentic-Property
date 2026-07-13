@@ -28,6 +28,7 @@ dependencies = [
     "fastapi>=0.139.0",
     "sqlalchemy>=2.0.51",
     "tavily-python>=0.7.26",
+    "rapidfuzz>=3.0",
 ]
 
 [dependency-groups]

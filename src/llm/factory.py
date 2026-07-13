@@ -53,7 +53,7 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
                 base_url=settings.custom_openai_base_url,
                 api_key=settings.custom_openai_api_key,
                 streaming=streaming,
-                extra_body={"enable_thinking": False},
+                #extra_body={"enable_thinking": False},
             )
         case "groq":
             # Only hide reasoning tokens during streaming (answer_generation).

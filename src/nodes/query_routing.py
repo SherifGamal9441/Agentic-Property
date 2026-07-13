@@ -20,6 +20,7 @@ Writes to state:
 """
 
 import logging
+import json
 
 from src.agents.state import AgentState
 from src.mcp import (
@@ -33,11 +34,11 @@ logger = logging.getLogger(__name__)
 
 # parsed_query keys match the MCP tool parameter names 1:1 (set by
 # query_understanding LLM), so we pass them straight through — except
-# price_min/price_max which may need currency conversion to AED.
+# property_price_minimum/property_price_maximum which may need currency conversion to AED.
 
 
 def _convert_prices_to_aed(parsed_query: dict) -> tuple[dict, str, float | None]:
-    """If user specified a non-AED currency, convert price_min/price_max to AED.
+    """If user specified a non-AED currency, convert property_price_minimum/property_price_maximum to AED.
 
     Returns (updated_query, currency, exchange_rate).
     exchange_rate is None when no conversion was needed.
@@ -61,30 +62,41 @@ def _convert_prices_to_aed(parsed_query: dict) -> tuple[dict, str, float | None]
     )
 
     query = dict(parsed_query)
-    for key in ("price_min", "price_max"):
+    for key in ("property_price_minimum", "property_price_maximum"):
         if key in query and query[key] is not None:
             query[key] = round(query[key] * rate, 2)
 
     return query, currency, rate
 
 
-def _call_active_tool(parsed_query: dict) -> list[dict]:
-    """Search active DLD listings via MCP server."""
+def _call_active_tool(parsed_query: dict) -> tuple[list[dict], str | None]:
+    """Search active DLD listings via MCP server.
+    Returns (listings, error_msg). error_msg is None on success.
+    Empty list + no error = query matched 0 rows (not a failure)."""
     logger.info("_call_active_tool: searching active listings with %s", parsed_query)
-    return search_active_sync(**parsed_query)
+    try:
+        return search_active_sync(**parsed_query), None
+    except (RuntimeError, json.JSONDecodeError) as e:
+        logger.error("_call_active_tool: MCP failure: %s", e)
+        return [], f"MCP active search failed: {e}"
 
 
-def _call_historical_tool(parsed_query: dict) -> list[dict]:
-    """Search historical DLD transactions via MCP server."""
+def _call_historical_tool(parsed_query: dict) -> tuple[list[dict], str | None]:
+    """Search historical DLD transactions via MCP server.
+    Returns (listings, error_msg). error_msg is None on success.
+    Empty list + no error = query matched 0 rows (not a failure)."""
     logger.info("_call_historical_tool: searching historical with %s", parsed_query)
-    return search_historical_sync(**parsed_query)
+    try:
+        return search_historical_sync(**parsed_query), None
+    except (RuntimeError, json.JSONDecodeError) as e:
+        logger.error("_call_historical_tool: MCP failure: %s", e)
+        return [], f"MCP historical search failed: {e}"
 
 
 ##node itself
 def query_routing_node(state: AgentState) -> dict:
     """
     LangGraph node: fetch properties via active or historical tool.
-
     Strategy:
       1. Convert prices to AED if user specified a non-AED currency.
       2. Try active tool -> if results: data_source="active", data_intent="recommend"
@@ -100,7 +112,7 @@ def query_routing_node(state: AgentState) -> dict:
     }
 
     logger.info("query_routing: trying active data")
-    active_results = _call_active_tool(parsed_query)
+    active_results, active_error = _call_active_tool(parsed_query)
 
     if active_results:
         logger.info(
@@ -115,7 +127,7 @@ def query_routing_node(state: AgentState) -> dict:
         }
 
     logger.info("query_routing: active data returned nothing, trying historical data")
-    historical_results = _call_historical_tool(parsed_query)
+    historical_results, historical_error = _call_historical_tool(parsed_query)
 
     if historical_results:
         logger.info(
@@ -129,9 +141,17 @@ def query_routing_node(state: AgentState) -> dict:
             "data_intent": "insights_only",
         }
     else:
-        logger.warning(
-            "query_routing: both tools returned nothing -- proceeding with web search"
-        )
+        # Distinguish "no data matched" from "MCP failed" for debugging
+        errors = [e for e in (active_error, historical_error) if e]
+        if errors:
+            logger.warning(
+                "query_routing: both tools returned nothing (MCP errors: %s) -- proceeding with web search",
+                "; ".join(errors),
+            )
+        else:
+            logger.warning(
+                "query_routing: both tools returned 0 rows (no MCP errors) -- proceeding with web search"
+            )
         return {
             **base_result,
             "retrieved_properties": [],

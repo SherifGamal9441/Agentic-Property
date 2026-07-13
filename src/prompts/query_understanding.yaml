@@ -8,40 +8,58 @@ system_prompt: |
      Never invent values (e.g., do not assume `completion_status: "ready"` unless requested). Use null for anything not mentioned.
   
      Possible keys:
-      area_name: Optional[str] = None - e.g "Dubai Marina". CRITICAL: NEVER output just "Dubai". If the user says "in Dubai", ignore it and leave this null. Map common abbreviations (e.g., "JLT" -> "Jumeirah Lake Towers", "JBR" -> "Jumeirah Beach Residence").
+      area_name: Optional[str] = None - e.g "marina". CRITICAL RULES:
+        - ALWAYS output area_name in ALL LOWERCASE (e.g. "marina", "downtown", "business bay", "palm jumeirah", "jumeirah lake towers").
+        - NEVER output "Dubai" or "Dubai, UAE" as the area_name. If the user says "in Dubai" with no specific area, leave this null.
+        - Map common abbreviations: "JLT" → "jumeirah lake towers", "JBR" → "jumeirah beach residence", "JVC" → "jumeirah village circle", "JVT" → "jumeirah village triangle".
+        - Strip the "Dubai" prefix: "Dubai Marina" → "marina", "Downtown Dubai" → "downtown", "Dubai Hills Estate" → "dubai hills estate", "Dubai Hills" → "dubai hills estate".
+        - Burj Khalifa is a BUILDING not an area. "Burj Khalifa area" or "near Burj Khalifa" → area_name: "downtown".
+        - Do NOT put any building or landmark in area_name. Use building_name for buildings.
+        - "DAMAC Hills 2" → area_name: "damac hills", building_name: "damac hills 2". area_name must NOT be null.
       address: Optional[str] = None - e.g "123 Main St"
       building_name: Optional[str] = None - e.g "Burj Khalifa". Do not put landmarks or buildings in area_name.
-      type: Optional[str] = None - e.g "apartment" | "villa" | "townhouse" | "studio" | "penthouse" | "office" | "retail"
-      furnishing: Optional[str] = None - e.g "furnished" | "unfurnished"
-      completion_status: Optional[str] = None - e.g "off-plan" | "ready". Do not guess this.
-      price_min: Optional[float] = None - minimum price in the user's currency
-      price_max: Optional[float] = None - maximum price in the user's currency
-      currency: Optional[str] = None - currency code the user mentioned (e.g "USD", "EUR", "GBP"). Omit or null if user says AED or doesn't specify.
-      beds_min: Optional[int] = None - minimum number of bedrooms
-      beds_max: Optional[int] = None - maximum number of bedrooms
-      baths_min: Optional[int] = None - minimum number of bathrooms
-      baths_max: Optional[int] = None - maximum number of bathrooms
-      year_of_completion_min: Optional[int] = None - minimum year of completion
-      year_of_completion_max: Optional[int] = None - maximum year of completion
-      total_parking_spaces_min: Optional[int] = None - minimum number of parking spaces
-      total_parking_spaces_max: Optional[int] = None - maximum number of parking spaces
-      total_floors_min: Optional[int] = None - minimum number of floors
-      total_floors_max: Optional[int] = None - maximum number of floors
-      total_building_area_sqft_min: Optional[float] = None - minimum total building area in sqft
-      total_building_area_sqft_max: Optional[float] = None - maximum total building area in sqft
-      post_date_min: Optional[str] = None - minimum post date
-      post_date_max: Optional[str] = None - maximum post date
+      type: Optional[str] = None - "apartment" | "villa" | "townhouse" | "studio" | "penthouse" | "office" | "retail"
+        - "Studio apartment" → type: "studio". "1 bedroom" without explicit type → type: "apartment".
+      furnishing: Optional[str] = None - "furnished" | "unfurnished"
+      completion_status: Optional[str] = None - "off-plan" | "ready". Do not guess this.
+      property_price_minimum: Optional[float] = None - LOWER bound. "over X" / "above X" / "at least X" → property_price_minimum = X.
+      property_price_maximum: Optional[float] = None - UPPER bound. "under X" / "within X" / "budget X" / "I have X" / "What can I buy with X" → property_price_maximum = X.
+      currency: Optional[str] = None - e.g "USD", "EUR", "GBP". Omit or null if AED or not specified.
+      property_beds_minimum: Optional[int] = None - minimum bedrooms. For exact count "3 bedroom" → property_beds_minimum: 3 AND property_beds_maximum: 3.
+      property_beds_maximum: Optional[int] = None - maximum bedrooms. For exact count "3 bedroom" → property_beds_minimum: 3 AND property_beds_maximum: 3.
+      property_bathrooms_minimum: Optional[int] = None - minimum number of bathrooms
+      property_bathrooms_maximum: Optional[int] = None - maximum number of bathrooms
+      year_of_completion_minimum: Optional[int] = None - "built after 2020" → 2020 (inclusive)
+      year_of_completion_maximum: Optional[int] = None - maximum year of completion
+      parking_spaces_minimum: Optional[int] = None - minimum number of parking spaces
+      parking_spaces_maximum: Optional[int] = None - maximum number of parking spaces
+      total_floors_minimum: Optional[int] = None - minimum number of floors
+      total_floors_maximum: Optional[int] = None - maximum number of floors
+      total_building_area_sqft_minimum: Optional[float] = None - minimum total building area in sqft
+      total_building_area_sqft_maximum: Optional[float] = None - maximum total building area in sqft
+      post_date_minimum: Optional[str] = None - minimum post date
+      post_date_maximum: Optional[str] = None - maximum post date
   
   
-  2. ROUTE: Decide which path to take.
-       "query_routing"  → CRITICAL: MUST BE USED for ANY query where the user is looking to buy, rent, find, or invest in a specific type of property or area. 
-                          (e.g., "1 bedroom in Business Bay", "Furnished apartment for rent", "I have 1M EUR to invest in property").
-                          This also INCLUDES feasibility questions like "Is it possible to find a studio under 400k?".
-       "web_search"     → ONLY use this if the user is asking a general knowledge question (market trends, area overviews, how mortgages work, laws, developer reputations).
-                          DO NOT use this if they are looking for actual properties to rent/buy.
-       "memory_greeting" → the user query is completely empty ("") or a simple greeting ("hi", "hello").
-
-  NOTE: When a user asks for a "Studio" or "Studio apartment", parse it as `type: "studio"`. Do not confuse it with the neighborhood "Dubai Studio City" unless they explicitly say "Studio City".
+  2. ROUTE: Decide which path to take. You MUST always include the "route" key.
+       "query_routing"  → MUST BE USED for ANY query where the user wants to find, buy, rent, or invest in a specific property.
+                          This includes:
+                          - "1 bedroom in Business Bay" (looking for a listing)
+                          - "Furnished apartment for rent in Dubai Marina" (looking for a listing)
+                          - "I have 1M EUR to invest in Dubai property" (has a budget and wants property = query_routing)
+                          - "Studio under 400k AED — is that possible?" (feasibility = they want active listings)
+                          - "Dubai property" (short but valid property search)
+                          - "Cheapest apartment for sale in Dubai right now" (looking for a listing)
+                          - "Properties with swimming pool" / "5 bedrooms and a private pool" (amenity queries = query_routing)
+                          - "Compare apartments in Downtown vs Business Bay" (comparison = query_routing)
+                          - "Tell me about DAMAC Hills 2 properties" (specific area = query_routing)
+                          - "Are there any historical property records for JVC?" (historical DB = query_routing)
+                          - ANY query with a budget, property criteria, or intent to find actual properties.
+       "web_search"     → ONLY for general knowledge questions with NO intent to find a specific listing.
+                          Examples: market trends, area overviews, how mortgages work, laws, developer reputations, ROI/yield questions, schools, lifestyle.
+                          Do NOT use this if the user is looking for an actual property to buy or rent.
+  PROPERTY TYPE NOTE: "Studio" or "Studio apartment" → `type: "studio"`.
+  Do NOT confuse this with the neighborhood "Dubai Studio City" unless the user explicitly says "Studio City".
   
   Return ONLY valid JSON — no prose, no markdown fences:
   {
