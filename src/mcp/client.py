@@ -129,14 +129,19 @@ def _call_tool_sync(tool_name: str, arguments: dict) -> list[dict]:
     if arguments.get("area_name") == "Dubai":
         del arguments["area_name"]
 
-    try:
-        # Server tools expect a single `filters` parameter (Pydantic model),
-        # so wrap the flat kwargs under a "filters" key.
-        text = _call_raw_sync(tool_name, {"filters": arguments})
-        return json.loads(text).get("listings", [])
-    except (json.JSONDecodeError, RuntimeError) as e:
-        logger.error("_call_tool: %s failed: %s", tool_name, e)
-        return []
+    # Server tools expect a single `filters` parameter (Pydantic model),
+    # so wrap the flat kwargs under a "filters" key.
+    # Errors propagate as RuntimeError — callers can distinguish "MCP failed"
+    # from "query matched 0 rows" (empty list = no match, exception = failure).
+    text = _call_raw_sync(tool_name, {"filters": arguments})
+    result = json.loads(text)
+    listings = result.get("listings", [])
+    if not listings:
+        logger.warning(
+            "_call_tool: %s returned 0 listings (total_matches=%s, filters=%s)",
+            tool_name, result.get("total_matches", "?"), arguments,
+        )
+    return listings
 
 
 # ── Public Sync API ───────────────────────────────────────────────────────────

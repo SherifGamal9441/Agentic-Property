@@ -12,14 +12,22 @@ class BasePropertyFilters(BaseModel):
     )
     building_name: Optional[str] = Field(
         default=None,
-        description="Name of the specific building or tower (e.g. 'Burj Khalifa', 'Marina Gate')."
+        description=(
+            "Name of the specific building or tower (e.g. 'Burj Khalifa', 'Marina Gate', "
+            "'Palace Beach Residence Tower 2'). NOTE: some listings have the building name "
+            "stored in the address field instead of building_name. The server automatically "
+            "falls back to searching address if building_name yields no results."
+        )
     )
     type: Optional[str] = Field(
         default=None,
         description=(
-            "Property type. Use: 'Apartment', 'Villa', 'Townhouse', 'Penthouse', "
+            "Property type. IMPORTANT: values differ by data source.\n"
+            "- For ACTIVE listings: use 'Apartments' (plural is the only value in active data).\n"
+            "- For HISTORICAL listings: use one of: 'Apartment', 'Villa', 'Townhouse', 'Penthouse', "
             "'Hotel Apartment', 'Residential Building', 'Residential Floor', "
-            "'Residential Plot', 'Villa Compound'. "
+            "'Residential Plot', 'Villa Compound'.\n"
+            "Server uses partial case-insensitive matching, so 'apartment' will match both 'Apartments' and 'Apartment'."
         )
     )
     furnishing: Optional[str] = Field(
@@ -29,8 +37,12 @@ class BasePropertyFilters(BaseModel):
     completion_status: Optional[str] = Field(
         default=None,
         description=(
-            "Build status. Use 'Ready' for completed/built properties, "
-            "or 'Off-Plan' for properties under construction. "
+            "Build status of the property. IMPORTANT: the expected value depends on the data source.\n"
+            "- For ACTIVE listings: use 'completed' or 'under-construction'.\n"
+            "- For HISTORICAL listings: use 'Ready' or 'Off-Plan'.\n"
+            "Acceptable synonyms (server-side normalization will map them):\n"
+            "  completed/built/ready → 'completed' (active) / 'Ready' (historical)\n"
+            "  under-construction/off-plan/off plan → 'under-construction' (active) / 'Off-Plan' (historical)\n"
         )
     )
     property_price_minimum: Optional[float] = Field(

@@ -92,7 +92,7 @@ def _normalize_parsed_query(parsed_query: dict) -> dict:
     Returns a new dict (does not mutate the input).
     """
     if not isinstance(parsed_query, dict):
-        return parsed_query
+        return {}
 
     pq = dict(parsed_query)
 
@@ -187,8 +187,8 @@ def query_understanding_node(state: AgentState) -> dict:
             "route_reason": "parse failure fallback",
         }
 
-    parsed_query: dict = result.get("parsed_query", {})
-    route: str = result.get("route", "web_search")
+    parsed_query: dict = result.get("parsed_query") or {}
+    route: str = result.get("route") or "web_search"
 
     # Apply deterministic post-processing to fix known LLM inconsistencies
     parsed_query = _normalize_parsed_query(parsed_query)
@@ -196,7 +196,7 @@ def query_understanding_node(state: AgentState) -> dict:
     logger.info(
         "query_understanding: route=%s | parsed=%s | reason=%s",
         route,
-        list(parsed_query.keys()),
+        list(parsed_query.keys()) if isinstance(parsed_query, dict) else [],
         result.get("route_reason", ""),
     )
 
