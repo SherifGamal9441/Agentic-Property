@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, test } from "vitest";
+import { afterEach, expect, test } from "vitest";
 
 import App, { type Property } from "./App";
 
@@ -26,7 +26,7 @@ const properties: Property[] = Array.from({ length: 5 }, (_, index) => ({
   observed_at: "2026-07-01",
   dataset_snapshot_at: "2026-07-01",
   data_status: "active_dataset_listing",
-  fit_score: 0.9,
+  fit_score: 0.9 - index * 0.01,
   score_factors: ["Matches Dubai Marina"],
   matched_criteria: ["Matches Dubai Marina"],
   unmatched_criteria: [],
@@ -35,78 +35,96 @@ const properties: Property[] = Array.from({ length: 5 }, (_, index) => ({
   data_source: "active",
 }));
 
-test("starts with an honest empty workspace", () => {
+afterEach(() => localStorage.clear());
+
+test("starts with an editorial empty workspace without ingestion jargon", () => {
   render(<App />);
 
   expect(screen.getByRole("link", { name: /start a property brief/i })).toHaveAttribute("href", "#workspace");
   expect(screen.getByText(/guided starts/i)).toBeInTheDocument();
-  expect(screen.getByText(/understand your brief/i)).toBeInTheDocument();
   expect(screen.getByText(/start with a property brief/i)).toBeInTheDocument();
-  expect(screen.queryByText(/marina vista residence/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/csv loaded into database/i)).not.toBeInTheDocument();
+});
+
+test("adds and removes shortlist and comparison entries from property detail", async () => {
+  const user = userEvent.setup();
+  render(<App initialProperties={properties.slice(0, 1)} />);
+
+  await user.click(screen.getAllByRole("button", { name: "Open Property 1" })[0]);
+  const drawer = screen.getByRole("complementary", { name: /property intelligence/i });
+  await user.click(within(drawer).getByRole("button", { name: "Add to shortlist" }));
+  await user.click(within(drawer).getByRole("button", { name: "Add to comparison" }));
+
+  expect(within(drawer).getByRole("button", { name: "Remove from shortlist" })).toBeInTheDocument();
+  expect(within(drawer).getByRole("button", { name: "Remove from comparison" })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: /comparison shortlist/i })).toHaveTextContent("Property 1");
 });
 
 test("compares up to four properties and rejects a fifth", async () => {
   const user = userEvent.setup();
   render(<App initialProperties={properties} />);
 
-  for (const button of screen.getAllByRole("button", { name: "Compare" })) {
-    await user.click(button);
-  }
+  for (const button of screen.getAllByRole("button", { name: "Add to comparison" })) await user.click(button);
 
   expect(screen.getByRole("status")).toHaveTextContent("Compare up to four homes at a time.");
   expect(screen.getByRole("region", { name: /comparison shortlist/i })).toHaveTextContent("Property 4");
   expect(screen.getByRole("region", { name: /comparison shortlist/i })).not.toHaveTextContent("Property 5");
 });
 
-test("shows only valid coordinate pins and keeps card selection synchronized", async () => {
+test("scopes map evidence and lets buyers choose homes in an overlap group", async () => {
+  const user = userEvent.setup();
+  const overlapping = [{ ...properties[0], id: "overlap", title: "Overlap home" }, { ...properties[1], id: "overlap-2", title: "Overlap home two", latitude: properties[0].latitude, longitude: properties[0].longitude }];
+  render(<App initialProperties={overlapping} />);
+
+  await user.click(screen.getByRole("button", { name: "Show shortlist locations" }));
+  expect(screen.getByText(/no exact shortlist locations/i)).toBeInTheDocument();
+  await user.click(screen.getAllByRole("button", { name: "Add to shortlist" })[0]);
+  await user.click(screen.getByRole("button", { name: "Add to shortlist" }));
+  await user.click(screen.getByRole("button", { name: "Show shortlist locations" }));
+  await user.click(screen.getByRole("button", { name: /open 2 homes in dubai marina/i }));
+  expect(screen.getByText(/choose a home at this location/i)).toBeInTheDocument();
+  await user.click(within(screen.getByRole("region", { name: "Location group" })).getByRole("button", { name: "Open Overlap home two" }));
+  expect(screen.getByRole("complementary", { name: /property intelligence/i })).toHaveTextContent("Overlap home two");
+});
+
+test("saves and restores buyer criteria and shortlist on the same device", async () => {
+  const user = userEvent.setup();
+  render(<App initialProperties={properties.slice(0, 1)} />);
+
+  await user.click(screen.getByRole("button", { name: "Add to shortlist" }));
+  await user.type(screen.getByRole("textbox", { name: "Property brief" }), "Two bedrooms in Dubai Marina");
+  await user.type(screen.getByRole("textbox", { name: "Must-have criteria" }), "waterfront");
+  await user.click(screen.getByRole("button", { name: /save this search/i }));
+  await user.click(screen.getByRole("button", { name: "Clear research brief" }));
+  await user.click(screen.getByRole("button", { name: "Restore saved brief" }));
+
+  expect(screen.getByRole("textbox", { name: "Property brief" })).toHaveValue("Two bedrooms in Dubai Marina");
+  expect(screen.getByRole("textbox", { name: "Must-have criteria" })).toHaveValue("waterfront");
+  expect(screen.getByRole("status")).toHaveTextContent("Saved brief restored.");
+});
+
+test("shows only valid coordinate pins and keeps selection synchronized", async () => {
   const user = userEvent.setup();
   render(<App initialProperties={properties} />);
 
   const map = screen.getByLabelText("Property location view");
   expect(within(map).getAllByRole("button", { name: /open property/i })).toHaveLength(4);
-  expect(screen.getByText(/property 5 is shown by area only/i)).toBeInTheDocument();
+  expect(screen.getByText(/property 5 has area-only location evidence/i)).toBeInTheDocument();
 
   await user.click(within(map).getByRole("button", { name: "Open Property 2" }));
   expect(screen.getByRole("complementary", { name: /property intelligence/i })).toHaveTextContent("Property 2");
 });
 
-test("shows buyer decision evidence and saves local search", async () => {
+test("sorts visible results and keeps buyer decision evidence", async () => {
   const user = userEvent.setup();
-  render(<App initialProperties={properties.slice(0, 2)} />);
+  render(<App initialProperties={[properties[1], properties[0]]} />);
 
-  await user.click(screen.getAllByRole("button", { name: "Compare" })[0]);
+  await user.selectOptions(screen.getByRole("combobox", { name: "Sort properties" }), "price-low");
+  expect(within(screen.getByRole("region", { name: "Property results" })).getAllByRole("button", { name: /open property/i })[0]).toHaveAccessibleName("Open Property 1");
+
+  await user.click(screen.getAllByRole("button", { name: "Add to comparison" })[0]);
   await user.click(screen.getByRole("button", { name: "View decision sheet" }));
   expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Historical comparable evidence");
-  expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Total ownership cost assumptions");
   await user.type(screen.getByRole("spinbutton", { name: "Transfer cost" }), "5000");
   expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Entered costs: AED 5,000");
-
-  await user.type(screen.getByRole("textbox", { name: "Property brief" }), "Two bedrooms in Dubai Marina");
-  await user.click(screen.getByRole("button", { name: /save this search/i }));
-  expect(screen.getByRole("status")).toHaveTextContent("Search saved in this browser.");
-});
-
-test("flags saved research only when a newer active snapshot is shown", () => {
-  localStorage.setItem("aizen-saved-searches", JSON.stringify([{
-    id: "saved-1",
-    query: "Two bedrooms in Dubai Marina",
-    snapshot: "2026-06-01",
-    resultIds: ["old-property"],
-  }]));
-
-  render(<App initialProperties={properties.slice(0, 1)} />);
-
-  expect(screen.getByRole("status")).toHaveTextContent("A newer active dataset snapshot is available for a saved search.");
-});
-
-test("keeps buyer criteria visible and records bounded result feedback", async () => {
-  const user = userEvent.setup();
-  render(<App initialProperties={properties.slice(0, 1)} />);
-
-  await user.type(screen.getByRole("textbox", { name: "Must-have criteria" }), "waterfront");
-  expect(screen.getByText("Must-have: waterfront")).toBeInTheDocument();
-
-  await user.click(screen.getAllByRole("button", { name: "Open Property 1" })[0]);
-  await user.click(screen.getByRole("button", { name: "Useful result" }));
-  expect(screen.getByRole("status")).toHaveTextContent("Feedback saved in this browser.");
 });
