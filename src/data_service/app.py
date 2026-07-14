@@ -61,6 +61,27 @@ class SearchResponse(BaseModel):
     returned_count: int
     listings: List[ListingResponse]
 
+
+def build_market_context(area: str, listings: list[HistoricalListing]) -> dict:
+    """Summarize reported historical evidence without estimating missing values."""
+    prices = [listing.price for listing in listings if listing.price is not None]
+    unit_prices = [
+        listing.price / listing.total_building_area_sqft
+        for listing in listings
+        if listing.price is not None and listing.total_building_area_sqft and listing.total_building_area_sqft > 0
+    ]
+    dates = [listing.post_date for listing in listings if listing.post_date is not None]
+    return {
+        "area": area,
+        "record_count": len(listings),
+        "period_start": min(dates) if dates else None,
+        "period_end": max(dates) if dates else None,
+        "price_min": min(prices) if prices else None,
+        "price_max": max(prices) if prices else None,
+        "price_per_sqft_min": min(unit_prices) if unit_prices else None,
+        "price_per_sqft_max": max(unit_prices) if unit_prices else None,
+    }
+
 # ---------------------------------------------------------------------------
 # Helper: build query filters
 # ---------------------------------------------------------------------------
@@ -157,8 +178,22 @@ def apply_filters(query, model, filters: BasePropertyFilters):
 app = FastAPI(title="Dubai Real Estate Data Service")
 
 @app.get("/health")
-def health_check():
-    return {"status": "ok", **get_database_status()}
+def health_check(db: Session = Depends(get_db)):
+    latest_active = db.query(ActiveListing.post_date).order_by(desc(ActiveListing.post_date).nulls_last()).first()
+    active_snapshot_at = latest_active[0] if latest_active else None
+    return {
+        "status": "ok",
+        **get_database_status(),
+        "active_records": db.query(ActiveListing).count(),
+        "historical_records": db.query(HistoricalListing).count(),
+        "active_snapshot_at": active_snapshot_at,
+    }
+
+
+@app.get("/market-context")
+def market_context(area: str = Query(min_length=1), db: Session = Depends(get_db)):
+    listings = db.query(HistoricalListing).filter(HistoricalListing.area_name.ilike(f"%{area}%")).all()
+    return build_market_context(area, listings)
 
 @app.post("/search/historical", response_model=SearchResponse)
 def search_historical(req: HistoricalSearchRequest, db: Session = Depends(get_db)):

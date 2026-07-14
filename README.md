@@ -202,7 +202,11 @@ Agentic-Property/
 
 ### Flagship Agentic UI (recommended)
 
-The job-fair demo defaults to **Demo Mode**, which streams a reliable representative scenario without an API key. Live Mode remains available when `GROQ_API_KEY` is set.
+The flagship UI is a buyer workspace backed by the active CSV dataset loaded into the database. It does not present demo listings or claim real-time scraping. Each result shows its source and dataset snapshot date; saved searches are kept only in the browser and are flagged when a newer active snapshot is returned.
+
+Use the map as relative location evidence from supplied listing coordinates. It intentionally has no paid map dependency, and records without verified coordinates remain area-only. The comparison tray accepts one to four homes, and its decision sheet makes historical context and buyer-entered ownership costs explicit.
+
+Buyers can add must-have, nice-to-have, and deal-breaker context to a brief, inspect reported price-per-square-foot, request historical area context, and leave browser-local research feedback. The data-service health endpoint reports active/historical record counts and the latest active snapshot date for operational visibility.
 
 ```bash
 docker compose up --build -d

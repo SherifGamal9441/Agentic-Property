@@ -104,7 +104,7 @@ def test_recommendation_path(
     # Answer generation
     mock_ans_llm.return_value = _make_stream_mock(FINAL_ANSWER_TOKENS)
 
-    graph = build_graph()
+    graph = build_graph(checkpointer=False)
     final_state = graph.invoke(
         {"query": "2BR in Dubai Marina, sea view, AED 1.8M"},
         {"configurable": {"thread_id": f"test-rec-{uuid.uuid4()}"}},
@@ -148,16 +148,12 @@ def test_web_search_path(mock_mem_llm, mock_rel_llm, mock_und_llm, mock_ans_llm)
     mock_ans_llm.return_value = _make_stream_mock(["Rents ", "are ", "rising."])
 
     # Inject web_search_summary to simulate web_search sub-graph having already run
-    with patch("src.nodes.web_search.create_web_search_agent") as mock_ws:
-        def fake_web_search_agent():
-            def _run(state):
-                return {"web_search_summary": "Rental prices in Downtown Dubai increased 12% in 2025."}
-            mock_compiled = MagicMock()
-            mock_compiled.invoke = _run
-            return mock_compiled
-        mock_ws.return_value = fake_web_search_agent()
+    with patch("src.agents.graph.create_web_search_agent") as mock_ws:
+        mock_ws.return_value = lambda state: {
+            "web_search_summary": "Rental prices in Downtown Dubai increased 12% in 2025."
+        }
 
-        graph = build_graph()
+        graph = build_graph(checkpointer=False)
         final_state = graph.invoke(
             {"query": "What are rental trends in Downtown Dubai?"},
             {"configurable": {"thread_id": f"test-ws-{uuid.uuid4()}"}},
@@ -186,7 +182,7 @@ def test_rejection_path(mock_mem_llm, mock_rel_llm, mock_und_llm):
         json.dumps({"relevant": False, "failed_rule": "topic", "reason": "not real estate"})
     )
 
-    graph = build_graph()
+    graph = build_graph(checkpointer=False)
     final_state = graph.invoke(
         {"query": "What is the best pasta recipe?"},
         {"configurable": {"thread_id": f"test-rej-{uuid.uuid4()}"}},

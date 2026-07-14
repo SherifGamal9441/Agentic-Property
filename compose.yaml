@@ -57,6 +57,8 @@ services:
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
       LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-agentic-property}
+    volumes:
+      - agent-memory:/app/data/memory
     healthcheck:
       test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8002/health')"]
       interval: 5s
@@ -82,3 +84,4 @@ volumes:
   dld-pgdata:
     name: dld-pgdata
   dld-bootstrap-state:
+  agent-memory:

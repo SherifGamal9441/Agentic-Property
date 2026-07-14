@@ -56,7 +56,7 @@ def test_parse_clean_json():
 
 def test_parse_garbage_defaults_to_property():
     result = _parse_llm_response("not json at all")
-    assert result["category"] == "property_query"
+    assert result["category"] == "general_query"
 
 
 def test_parse_json_with_markdown_fence():

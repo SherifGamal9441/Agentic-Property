@@ -1,73 +1,50 @@
-"""
-End-to-End Pipeline Test with Fake Data.
+"""Full agent graph routing with active data and mocked model boundaries."""
 
-This test patches the two tool stubs in `query_routing.py` to return fake properties.
-It does NOT mock the LLMs. This allows testing the full graph logic (query understanding,
-routing, comparison, reflection, answer generation) with realistic data exactly as it 
-would run in production.
+from unittest.mock import MagicMock, patch
 
-Usage:
-    uv run pytest tests/agents/test_pipeline_e2e.py -s
-    (The -s flag ensures you can see the streaming text and print statements)
-"""
+from src.agents.graph import build_graph
 
-import pytest
-from unittest.mock import patch
 
-from src.agents.graph import agent_graph
+ACTIVE_PROPERTIES = [{
+    "id": "prop-001",
+    "title": "Marina Crest 2BR Apartment",
+    "price": 1_750_000,
+    "area_name": "Dubai Marina",
+    "beds": 2,
+}]
 
-FAKE_CACHED_PROPERTIES = [
-    {
-        "id": "prop-001",
-        "title": "Marina Crest 2BR Apartment",
-        "price": 1_750_000,
-        "area_sqm": 110.5,
-        "location": "Dubai Marina",
-        "bedrooms": 2,
-        "amenities": ["sea view", "gym", "pool"],
-    },
-    {
-        "id": "prop-002",
-        "title": "Jumeirah Living 2BR",
-        "price": 2_100_000,
-        "area_sqm": 130.0,
-        "location": "Jumeirah",
-        "bedrooms": 2,
-        "amenities": ["canal view", "maid room"],
-    }
-]
 
-# We mark this so you know it's a slow test that requires the LLM
-@pytest.mark.slow
-@patch("src.nodes.query_routing._call_historical_tool", return_value=[])
-@patch("src.nodes.query_routing._call_cached_tool", return_value=FAKE_CACHED_PROPERTIES)
-def test_full_pipeline_with_real_llm_and_fake_data(mock_cached, mock_historical):
-    """
-    Test the pipeline with fake data and the REAL LLM.
-    """
-    query = "I'm looking for a 2-bedroom apartment in Dubai Marina with a sea view, budget AED 1.8M."
-    initial_state = {"query": query}
-    
-    print(f"\n[Test] Sending query: '{query}'")
-    print("[Test] Injecting 2 fake properties into the cached tool...")
-    
-    # 1. Invoke the graph
-    final_state = agent_graph.invoke(initial_state)
-    
-    # 2. Assertions
-    # We assert on the deterministic parts of the graph flow
-    assert final_state["is_relevant"] is True
-    assert final_state["route"] == "query_routing"
-    assert final_state["data_source"] == "cached"
-    assert final_state["data_intent"] == "recommend"
-    assert final_state["comparison_result"] is not None
-    
-    props = final_state["comparison_result"].get("properties", [])
-    assert len(props) > 0, "The LLM failed to return any properties in the comparison"
-    
-    assert final_state["final_answer"] is not None
-    assert len(final_state["final_answer"]) > 50
+def _llm(content: str) -> MagicMock:
+    response = MagicMock(content=content)
+    llm = MagicMock()
+    llm.invoke.return_value = response
+    return llm
 
-    print("\n[Test] --- FINAL ANSWER ---")
-    print(final_state["final_answer"])
-    print("[Test] --------------------")
+
+@patch("src.nodes.answer_generation.get_llm")
+@patch("src.nodes.reflection.get_llm")
+@patch("src.nodes.comparison_engine.get_llm")
+@patch("src.nodes.query_routing._call_historical_tool", return_value=([], None))
+@patch("src.nodes.query_routing._call_active_tool", return_value=(ACTIVE_PROPERTIES, None))
+@patch("src.nodes.query_understanding.get_llm")
+@patch("src.nodes.query_relevancy.get_llm")
+@patch("src.nodes.memory.get_llm")
+def test_full_pipeline_uses_active_data(
+    mock_memory, mock_relevancy, mock_understanding, _mock_active, _mock_historical,
+    mock_comparison, mock_reflection, mock_answer,
+):
+    mock_memory.return_value = _llm('{"category":"property_query"}')
+    mock_relevancy.return_value = _llm('{"relevant":true}')
+    mock_understanding.return_value = _llm('{"parsed_query":{"area_name":"Dubai Marina"},"route":"query_routing"}')
+    mock_comparison.return_value = _llm('{"properties":[{"id":"prop-001","title":"Marina Crest 2BR Apartment","fit_score":0.9,"matched_criteria":["location"],"unmatched_criteria":[],"price_assessment":"fair"}]}')
+    mock_reflection.return_value = _llm('{"ok":true,"issues":[],"confidence":0.9}')
+    mock_answer.return_value.stream.return_value = iter([MagicMock(content="A supported result.")])
+
+    state = build_graph(checkpointer=False).invoke({"query": "2BR in Dubai Marina"})
+
+    assert state["is_relevant"] is True
+    assert state["route"] == "query_routing"
+    assert state["data_source"] == "active"
+    assert state["data_intent"] == "recommend"
+    assert state["comparison_result"]["properties"][0]["id"] == "prop-001"
+    assert state["final_answer"] == "A supported result."
