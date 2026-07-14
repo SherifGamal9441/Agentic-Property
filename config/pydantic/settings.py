@@ -31,9 +31,8 @@ class Settings(BaseSettings):
     groq_model: str = "qwen/qwen3.6-27b"
     # Custom OpenAI-compatible endpoint (Unsloth Studio, llama.cpp, etc.)
     #custom_openai_model: str = "jackrong/Qwopus3.5-4B-Coder-MTP-GGUF:Q4_K_M"
-    custom_openai_model: str = "Carnice-Qwen3.6-MoE-35B-A3B-APEX-MTP-I-Nano"
-    #custom_openai_base_url: str = "http://localhost:8888/v1"
-    custom_openai_base_url: str = "http://192.168.1.2:8888/v1"
+    custom_openai_model: str = ""
+    custom_openai_base_url: str = ""
     custom_openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
 
     # ── Agent behaviour ───────────────────────────────────────────────────────

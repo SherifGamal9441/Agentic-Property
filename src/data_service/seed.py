@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import time
 import logging
@@ -23,6 +24,20 @@ logger = logging.getLogger(__name__)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HISTORICAL_CSV = os.path.join(PROJECT_ROOT, "data", "historical_dld.csv")
 ACTIVE_CSV = os.path.join(PROJECT_ROOT, "data", "active_dld.csv")
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _parse_post_date(value):
+    if not isinstance(value, str):
+        return value
+
+    parsed = pd.to_datetime(
+        value,
+        errors="coerce",
+        format="%Y-%m-%d" if ISO_DATE.fullmatch(value) else "mixed",
+        dayfirst=not bool(ISO_DATE.fullmatch(value)),
+    )
+    return parsed.date() if pd.notna(parsed) else None
 
 def wait_for_db(retries=30, delay=2):
     """Wait for Postgres to become available."""
@@ -45,12 +60,7 @@ def clean_row(row):
             data[k] = None
         elif k == "post_date":
             try:
-                if isinstance(v, str):
-                    # dayfirst=True because CSV uses DD/MM/YYYY
-                    dt = pd.to_datetime(v, errors="coerce", dayfirst=True)
-                    data[k] = dt.date() if pd.notna(dt) else None
-                else:
-                    data[k] = v
+                data[k] = _parse_post_date(v)
             except Exception:
                 data[k] = None
         elif k == "property_id":
@@ -98,7 +108,7 @@ def seed_table(csv_path: str, model_class, truncate_first: bool = False):
             )
 
             if has_unique:
-                # Use dialect-specific INSERT ... ON CONFLICT DO NOTHING
+                # Use dialect-specific INSERT ... ON CONFLICT DO UPDATE.
                 dialect_name = session.bind.dialect.name
                 
                 chunk_size = 50
@@ -106,13 +116,25 @@ def seed_table(csv_path: str, model_class, truncate_first: bool = False):
                     chunk = records[i:i + chunk_size]
                     if dialect_name == "postgresql":
                         from sqlalchemy.dialects.postgresql import insert as pg_insert
-                        stmt = pg_insert(model_class).values(chunk).on_conflict_do_nothing(
-                            index_elements=["property_id"]
+                        stmt = pg_insert(model_class).values(chunk)
+                        stmt = stmt.on_conflict_do_update(
+                            index_elements=["property_id"],
+                            set_={
+                                key: getattr(stmt.excluded, key)
+                                for key in chunk[0]
+                                if key != "property_id"
+                            },
                         )
                     elif dialect_name == "sqlite":
                         from sqlalchemy.dialects.sqlite import insert as sqlite_insert
-                        stmt = sqlite_insert(model_class).values(chunk).on_conflict_do_nothing(
-                            index_elements=["property_id"]
+                        stmt = sqlite_insert(model_class).values(chunk)
+                        stmt = stmt.on_conflict_do_update(
+                            index_elements=["property_id"],
+                            set_={
+                                key: getattr(stmt.excluded, key)
+                                for key in chunk[0]
+                                if key != "property_id"
+                            },
                         )
                     else:
                         # Generic fallback: plain insert (may fail on dupes)
@@ -136,19 +158,22 @@ def seed_table(csv_path: str, model_class, truncate_first: bool = False):
             logger.error(f"Error during insert: {e}")
             return 0, len(records)
 
-def seed_all():
+def seed_all(reset_active: bool = False):
     logger.info("Starting database seeding...")
+    missing_files = [path for path in (HISTORICAL_CSV, ACTIVE_CSV) if not os.path.exists(path)]
+    if missing_files:
+        raise FileNotFoundError(f"Required seed data is missing: {', '.join(missing_files)}")
     if not wait_for_db():
         logger.error("Could not connect to database after multiple attempts. Exiting.")
         sys.exit(1)
     Base.metadata.create_all(bind=engine)
 
     hist_ins, hist_skp = seed_table(HISTORICAL_CSV, HistoricalListing, truncate_first=True)
-    act_ins, act_skp = seed_table(ACTIVE_CSV, ActiveListing)
+    act_ins, act_skp = seed_table(ACTIVE_CSV, ActiveListing, truncate_first=reset_active)
 
     total_ins = hist_ins + act_ins
     total_skp = hist_skp + act_skp
     logger.info(f"Seeding complete. Total inserted: {total_ins}, Total skipped: {total_skp}")
 
 if __name__ == "__main__":
-    seed_all()
+    seed_all(reset_active=os.getenv("RESET_ACTIVE_LISTINGS", "").lower() in {"1", "true"})

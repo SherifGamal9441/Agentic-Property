@@ -191,18 +191,12 @@ Agentic-Property/
    uv sync
    ```
 
-3. **Start the Backend Data Service**:
-   You can either run the FastAPI server natively, or use Docker Compose.
+3. **Start the full application**:
+   Set your local model settings in `.env`, ensure both CSV files exist under `data/`, then run:
    ```bash
-   # Seed the database first
-   uv run python src/data_service/seed.py
-
-   # Run the FastAPI Data Service locally
-   uv run scripts/run_data_service.py
-
-   # OR use Docker Compose (starts Postgres + Data Service + MCP Server)
-   cd docker && docker-compose up -d
+   docker compose up --build -d
    ```
+   Open [http://localhost:5173](http://localhost:5173). The first start backs up existing PostgreSQL and SQLite listing data under `data/backups/`, repairs SQLite from the CSVs, and seeds PostgreSQL. PostgreSQL is primary; SQLite is a visible fallback if PostgreSQL is unavailable.
 
 ## Usage
 
@@ -211,11 +205,10 @@ Agentic-Property/
 The job-fair demo defaults to **Demo Mode**, which streams a reliable representative scenario without an API key. Live Mode remains available when `GROQ_API_KEY` is set.
 
 ```bash
-cd docker
-docker compose up --build
+docker compose up --build -d
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The browser UI calls the agent facade at `http://localhost:8002`; the data service remains available at `http://localhost:8000`.
+Open [http://localhost:5173](http://localhost:5173). The browser UI calls the agent facade at `http://localhost:8002`; the data service remains available at `http://localhost:8000`. Check service state with `docker compose logs -f`; stop with `docker compose down`.
 
 ### Web UI
 Run the legacy Streamlit proof of concept:

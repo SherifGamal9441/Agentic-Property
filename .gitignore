@@ -8,6 +8,7 @@ logs/
 .venv
 .hermes
 data/memory/
+data/backups/
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo

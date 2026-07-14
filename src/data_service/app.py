@@ -7,7 +7,7 @@ from typing import Optional, List
 from pydantic import BaseModel, ConfigDict, validator
 from src.mcp.schemas import BasePropertyFilters, HistoricalFilters
 
-from .database import get_db
+from .database import get_database_status, get_db
 from .db_tables import HistoricalListing, ActiveListing
 
 # ---------------------------------------------------------------------------
@@ -158,7 +158,7 @@ app = FastAPI(title="Dubai Real Estate Data Service")
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok"}
+    return {"status": "ok", **get_database_status()}
 
 @app.post("/search/historical", response_model=SearchResponse)
 def search_historical(req: HistoricalSearchRequest, db: Session = Depends(get_db)):

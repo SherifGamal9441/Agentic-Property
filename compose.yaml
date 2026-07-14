@@ -1,0 +1,84 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dld}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dld_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-dld_db}
+    volumes:
+      - dld-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  data-service:
+    build:
+      context: .
+      dockerfile: docker/data-service.Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dld}:${POSTGRES_PASSWORD:-dld_pass}@postgres:5432/${POSTGRES_DB:-dld_db}
+      DATABASE_CONNECT_RETRIES: "1"
+      BOOTSTRAP_CONNECT_RETRIES: "30"
+      BOOTSTRAP_MARKER: /state/postgres-seeded
+    volumes:
+      - ./data:/app/data
+      - dld-bootstrap-state:/state
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  agent-api:
+    build:
+      context: .
+      dockerfile: docker/agent-api.Dockerfile
+    ports:
+      - "8002:8002"
+    depends_on:
+      data-service:
+        condition: service_healthy
+    environment:
+      DATA_SERVICE_URL: http://data-service:8000
+      LLM_PROVIDER: ${LLM_PROVIDER:?Set LLM_PROVIDER in .env}
+      CUSTOM_OPENAI_MODEL: ${CUSTOM_OPENAI_MODEL:?Set CUSTOM_OPENAI_MODEL in .env}
+      CUSTOM_OPENAI_BASE_URL: ${CUSTOM_OPENAI_BASE_URL:?Set CUSTOM_OPENAI_BASE_URL in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      EXCHANGERATE_API_KEY: ${EXCHANGERATE_API_KEY:-}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-agentic-property}
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://localhost:8002/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      agent-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  dld-pgdata:
+    name: dld-pgdata
+  dld-bootstrap-state:
