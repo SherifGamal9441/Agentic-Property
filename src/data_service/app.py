@@ -62,7 +62,7 @@ class SearchResponse(BaseModel):
     listings: List[ListingResponse]
 
 
-def build_market_context(area: str, listings: list[HistoricalListing]) -> dict:
+def build_market_context(area: str, listings: list[HistoricalListing], matching_basis: list[str] | None = None) -> dict:
     """Summarize reported historical evidence without estimating missing values."""
     prices = [listing.price for listing in listings if listing.price is not None]
     unit_prices = [
@@ -73,6 +73,7 @@ def build_market_context(area: str, listings: list[HistoricalListing]) -> dict:
     dates = [listing.post_date for listing in listings if listing.post_date is not None]
     return {
         "area": area,
+        "matching_basis": matching_basis or ["area"],
         "record_count": len(listings),
         "period_start": min(dates) if dates else None,
         "period_end": max(dates) if dates else None,
@@ -191,9 +192,23 @@ def health_check(db: Session = Depends(get_db)):
 
 
 @app.get("/market-context")
-def market_context(area: str = Query(min_length=1), db: Session = Depends(get_db)):
-    listings = db.query(HistoricalListing).filter(HistoricalListing.area_name.ilike(f"%{area}%")).all()
-    return build_market_context(area, listings)
+def market_context(
+    area: str = Query(min_length=1),
+    property_type: str | None = Query(default=None, min_length=1),
+    beds: int | None = Query(default=None, ge=0),
+    db: Session = Depends(get_db),
+):
+    """Return only reported historical context for available comparable facts."""
+    query = db.query(HistoricalListing).filter(HistoricalListing.area_name.ilike(f"%{area}%"))
+    matching_basis = ["area"]
+    if property_type:
+        normalized_type = "Apartment" if property_type.strip().lower() == "apartments" else property_type.strip()
+        query = query.filter(HistoricalListing.type.ilike(f"%{normalized_type}%"))
+        matching_basis.append("property_type")
+    if beds is not None:
+        query = query.filter(HistoricalListing.beds == beds)
+        matching_basis.append("beds")
+    return build_market_context(area, query.all(), matching_basis)
 
 @app.post("/search/historical", response_model=SearchResponse)
 def search_historical(req: HistoricalSearchRequest, db: Session = Depends(get_db)):

@@ -30,3 +30,11 @@ def test_market_context_uses_only_reported_historical_values():
     assert context["price_min"] == 1_000_000
     assert context["price_per_sqft_max"] == 1_500
     assert context["period_start"] == date(2025, 1, 1)
+
+
+def test_market_context_reports_matching_basis_without_estimating_values():
+    context = build_market_context("Dubai Marina", [], ["area", "property_type", "beds"])
+
+    assert context["matching_basis"] == ["area", "property_type", "beds"]
+    assert context["record_count"] == 0
+    assert context["price_min"] is None

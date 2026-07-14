@@ -10,7 +10,7 @@ from typing import Any
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -54,10 +54,15 @@ def _safe_failure(_: Exception) -> dict[str, Any]:
     }
 
 
-def _market_context(area: str) -> dict[str, Any]:
+def _market_context(area: str, property_type: str | None = None, beds: int | None = None) -> dict[str, Any]:
     endpoint = os.getenv("DATA_SERVICE_URL", "http://localhost:8000").rstrip("/")
     try:
-        with urlopen(f"{endpoint}/market-context?{urlencode({'area': area})}", timeout=3) as response:
+        query = {"area": area}
+        if property_type:
+            query["property_type"] = property_type
+        if beds is not None:
+            query["beds"] = beds
+        with urlopen(f"{endpoint}/market-context?{urlencode(query)}", timeout=3) as response:
             return json.loads(response.read())
     except Exception:
         return {"area": area, "unavailable": True}
@@ -204,8 +209,37 @@ async def health() -> dict[str, str]:
 
 
 @app.get("/api/market-context")
-async def market_context(area: str = Query(min_length=1)) -> dict[str, Any]:
-    return _market_context(area)
+async def market_context(
+    area: str = Query(min_length=1),
+    property_type: str | None = Query(default=None, min_length=1),
+    beds: int | None = Query(default=None, ge=0),
+) -> dict[str, Any]:
+    return _market_context(area, property_type, beds)
+
+
+@app.get("/api/conversations/{thread_id}")
+async def conversation_history(thread_id: uuid.UUID) -> dict[str, Any]:
+    """Expose only the caller-known thread's persisted buyer/Aizen transcript."""
+    from src.agents.graph import build_graph
+    from src.memory.long_term_memory import create_async_checkpointer
+
+    checkpointer = await create_async_checkpointer()
+    try:
+        state = await build_graph(checkpointer=checkpointer).aget_state(
+            {"configurable": {"thread_id": str(thread_id)}}
+        )
+        values = getattr(state, "values", {}) or {}
+        messages = [
+            {"role": item["role"], "content": item["content"]}
+            for item in values.get("conversation_history", [])
+            if item.get("role") in {"user", "assistant"} and isinstance(item.get("content"), str)
+        ]
+        if not messages:
+            raise HTTPException(status_code=404, detail="Research conversation is unavailable.")
+        return {"thread_id": str(thread_id), "messages": messages}
+    finally:
+        if getattr(checkpointer, "conn", None):
+            await checkpointer.conn.close()
 
 
 @app.post("/api/runs")

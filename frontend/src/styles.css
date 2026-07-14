@@ -1,11 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,600&family=Manrope:wght@400;500;600;700&display=swap');
 
-:root { font-family: Manrope, sans-serif; color: #14211d; background: #f5f1e9; font-synthesis: none; }
+:root { --ivory: #fffdf8; --sand: #f5f1e9; --ink: #14211d; --forest: #21322b; --champagne: #e5bb77; --line: #d9d2c6; --clay: #a85d3d; font-family: Manrope, sans-serif; color: var(--ink); background: var(--sand); font-synthesis: none; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background: #f5f1e9; }
 button, textarea { font: inherit; }
 button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid #b96542; outline-offset: 3px; }
 a { color: inherit; text-decoration: none; }
 .app-shell { min-height: 100vh; overflow: hidden; }
 .topbar { height: 76px; padding: 0 5vw; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #d9d2c6; background: rgba(245,241,233,.92); position: sticky; top: 0; z-index: 20; backdrop-filter: blur(15px); }
@@ -50,3 +51,7 @@ main { max-width: 1600px; margin: auto; padding: 0 4vw 4vw; }
 .map-scopes { margin: 1rem 0 .3rem; }.map-scopes button { flex: 1; }.map-pin.shortlisted { box-shadow: 0 0 0 3px #e5bb77, 0 3px 9px rgba(20,33,29,.2); }.map-pin.comparing { outline: 2px solid #b96542; outline-offset: 2px; }.map-cluster { margin-top: .8rem; border: 1px solid #d9d2c6; background: #fffdf8; padding: .65rem; }.map-cluster p { margin: 0 0 .45rem; color: #526057; font-size: .68rem; }.map-cluster button { width: 100%; text-align: left; border: 0; border-top: 1px solid #eee5d9; background: transparent; padding: .5rem 0; color: #14211d; font-size: .68rem; }
 .drawer-actions button[aria-pressed="true"] { background: #f2e5d1; border-color: #cda974; color: #6f3b25; }.drawer-actions .dark-button[aria-pressed="true"] { background: #21322b; color: #fffdf8; }
 @media (max-width: 720px) { .research-actions button { flex: 1 1 auto; }.empty-state { min-height: 220px; padding: 1.5rem; }.results-heading { align-items: start; flex-direction: column; }.results-heading label { width: 100%; }.results-heading select { width: 100%; } }
+.research-sessions { margin-top: 2rem; border-top: 1px solid #dfd7ca; padding-top: 1rem; }.research-sessions .section-label { margin-bottom: .35rem; }.research-sessions button { display: grid; gap: .18rem; justify-content: start; padding: .6rem 0; }.research-sessions button[aria-current="page"] { color: #a85d3d; }.research-sessions small { color: #7a817b; font-size: .58rem; }
+.research-timeline { margin: 1.2rem 0; border-top: 1px solid #e0d8cb; border-bottom: 1px solid #e0d8cb; padding: 1rem 0; display: grid; gap: .7rem; }.conversation-message { max-width: 88%; padding: .7rem .8rem; background: #f4efe7; color: #455149; font-size: .72rem; line-height: 1.55; }.conversation-message.assistant { margin-left: auto; background: #14211d; color: #fffdf8; }.conversation-message b { display: block; color: #a85d3d; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; }.conversation-message.assistant b { color: #e5bb77; }.conversation-message p { margin: .25rem 0 0; white-space: pre-wrap; }
+.decision-state { color: #8b4c30 !important; text-transform: capitalize; }.buyer-note { padding-left: .55rem; border-left: 2px solid #e5bb77; }.historical-context { margin-top: .85rem; padding-top: .75rem; border-top: 1px solid #e0d8cb; }.historical-context p { margin: .35rem 0; }.historical-context small { color: #6b756d; font-size: .6rem; line-height: 1.45; }.buyer-decision-controls label { display: grid; gap: .35rem; color: #56615a; font-size: .68rem; }.buyer-decision-controls textarea { min-height: 76px; resize: vertical; border: 1px solid #d9d2c6; padding: .55rem; background: #fffdf8; color: #14211d; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

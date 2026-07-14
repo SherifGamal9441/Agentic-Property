@@ -214,6 +214,8 @@ docker compose up --build -d
 
 Open [http://localhost:5173](http://localhost:5173). The browser UI calls the agent facade at `http://localhost:8002`; the data service remains available at `http://localhost:8000`. Check service state with `docker compose logs -f`; stop with `docker compose down`.
 
+The buyer workspace keeps research conversations in the existing LangGraph SQLite checkpoint store and restores the visible timeline through `GET /api/conversations/{thread_id}`. Its decision sheet requests factual historical context from `GET /api/market-context`, optionally narrowed by property type and bedrooms; this evidence is explicitly market context, not active inventory or a valuation.
+
 ### Web UI
 Run the legacy Streamlit proof of concept:
 ```bash

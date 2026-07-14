@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 export type Property = {
   id: string;
@@ -34,7 +34,11 @@ export type Property = {
 type TraceStep = { node: string; label: string; status: "active" | "complete" };
 type Criteria = { mustHave: string; niceToHave: string; dealBreaker: string };
 type SavedSearch = { id: string; query: string; snapshot: string | null; resultIds: string[]; criteria?: Criteria; shortlistIds?: string[] };
-type MarketContext = { area: string; record_count?: number; period_start?: string | null; period_end?: string | null; price_min?: number | null; price_max?: number | null; price_per_sqft_min?: number | null; price_per_sqft_max?: number | null; unavailable?: boolean };
+type MarketContext = { area: string; matching_basis?: string[]; record_count?: number; period_start?: string | null; period_end?: string | null; price_min?: number | null; price_max?: number | null; price_per_sqft_min?: number | null; price_per_sqft_max?: number | null; unavailable?: boolean };
+type ConversationMessage = { role: "user" | "assistant"; content: string };
+type ResearchSession = { threadId: string; title: string; lastActivityAt: string };
+type BuyerDecision = { status: "saved" | "maybe" | "ruled_out"; note: string };
+type Costs = { transfer: string; finance: string; service: string; moving: string };
 type MapScope = "all" | "shortlist" | "comparison";
 type SortBy = "fit" | "price-low" | "price-per-sqft";
 
@@ -66,6 +70,22 @@ function idsFromStorage(key: string) {
     return [];
   }
 }
+
+function storageValue<T>(key: string, fallback: T): T {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "null");
+    return value && typeof value === "object" ? value as T : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const costValue = (value: string) => value === "" ? null : Math.max(0, Number(value) || 0);
+const contextQuery = (property: Property) => new URLSearchParams(Object.entries({
+  area: property.area,
+  ...(property.property_type ? { property_type: property.property_type } : {}),
+  ...(property.beds !== null ? { beds: String(property.beds) } : {}),
+}));
 
 function LocationView({ properties, selectedId, shortlistIds, compareIds, onSelect }: {
   properties: Property[];
@@ -135,16 +155,37 @@ function LocationView({ properties, selectedId, shortlistIds, compareIds, onSele
   </section>;
 }
 
-function DecisionSheet({ properties, onClose }: { properties: Property[]; onClose: () => void }) {
-  const [costs, setCosts] = useState({ transfer: "", finance: "", service: "", moving: "" });
-  const enteredCosts = Object.values(costs).reduce((total, item) => total + (Number(item) || 0), 0);
+function DecisionSheet({ properties, onClose, decisions }: { properties: Property[]; onClose: () => void; decisions: Record<string, BuyerDecision> }) {
+  const [costs, setCosts] = useState<Costs>({ transfer: "", finance: "", service: "", moving: "" });
+  const [contexts, setContexts] = useState<Record<string, MarketContext>>({});
+  const closeButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => closeButton.current?.focus(), []);
+  useEffect(() => {
+    let cancelled = false;
+    setContexts({});
+    void Promise.all(properties.map(async (property) => {
+      try {
+        const response = await fetch(`${API_URL}/api/market-context?${contextQuery(property)}`);
+        if (!response.ok) throw new Error("Historical evidence unavailable");
+        return [property.id, await response.json()] as const;
+      } catch {
+        return [property.id, { area: property.area, unavailable: true }] as const;
+      }
+    })).then((entries) => !cancelled && setContexts(Object.fromEntries(entries)));
+    return () => { cancelled = true; };
+  }, [properties]);
+  const oneOffCosts = [costValue(costs.transfer), costValue(costs.finance), costValue(costs.moving)].reduce<number>((total, item) => total + (item || 0), 0);
   return <div className="drawer-backdrop" onClick={onClose}>
-    <section className="intelligence-drawer decision-sheet" role="dialog" aria-label="Buyer decision sheet" onClick={(event) => event.stopPropagation()}>
-      <button type="button" className="close" onClick={onClose} aria-label="Close buyer decision sheet">×</button>
+    <section className="intelligence-drawer decision-sheet" role="dialog" aria-modal="true" aria-label="Buyer decision sheet" onClick={(event) => event.stopPropagation()}>
+      <button ref={closeButton} type="button" className="close" onClick={onClose} aria-label="Close buyer decision sheet">×</button>
       <p className="section-label">Buyer decision sheet</p><h2>{properties.length} selected home{properties.length === 1 ? "" : "s"}</h2>
-      <div className="decision-grid">{properties.map((property) => <article key={property.id}><h3>{property.title}</h3><p>{price(property.price, property.currency)} · {value(property.size_sqft)} sq ft</p><p>{property.score_factors.join(" · ") || "No reported match factors"}</p><p>{property.unmatched_criteria.join(" · ") || "No reported gaps"}</p><p>{property.source_name || emptyValue} · {property.dataset_snapshot_at || "Snapshot date unavailable"}</p></article>)}</div>
-      <section><h3>Historical comparable evidence</h3><p>Use historical transactions as market context only. They are not active listings.</p></section>
-      <section><h3>Total ownership cost assumptions</h3><p>Property prices shown above. No fee is assumed: add only the costs you have confirmed.</p><div className="ownership-costs">{([['transfer', 'Transfer cost'], ['finance', 'Finance cost'], ['service', 'Annual service charge'], ['moving', 'Moving cost']] as const).map(([key, label]) => <label key={key}>{label}<input aria-label={label} type="number" min="0" inputMode="numeric" value={costs[key]} onChange={(event) => setCosts((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</div><p className="entered-costs">Entered costs: {price(enteredCosts, "AED")}</p></section>
+      <div className="decision-grid">{properties.map((property) => {
+        const context = contexts[property.id];
+        const purchaseTotal = property.price === null ? null : property.price + oneOffCosts;
+        const decision = decisions[property.id];
+        return <article key={property.id}><h3>{property.title}</h3><p>{price(property.price, property.currency)} · {value(property.size_sqft)} sq ft</p><p>{property.score_factors.join(" · ") || "No reported match factors"}</p><p>{property.unmatched_criteria.join(" · ") || "No reported gaps"}</p><p>{property.source_name || emptyValue} · {property.dataset_snapshot_at || "Snapshot date unavailable"}</p><p><b>Buyer decision:</b> {decision?.status?.replace("_", " ") || "Not classified"}</p>{decision?.note && <p className="buyer-note">{decision.note}</p>}<p><b>Reported price + entered one-off costs:</b> {price(purchaseTotal, property.currency)}</p><p><b>Annual service:</b> {costValue(costs.service) === null ? "Not entered" : price(costValue(costs.service), "AED")}</p><div className="historical-context"><b>Historical market context</b>{!context ? <p>Loading reported transactions…</p> : context.unavailable || !context.record_count ? <p>No reported historical transactions match available comparable facts.</p> : <p>{context.record_count} reported transactions · {context.period_start} to {context.period_end} · {price(context.price_min ?? null)}–{price(context.price_max ?? null)} · {price(context.price_per_sqft_min ?? null)}–{price(context.price_per_sqft_max ?? null)} / sq ft</p>}<small>Matching basis: {context?.matching_basis?.join(", ").replaceAll("_", " ") || "reported property facts"}. Historical market context only—not active inventory or a valuation.</small></div></article>;
+      })}</div>
+      <section><h3>Confirmed cost assumptions</h3><p>Only add costs you have confirmed. Blank means not entered; annual service is not included in purchase total.</p><div className="ownership-costs">{([['transfer', 'Transfer cost'], ['finance', 'Finance cost'], ['service', 'Annual service charge'], ['moving', 'Moving cost']] as const).map(([key, label]) => <label key={key}>{label}<input aria-label={label} type="number" min="0" inputMode="numeric" value={costs[key]} onChange={(event) => setCosts((current) => ({ ...current, [key]: event.target.value }))} /></label>)}</div></section>
       <button type="button" className="dark-button" onClick={() => window.print()}>Print decision sheet</button>
     </section>
   </div>;
@@ -167,9 +208,39 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
   const [showDecisionSheet, setShowDecisionSheet] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>("fit");
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>(savedSearchesFromStorage);
+  const [sessions, setSessions] = useState<ResearchSession[]>(() => storageValue("aizen-research-sessions", []));
+  const [transcript, setTranscript] = useState<ConversationMessage[]>([]);
+  const [buyerDecisions, setBuyerDecisions] = useState<Record<string, BuyerDecision>>(() => storageValue("aizen-buyer-decisions", {}));
+  const propertyCloseButton = useRef<HTMLButtonElement>(null);
+
+  const rememberSession = (threadId: string, title: string) => setSessions((current) => [{
+    threadId, title: title.trim().slice(0, 56) || "Untitled research", lastActivityAt: new Date().toISOString(),
+  }, ...current.filter((session) => session.threadId !== threadId)]);
+
+  const loadConversation = async (threadId: string, reportUnavailable = false) => {
+    try {
+      const response = await fetch(`${API_URL}/api/conversations/${threadId}`);
+      if (!response.ok) throw new Error("Research conversation is unavailable.");
+      const data = await response.json();
+      setTranscript(Array.isArray(data.messages) ? data.messages : []);
+    } catch {
+      setTranscript([]);
+      if (reportUnavailable) setNotice("Research conversation is unavailable. You can continue with a new brief.");
+    }
+  };
 
   useEffect(() => localStorage.setItem("aizen-saved-searches", JSON.stringify(savedSearches)), [savedSearches]);
   useEffect(() => localStorage.setItem("aizen-shortlist", JSON.stringify(shortlistIds)), [shortlistIds]);
+  useEffect(() => localStorage.setItem("aizen-research-sessions", JSON.stringify(sessions)), [sessions]);
+  useEffect(() => localStorage.setItem("aizen-buyer-decisions", JSON.stringify(buyerDecisions)), [buyerDecisions]);
+  useEffect(() => {
+    const threadId = localStorage.getItem("aizen-thread-id");
+    if (!threadId) return;
+    rememberSession(threadId, sessions.find((session) => session.threadId === threadId)?.title || "Current research");
+    void loadConversation(threadId);
+  // Restore only once; later interactions own the active session.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (!selected && !showDecisionSheet) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -178,6 +249,7 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [selected, showDecisionSheet]);
+  useEffect(() => { if (selected) propertyCloseButton.current?.focus(); }, [selected]);
 
   const snapshot = properties[0]?.dataset_snapshot_at || null;
   const criteria: Criteria = { mustHave, niceToHave, dealBreaker };
@@ -218,6 +290,21 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
     setNotice("Added to comparison.");
   };
 
+  const setBuyerDecision = (id: string, status: BuyerDecision["status"]) => {
+    setBuyerDecisions((current) => {
+      if (current[id]?.status === status) {
+        const { [id]: _, ...remaining } = current;
+        return remaining;
+      }
+      return { ...current, [id]: { status, note: current[id]?.note || "" } };
+    });
+  };
+
+  const setBuyerNote = (id: string, note: string) => setBuyerDecisions((current) => ({
+    ...current,
+    [id]: { status: current[id]?.status || "maybe", note: note.slice(0, 500) },
+  }));
+
   const saveSearch = () => {
     if (!query.trim()) {
       setNotice("Add a property brief before saving a search.");
@@ -246,8 +333,15 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
 
   const startNewConversation = () => {
     localStorage.removeItem("aizen-thread-id");
+    setTranscript([]);
     clearBrief();
     setNotice("New conversation started.");
+  };
+
+  const selectSession = (session: ResearchSession) => {
+    localStorage.setItem("aizen-thread-id", session.threadId);
+    setAnswer(""); setProperties([]); setCompareIds([]); setSelected(null); setNotice("");
+    void loadConversation(session.threadId, true);
   };
 
   const recordFeedback = (property: Property, kind: "useful" | "issue") => {
@@ -257,13 +351,14 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
     setNotice("Feedback saved in this browser.");
   };
 
-  const loadMarketContext = async (area: string) => {
+  const loadMarketContext = async (property: Property) => {
     setMarketContext(null);
     try {
-      const response = await fetch(`${API_URL}/api/market-context?${new URLSearchParams({ area })}`);
+      const response = await fetch(`${API_URL}/api/market-context?${contextQuery(property)}`);
+      if (!response.ok) throw new Error("Historical evidence unavailable");
       setMarketContext(await response.json());
     } catch {
-      setMarketContext({ area, unavailable: true });
+      setMarketContext({ area: property.area, unavailable: true });
     }
   };
 
@@ -272,12 +367,13 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
     if (!query.trim() || isRunning) return;
     const threadId = localStorage.getItem("aizen-thread-id") || crypto.randomUUID();
     localStorage.setItem("aizen-thread-id", threadId);
+    rememberSession(threadId, query);
     setIsRunning(true); setNotice(""); setAnswer(""); setProperties([]); setCompareIds([]); setTrace([]); setSelected(null);
     try {
       const decisionBrief = [query, ...profile.map(([label, item]) => `${label}: ${item}`)].join("\n");
       const response = await fetch(`${API_URL}/api/runs`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: decisionBrief, thread_id: threadId }) });
       if (!response.ok || !response.body) throw new Error("Property research is temporarily unavailable. Please try again.");
-      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = "";
+      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ""; let finalAnswer = "";
       while (true) {
         const { done, value: chunk } = await reader.read(); if (done) break;
         buffer += decoder.decode(chunk, { stream: true }); const events = buffer.split("\n\n"); buffer = events.pop() || "";
@@ -286,10 +382,11 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
           const data = JSON.parse(line);
           if (type === "agent_step") setTrace((current) => [...current.filter((item) => item.node !== data.node), { node: data.node, label: data.label, status: data.status }]);
           if (type === "properties") setProperties(data.properties || []);
-          if (type === "answer_token") setAnswer((current) => current + data.token);
+          if (type === "answer_token") { finalAnswer += data.token; setAnswer((current) => current + data.token); }
           if (type === "run_failed") setNotice(data.message || "Property research is temporarily unavailable. Please try again.");
         });
       }
+      if (finalAnswer) setTranscript((current) => [...current, { role: "user", content: decisionBrief }, { role: "assistant", content: finalAnswer }]);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Property research is temporarily unavailable. Please try again.");
     } finally { setIsRunning(false); }
@@ -301,7 +398,7 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
       <section className="hero"><div><p className="eyebrow">Dubai property intelligence</p><h1>Find a home.<br /><em>Know why it fits.</em></h1><p className="hero-copy">Aizen turns a property brief into an inspectable decision: active dataset research, ranked homes, and trade-offs you can see.</p><a className="primary-link" href="#workspace">Start a property brief <span>↓</span></a></div><div className="hero-card"><p>Data promise</p><strong>Active<span> dataset</span></strong><div className="confidence-bar"><span /></div></div></section>
       <section className="proof-strip" id="how-it-works" aria-label="How Aizen works"><p><b>01</b> Understand your brief</p><p><b>02</b> Search active data</p><p><b>03</b> Compare and audit</p><p><b>04</b> Make a decision with confidence</p></section>
       <section className={`workspace ${properties.length ? "has-results" : ""}`} id="workspace" aria-label="Aizen property workspace">
-        <aside className="brief-rail"><p className="section-label">Guided starts</p><h2>What are you looking for?</h2>{guidedBriefs.map((brief) => <button type="button" key={brief} onClick={() => setQuery(brief)}>{brief}<span>↗</span></button>)}<p className="rail-note"><span className="pulse" />Research with source, snapshot, and decision evidence.</p></aside>
+        <aside className="brief-rail"><p className="section-label">Guided starts</p><h2>What are you looking for?</h2>{guidedBriefs.map((brief) => <button type="button" key={brief} onClick={() => setQuery(brief)}>{brief}<span>↗</span></button>)}{sessions.length > 0 && <section className="research-sessions" aria-label="Research sessions"><p className="section-label">Your research</p>{sessions.map((session) => <button type="button" key={session.threadId} aria-current={localStorage.getItem("aizen-thread-id") === session.threadId ? "page" : undefined} onClick={() => selectSession(session)}><span>{session.title}</span><small>{new Date(session.lastActivityAt).toLocaleDateString()}</small></button>)}</section>}<p className="rail-note"><span className="pulse" />Research with source, snapshot, and decision evidence.</p></aside>
         <section className="agent-canvas">
           <div className="canvas-header"><div><p className="section-label">Your property brief</p><h2>Tell Aizen what matters</h2></div><span className="source-badge">{snapshot ? `Snapshot ${snapshot}` : "Active dataset research"}</span></div>
           <form className="query-box" onSubmit={runAgent}><textarea value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Property brief" rows={2} placeholder="A ready 2BR in Dubai Marina under AED 2M" /><button type="submit" disabled={isRunning}>{isRunning ? "Researching…" : "Research properties"}</button></form>
@@ -309,18 +406,20 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
           <div className="research-actions"><button type="button" onClick={saveSearch}>Save this search</button>{savedSearches.length > 0 && <button type="button" onClick={restoreSavedSearch}>Restore saved brief</button>}<button type="button" onClick={clearBrief}>Clear research brief</button>{shortlistIds.length > 0 && <button type="button" onClick={() => { setShortlistIds([]); setNotice("Shortlist cleared."); }}>Clear shortlist</button>}{compareIds.length > 0 && <button type="button" onClick={() => { setCompareIds([]); setNotice("Comparison cleared."); }}>Clear comparison</button>}</div>
           {(notice || savedChanges) && <p className="notice" role="status">{notice || `Saved research changed: ${savedChanges?.added} added, ${savedChanges?.removed} no longer matching, ${savedChanges?.unchanged} unchanged.`}</p>}
           {trace.length > 0 && <div className="trace" aria-label="Agent activity">{trace.map((step) => <div className={`trace-step ${step.status}`} key={step.node}>{step.label}</div>)}</div>}
-          {answer && <div className="answer"><span>A</span><p>{answer}</p></div>}
+          {transcript.length > 0 && <section className="research-timeline" aria-label="Research conversation"><p className="section-label">Research conversation</p>{transcript.map((message, index) => <article className={`conversation-message ${message.role}`} key={`${message.role}-${index}`}><b>{message.role === "user" ? "You" : "Aizen"}</b><p>{message.content}</p></article>)}</section>}
+          {answer && transcript.at(-1)?.content !== answer && <div className="answer"><span>A</span><p>{answer}</p></div>}
           {isRunning ? <section className="empty-state researching"><p className="section-label">Research in progress</p><h3>Building your decision view</h3><p>Matching active records to your brief and criteria.</p></section> : !properties.length ? <section className="empty-state"><p className="section-label">Buyer workspace</p><h3>Start with a property brief</h3><p>Describe the home you want. Aizen will return source, snapshot, criteria, and known trade-offs.</p></section> : <section className="property-results" aria-label="Property results"><div className="results-heading"><div><p className="section-label">Property evidence</p><h3>{properties.length} homes returned</h3></div><label>Sort<select aria-label="Sort properties" value={sortBy} onChange={(event) => setSortBy(event.target.value as SortBy)}><option value="fit">Best evidence match</option><option value="price-low">Price: low to high</option><option value="price-per-sqft">Price / sq ft: low to high</option></select></label></div><div className="property-grid">{visibleProperties.map((property) => {
             const isShortlisted = shortlistIds.includes(property.id); const isComparing = compareIds.includes(property.id);
-            return <article className={`property-card ${isShortlisted ? "shortlisted" : ""} ${isComparing ? "comparing" : ""}`} key={property.id}><button type="button" className="property-visual" onClick={() => setSelected(property)} aria-label={`Open ${property.title}`}><b>{property.fit_score === null ? "Match evidence pending" : `${Math.round(property.fit_score * 100)}% evidence match`}</b></button><div className="property-content"><button type="button" className="property-title" onClick={() => setSelected(property)}>{property.title}</button><p>{property.area} · {property.data_status === "historical_insight" ? "Historical market signal" : "Active dataset record"}</p><strong>{price(property.price, property.currency)}</strong><div className="property-specs"><span>{value(property.beds)} bed</span><span>{value(property.baths)} bath</span><span>{value(property.size_sqft)} sq ft</span></div><p className="evidence">{property.score_factors.join(" · ") || "No reported match factors"}</p><p className="evidence">{property.unmatched_criteria.join(" · ") || "No reported gaps"}</p><p className="evidence">{property.source_name || emptyValue} · {property.dataset_snapshot_at || "Snapshot unavailable"}</p><div className="property-actions"><button type="button" aria-pressed={isShortlisted} onClick={() => toggleShortlist(property.id)}>{isShortlisted ? "Remove from shortlist" : "Add to shortlist"}</button><button type="button" aria-pressed={isComparing} onClick={() => toggleCompare(property.id)}>{isComparing ? "Remove from comparison" : "Add to comparison"}</button>{property.source_url && <a href={property.source_url} target="_blank" rel="noreferrer">Source ↗</a>}</div></div></article>;
+            const decision = buyerDecisions[property.id];
+            return <article className={`property-card ${isShortlisted ? "shortlisted" : ""} ${isComparing ? "comparing" : ""}`} key={property.id}><button type="button" className="property-visual" onClick={() => setSelected(property)} aria-label={`Open ${property.title}`}><b>{property.fit_score === null ? "Match evidence pending" : `${Math.round(property.fit_score * 100)}% evidence match`}</b></button><div className="property-content"><button type="button" className="property-title" onClick={() => setSelected(property)}>{property.title}</button><p>{property.area} · {property.data_status === "historical_insight" ? "Historical market signal" : "Active dataset record"}</p><strong>{price(property.price, property.currency)}</strong><div className="property-specs"><span>{value(property.beds)} bed</span><span>{value(property.baths)} bath</span><span>{value(property.size_sqft)} sq ft</span></div><p className="evidence">{property.score_factors.join(" · ") || "No reported match factors"}</p><p className="evidence">{property.unmatched_criteria.join(" · ") || "No reported gaps"}</p><p className="evidence">{property.source_name || emptyValue} · {property.dataset_snapshot_at || "Snapshot unavailable"}</p>{decision && <p className="decision-state">Buyer decision: {decision.status.replace("_", " ")}</p>}<div className="property-actions"><button type="button" aria-pressed={isShortlisted} onClick={() => toggleShortlist(property.id)}>{isShortlisted ? "Remove from shortlist" : "Add to shortlist"}</button><button type="button" aria-pressed={isComparing} onClick={() => toggleCompare(property.id)}>{isComparing ? "Remove from comparison" : "Add to comparison"}</button><button type="button" aria-pressed={decision?.status === "saved"} onClick={() => setBuyerDecision(property.id, "saved")}>Save</button><button type="button" aria-pressed={decision?.status === "maybe"} onClick={() => setBuyerDecision(property.id, "maybe")}>Maybe</button><button type="button" aria-pressed={decision?.status === "ruled_out"} onClick={() => setBuyerDecision(property.id, "ruled_out")}>Rule out</button>{property.source_url && <a href={property.source_url} target="_blank" rel="noreferrer">Source ↗</a>}</div></div></article>;
           })}</div></section>}
         </section>
         <LocationView properties={properties} selectedId={selected?.id} shortlistIds={shortlistIds} compareIds={compareIds} onSelect={setSelected} />
       </section>
       <section className="compare-tray" role="region" aria-label="Comparison shortlist"><div><p className="section-label">Decision tray</p><h2>Compare your shortlist</h2><p>{shortlist.length} saved home{shortlist.length === 1 ? "" : "s"} · select one to four homes for side-by-side evidence.</p></div><div className="compare-slots">{comparison.map((property) => <button type="button" key={property.id} onClick={() => setSelected(property)}><span>{property.fit_score === null ? "Evidence pending" : `${Math.round(property.fit_score * 100)}% match`}</span>{property.title}<b>↗</b></button>)}{Array.from({ length: Math.max(0, 4 - comparison.length) }, (_, index) => <div className="empty-slot" key={index}>Add a home</div>)}</div>{comparison.length > 0 && <button type="button" className="dark-button" onClick={() => setShowDecisionSheet(true)}>View decision sheet</button>}</section>
     </main>
-    {selected && <div className="drawer-backdrop" onClick={() => setSelected(null)}><aside className="intelligence-drawer" role="complementary" aria-label="Property intelligence" onClick={(event) => event.stopPropagation()}><button type="button" className="close" onClick={() => setSelected(null)} aria-label="Close property intelligence">×</button><p className="section-label">Property evidence</p><h2>{selected.title}</h2><p>{selected.area} · {selected.data_status === "historical_insight" ? "Historical market signal" : "Active dataset record"}</p><strong className="drawer-price">{price(selected.price, selected.currency)}</strong><div className="drawer-actions"><button type="button" aria-pressed={shortlistIds.includes(selected.id)} onClick={() => toggleShortlist(selected.id)}>{shortlistIds.includes(selected.id) ? "Remove from shortlist" : "Add to shortlist"}</button><button type="button" className="dark-button" aria-pressed={compareIds.includes(selected.id)} onClick={() => toggleCompare(selected.id)}>{compareIds.includes(selected.id) ? "Remove from comparison" : "Add to comparison"}</button></div><section><h3>Why it was selected</h3><ul>{selected.score_factors.map((factor) => <li key={factor}>✓ {factor}</li>)}{selected.unmatched_criteria.map((gap) => <li className="gap" key={gap}>△ {gap}</li>)}</ul></section><section className="spec-grid"><h3>Reported details</h3><div><span>Bedrooms</span><b>{value(selected.beds)}</b></div><div><span>Bathrooms</span><b>{value(selected.baths)}</b></div><div><span>Size</span><b>{value(selected.size_sqft)}</b></div><div><span>Price / sq ft</span><b>{pricePerSqft(selected)}</b></div><div><span>Location evidence</span><b>{validCoordinates(selected) ? "Exact supplied coordinate" : selected.area ? "Area-only" : "Unavailable"}</b></div><div><span>Snapshot</span><b>{selected.dataset_snapshot_at || emptyValue}</b></div></section><section><h3>Historical area context</h3><button type="button" onClick={() => void loadMarketContext(selected.area)}>Load historical context</button>{marketContext && (marketContext.unavailable || !marketContext.record_count ? <p>Insufficient historical evidence for this area.</p> : <p>{marketContext.record_count} reported records · {marketContext.period_start} to {marketContext.period_end} · {price(marketContext.price_min ?? null)}–{price(marketContext.price_max ?? null)}</p>)}</section><section><h3>Research feedback</h3><button type="button" onClick={() => recordFeedback(selected, "useful")}>Useful result</button><button type="button" onClick={() => recordFeedback(selected, "issue")}>Missing or incorrect detail</button></section></aside></div>}
-    {showDecisionSheet && <DecisionSheet properties={comparison} onClose={() => setShowDecisionSheet(false)} />}
+    {selected && <div className="drawer-backdrop" onClick={() => setSelected(null)}><aside className="intelligence-drawer" role="dialog" aria-modal="true" aria-label="Property intelligence" onClick={(event) => event.stopPropagation()}><button ref={propertyCloseButton} type="button" className="close" onClick={() => setSelected(null)} aria-label="Close property intelligence">×</button><p className="section-label">Property evidence</p><h2>{selected.title}</h2><p>{selected.area} · {selected.data_status === "historical_insight" ? "Historical market signal" : "Active dataset record"}</p><strong className="drawer-price">{price(selected.price, selected.currency)}</strong><div className="drawer-actions"><button type="button" aria-pressed={shortlistIds.includes(selected.id)} onClick={() => toggleShortlist(selected.id)}>{shortlistIds.includes(selected.id) ? "Remove from shortlist" : "Add to shortlist"}</button><button type="button" className="dark-button" aria-pressed={compareIds.includes(selected.id)} onClick={() => toggleCompare(selected.id)}>{compareIds.includes(selected.id) ? "Remove from comparison" : "Add to comparison"}</button></div><section className="buyer-decision-controls"><h3>Your decision</h3><div className="drawer-actions"><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "saved"} onClick={() => setBuyerDecision(selected.id, "saved")}>Save</button><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "maybe"} onClick={() => setBuyerDecision(selected.id, "maybe")}>Maybe</button><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "ruled_out"} onClick={() => setBuyerDecision(selected.id, "ruled_out")}>Rule out</button></div><label>Private note<textarea aria-label="Private note" value={buyerDecisions[selected.id]?.note || ""} onChange={(event) => setBuyerNote(selected.id, event.target.value)} placeholder="What should you remember about this home?" /></label></section><section><h3>Why it was selected</h3><ul>{selected.score_factors.map((factor) => <li key={factor}>✓ {factor}</li>)}{selected.unmatched_criteria.map((gap) => <li className="gap" key={gap}>△ {gap}</li>)}</ul></section><section className="spec-grid"><h3>Reported details</h3><div><span>Bedrooms</span><b>{value(selected.beds)}</b></div><div><span>Bathrooms</span><b>{value(selected.baths)}</b></div><div><span>Size</span><b>{value(selected.size_sqft)}</b></div><div><span>Price / sq ft</span><b>{pricePerSqft(selected)}</b></div><div><span>Location evidence</span><b>{validCoordinates(selected) ? "Exact supplied coordinate" : selected.area ? "Area-only" : "Unavailable"}</b></div><div><span>Snapshot</span><b>{selected.dataset_snapshot_at || emptyValue}</b></div></section><section><h3>Historical area context</h3><button type="button" onClick={() => void loadMarketContext(selected)}>Load historical context</button>{marketContext && (marketContext.unavailable || !marketContext.record_count ? <p>Insufficient historical evidence for this area.</p> : <p>{marketContext.record_count} reported records · {marketContext.period_start} to {marketContext.period_end} · {price(marketContext.price_min ?? null)}–{price(marketContext.price_max ?? null)}</p>)}</section><section><h3>Research feedback</h3><button type="button" onClick={() => recordFeedback(selected, "useful")}>Useful result</button><button type="button" onClick={() => recordFeedback(selected, "issue")}>Missing or incorrect detail</button></section></aside></div>}
+    {showDecisionSheet && <DecisionSheet properties={comparison} decisions={buyerDecisions} onClose={() => setShowDecisionSheet(false)} />}
   </div>;
 }
 
