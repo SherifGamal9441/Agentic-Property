@@ -6,3 +6,5 @@ __pycache__/
 *.log
 last_run.json
 data/*.csv
+frontend/node_modules/
+frontend/dist/

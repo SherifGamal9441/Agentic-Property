@@ -56,7 +56,7 @@ async def _build_client():
         params = StdioServerParameters(
             command=s["command"],
             args=s["args"],
-            env={**os.environ, **_YAML_ENV},
+            env={**_YAML_ENV, **os.environ},
             cwd=cwd,
         )
         async with stdio_client(params) as (read, write):

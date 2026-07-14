@@ -8,3 +8,11 @@ logs/
 .venv
 .hermes
 data/memory/
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+.specify/scripts/
+.specify/templates/
+.specify/
+specs/
+AGENTS.md

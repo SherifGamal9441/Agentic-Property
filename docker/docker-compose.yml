@@ -47,6 +47,32 @@ services:
     networks:
       - dld-net
 
+  agent-api:
+    build:
+      context: ..
+      dockerfile: docker/agent-api.Dockerfile
+    depends_on:
+      - data-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATA_SERVICE_URL: http://data-service:8000
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      EXCHANGERATE_API_KEY: ${EXCHANGERATE_API_KEY:-}
+    networks:
+      - dld-net
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - agent-api
+    ports:
+      - "5173:80"
+    networks:
+      - dld-net
+
 volumes:
   dld-pgdata:
     name: dld-pgdata

@@ -26,6 +26,7 @@ dependencies = [
     # ── Evaluation ─────────────────────────────────────────────────────────────
     "langsmith>=0.3.13",
     "fastapi>=0.139.0",
+    "uvicorn[standard]>=0.30",
     "sqlalchemy>=2.0.51",
     "tavily-python>=0.7.26",
     "rapidfuzz>=3.0",

@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     vllm_api_key: str = "not-needed"
 
     # Groq (cloud fallback for teammates without local GPU)
-    groq_api_key: str = os.getenv("GROQ_API_KEY")
+    groq_api_key: str | None = os.getenv("GROQ_API_KEY")
     groq_model: str = "qwen/qwen3.6-27b"
     # Custom OpenAI-compatible endpoint (Unsloth Studio, llama.cpp, etc.)
     #custom_openai_model: str = "jackrong/Qwopus3.5-4B-Coder-MTP-GGUF:Q4_K_M"

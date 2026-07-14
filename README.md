@@ -121,7 +121,8 @@ query_understanding                                   │
 - **Data**: DLD (Dubai Land Department) via MCP server & PostgreSQL (running via Docker)
 - **Web Search**: DuckDuckGo (ddgs) + LLM summarization
 - **Persistence**: SqliteSaver (LangGraph checkpointer) for conversation state (stored in `data/memory/chat_history.db`)
-- **UI**: Streamlit with streaming token-by-token output and Light/Dark modes
+- **Flagship UI**: React/Vite agentic workspace with property intelligence drawer, trace, map, and comparison tray
+- **Legacy POC UI**: Streamlit with streaming token-by-token output and Light/Dark modes
 - **Validation**: Pydantic v2 (AgentState + settings)
 - **Evaluation**: LangSmith for structural and quality assurance testing
 
@@ -139,6 +140,7 @@ Agentic-Property/
 │       └── settings.py         # Pydantic Settings (max_retries, LLM config, etc.)
 ├── data/                       # Application data & persistent storage (chat history, CSVs)
 ├── docker/                     # Dockerfile and docker-compose for data services
+├── frontend/                   # Flagship React/Vite interface
 ├── src/
 │   ├── agents/
 │   │   ├── graph.py            # LangGraph StateGraph definition
@@ -204,8 +206,19 @@ Agentic-Property/
 
 ## Usage
 
+### Flagship Agentic UI (recommended)
+
+The job-fair demo defaults to **Demo Mode**, which streams a reliable representative scenario without an API key. Live Mode remains available when `GROQ_API_KEY` is set.
+
+```bash
+cd docker
+docker compose up --build
+```
+
+Open [http://localhost:5173](http://localhost:5173). The browser UI calls the agent facade at `http://localhost:8002`; the data service remains available at `http://localhost:8000`.
+
 ### Web UI
-Run the interactive Streamlit chat interface:
+Run the legacy Streamlit proof of concept:
 ```bash
 uv run streamlit run main.py
 ```
