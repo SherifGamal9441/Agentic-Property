@@ -58,6 +58,18 @@ test("labels historical properties as market signals", async () => {
   );
 });
 
+test("renders a property with no reported size without crashing", () => {
+  const missingSizeProperty = {
+    ...demoProperties[0],
+    title: "Size pending",
+    size_sqft: null as unknown as number,
+  };
+
+  render(<App initialProperties={[missingSizeProperty]} />);
+
+  expect(screen.getByText("—")).toBeInTheDocument();
+});
+
 test("limits comparison to three properties and explains the limit", async () => {
   const user = userEvent.setup();
   const comparisonProperties = Array.from({ length: 4 }, (_, index) => ({

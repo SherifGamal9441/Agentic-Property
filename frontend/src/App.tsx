@@ -11,7 +11,7 @@ export type Property = {
   beds: number;
   baths: number;
   property_type: string;
-  size_sqft: number;
+  size_sqft: number | null;
   furnishing: string;
   completion_status: string;
   parking_spaces: number;
@@ -103,6 +103,9 @@ const quickStarts = [
 
 const formatPrice = (price: number, currency = "AED") =>
   new Intl.NumberFormat("en-AE", { style: "currency", currency, maximumFractionDigits: 0 }).format(price);
+
+const formatSize = (size: number | null | undefined) =>
+  typeof size === "number" && Number.isFinite(size) ? `${size.toLocaleString()} sq ft` : "—";
 
 const score = (fit: number) => `${Math.round(fit * 100)}% match`;
 
@@ -322,7 +325,7 @@ function App({ initialProperties = demoProperties }: AppProps) {
                   <div className="property-content">
                     <button className="property-title" onClick={(event) => chooseProperty(property, event.currentTarget)}>{property.title}</button>
                     <p>{property.area}</p><strong>{formatPrice(property.price, property.currency)}</strong>
-                    <div className="property-specs"><span>{property.beds} bed</span><span>{property.baths} bath</span><span>{property.size_sqft.toLocaleString()} sq ft</span></div>
+                    <div className="property-specs"><span>{property.beds} bed</span><span>{property.baths} bath</span><span>{formatSize(property.size_sqft)}</span></div>
                     <div className="property-actions"><button onClick={() => toggleShortlist(property.id)}>{shortlist.includes(property.id) ? "Saved" : "Save"}</button><button onClick={() => toggleCompare(property.id)}>{compare.includes(property.id) ? "Comparing" : "Compare"}</button></div>
                   </div>
                 </article>
@@ -349,7 +352,7 @@ function App({ initialProperties = demoProperties }: AppProps) {
           <p className="section-label">Property intelligence</p><h2>{selected.title}</h2><p className="drawer-area">{selected.area} · {selected.property_type}</p><strong className="drawer-price">{formatPrice(selected.price, selected.currency)}</strong>
           <div className="drawer-actions"><button className="dark-button" onClick={() => toggleShortlist(selected.id)}>{shortlist.includes(selected.id) ? "Saved to shortlist" : "Save to shortlist"}</button><button onClick={() => toggleCompare(selected.id)}>{compare.includes(selected.id) ? "Remove compare" : "Add compare"}</button></div>
           <section><h3>Why Aizen selected it</h3><ul>{selected.matched_criteria.map((item) => <li key={item}>✓ {item}</li>)}{selected.unmatched_criteria.map((item) => <li className="gap" key={item}>△ {item}</li>)}</ul></section>
-          <section className="spec-grid"><h3>Key details</h3><div><span>Bedrooms</span><b>{selected.beds}</b></div><div><span>Bathrooms</span><b>{selected.baths}</b></div><div><span>Size</span><b>{selected.size_sqft.toLocaleString()} sq ft</b></div><div><span>Parking</span><b>{selected.parking_spaces}</b></div><div><span>Furnishing</span><b>{selected.furnishing}</b></div><div><span>Completion</span><b>{selected.completion_status}</b></div></section>
+          <section className="spec-grid"><h3>Key details</h3><div><span>Bedrooms</span><b>{selected.beds}</b></div><div><span>Bathrooms</span><b>{selected.baths}</b></div><div><span>Size</span><b>{formatSize(selected.size_sqft)}</b></div><div><span>Parking</span><b>{selected.parking_spaces}</b></div><div><span>Furnishing</span><b>{selected.furnishing}</b></div><div><span>Completion</span><b>{selected.completion_status}</b></div></section>
           <footer><span>{selected.data_intent === "insights_only" ? "Historical market signal" : "Active listing signal"}</span>{selected.source_url && <a href={selected.source_url} target="_blank" rel="noreferrer">View source ↗</a>}</footer>
         </aside>
       </div>}
