@@ -28,7 +28,7 @@ class HistoricalListing(Base):
     latitude = Column(Float)
     longitude = Column(Float)
     link = Column(String)
-    
+
     def __repr__(self):
         return f"<HistoricalListing(id='{self.id}', area='{self.area_name}')>"
 

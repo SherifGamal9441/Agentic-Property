@@ -12,7 +12,7 @@ Supported fields are `area`, `price`, `property_type`, `bedrooms`, `bathrooms`, 
 
 ## Listing evidence
 
-Each result carries identity, reported price and facts, exact coordinate status, captured source URL, observation date, snapshot identity, criterion evaluations, fit, evidence coverage, and suitability. Whole-building fields use the `building_*` prefix. No verified unit fields exist in schema version 2.
+Each result carries identity, reported price and facts, exact coordinate status, captured source URL, observation date, snapshot identity, criterion evaluations, fit, evidence coverage, and suitability. Whole-building fields use the `building_*` prefix. Property visuals are generated locally from stable identity and area and are not part of the evidence model. No verified unit fields exist in schema version 2.
 
 ## PropertyGuidance
 

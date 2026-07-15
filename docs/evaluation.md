@@ -7,9 +7,9 @@ Update this table only from a complete release-gate run.
 | Gate | Verified result |
 |---|---|
 | Python | 75 passed |
-| React/Vitest | 11 passed |
-| Production build | Passed; 238.17 kB initial JS, MapLibre isolated in a lazy 1,055.14 kB chunk, no Vite size warning |
-| Playwright journeys | 8 passed in Chromium |
+| React/Vitest | 13 passed |
+| Production build | Passed; 240.45 kB initial JS, MapLibre isolated in a lazy 1,055.14 kB chunk, no Vite size warning |
+| Playwright journeys | 9 passed in Chromium |
 | Compose configuration and health | Passed; PostgreSQL, data service, agent API, and frontend healthy |
 | Frozen data preflight | Passed; provider, checksums, Compose, services, and ports verified |
 | Diff whitespace | Passed |

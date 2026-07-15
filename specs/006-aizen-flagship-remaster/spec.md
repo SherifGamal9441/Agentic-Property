@@ -20,8 +20,8 @@ Aizen is a local-first Dubai home-buying decision product. One search action tur
 
 ## Experience direction
 
-Editorial Dubai is the reading and decision layer. The dark cinematic research surface transforms in place from a cancellable trace into a prominent completion reveal. Visuals are abstract architecture and maps; listing photography is never fabricated.
+Editorial Dubai is the reading and decision layer. The dark cinematic research surface transforms in place from a cancellable trace into a prominent completion reveal. Every property receives a deterministic, code-native architectural preview seeded by stable property identity and area. Visuals never change fit, evidence, or ordering.
 
 ## Explicit exclusions
 
-No public deployment, Arabic, investor mode, accounts, cross-device sync, paid map, thumbnails, CRM, valuation model, financial advice, automatic relaxation, notifications, or scheduled refresh.
+No public deployment, Arabic, investor mode, accounts, cross-device sync, paid map, listing photography, CRM, valuation model, financial advice, automatic relaxation, notifications, or scheduled refresh.

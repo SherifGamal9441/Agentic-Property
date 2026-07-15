@@ -7,6 +7,9 @@
 - [x] Building/unit truth correction in API, schema, and snapshot headers.
 - [x] Validated structured property guidance, audited counters, and ordered SSE contract.
 - [x] Cancellable cinematic trace, completion takeover, compact brief editor, restrained evidence metrics, and top-six reveal.
+- [x] Deterministic property-based abstract visuals with no fabricated listing photography.
+- [x] Editorial active-brief ledger with grouped criteria and polished disposable correction drawer.
+- [x] Primary/workspace navigation auto-scroll with sticky-header offset and reduced-motion behavior.
 - [x] Four-home comparison, shortlist filter, affordability selector, recent live reruns, clipboard summary, dossier, and case study.
 - [x] Provider-safe environment template and read-only preflight.
 - [x] Authoritative spec and deep documentation.

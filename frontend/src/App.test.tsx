@@ -92,6 +92,28 @@ test("shows six ranked homes first and reveals the rest on demand", async () => 
   expect(screen.getAllByRole("article", { name: /Marina Residence/ })).toHaveLength(8);
 });
 
+test("presents the active brief as an editorial ledger", () => {
+  render(<App initialProperties={properties.slice(0, 1)} initialBrief={brief} />);
+
+  expect(screen.getAllByText(brief.original_query)).toHaveLength(2);
+  expect(screen.getByText("2 criteria · 2 must-haves")).toBeInTheDocument();
+  expect(screen.getByText("Must-have")).toBeInTheDocument();
+});
+
+test("navigation switches workspace and scrolls its heading below the header", async () => {
+  const scrollIntoView = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scrollIntoView });
+  const user = userEvent.setup();
+  render(<App initialProperties={properties.slice(0, 1)} initialBrief={brief} />);
+
+  const areasButton = screen.getAllByRole("button").find((button) => button.textContent?.trim() === "Areas");
+  expect(areasButton).toBeDefined();
+  await user.click(areasButton!);
+
+  expect(await screen.findByRole("heading", { name: "Compare reported area evidence" })).toBeInTheDocument();
+  await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ block: "start" })));
+});
+
 test("keeps shortlist, comparison, private notes, and dossier synchronized", async () => {
   const user = userEvent.setup();
   render(<App initialProperties={properties.slice(0, 2)} initialBrief={brief} />);

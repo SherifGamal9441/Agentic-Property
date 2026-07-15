@@ -21,6 +21,7 @@
 - PostgreSQL is primary; SQLite remains an explicit degraded fallback.
 - React loads the heavyweight OpenFreeMap/MapLibre surface only when requested.
 - Every shown property exposes its captured source, observation date, snapshot, conflicts, and unknowns.
+- Property visuals are deterministic editorial architecture generated from each property's stable identity; no listing photography is implied.
 
 ```mermaid
 flowchart LR
@@ -93,7 +94,7 @@ Verified release results and manual gates belong in [evaluation](docs/evaluation
 
 ## Known limitations
 
-Local Docker demo only; English only; no accounts or cross-device sync; external source links may expire; no verified unit-size fields; web research depends on external sources; affordability is a buyer-entered scenario, not financial advice; historical prices are context, not current inventory or valuation.
+Local Docker demo only; English only; no accounts or cross-device sync; external source links may expire; property visuals are abstract rather than listing photography; no verified unit-size fields; web research depends on external sources; affordability is a buyer-entered scenario, not financial advice; historical prices are context, not current inventory or valuation.
 
 ## License
 

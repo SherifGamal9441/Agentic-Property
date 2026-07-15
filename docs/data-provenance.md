@@ -15,7 +15,7 @@ One source API attempt was made for true unit area and dedicated unit parking. T
 
 ## Schema dictionary
 
-Buyer-verifiable listing facts: property ID, reported price, type, bedrooms, bathrooms, address, furnishing, completion status, post date, building name, completion year, area name, coordinates, and source link.
+Buyer-verifiable listing facts: property ID, reported price, type, bedrooms, bathrooms, address, furnishing, completion status, post date, building name, completion year, area name, coordinates, and source link. Property visuals are deterministic CSS geometry based on stable property identity and area; they are presentation-only and never evidence.
 
 Building-only facts: `building_total_parking_spaces`, `building_floors`, `building_total_area_sqft`, and `building_elevators`. These may describe a whole building and never participate in buyer fit.
 

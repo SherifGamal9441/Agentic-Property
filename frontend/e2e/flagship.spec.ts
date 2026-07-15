@@ -73,6 +73,19 @@ test("top matches open a synchronized comparison matrix", async ({ page }) => {
   await expect(page.getByRole("rowheader", { name: "Evidence coverage" })).toBeVisible();
 });
 
+test("primary navigation reveals the selected workspace and scrolls to it", async ({ page }) => {
+  const [query, area, beds, price] = presets[0];
+  await routeRun(page, query, area, beds, price);
+  await page.goto("/");
+  await runQuery(page, query);
+
+  await page.getByRole("button", { name: "Areas", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Compare reported area evidence" })).toBeInViewport();
+
+  await page.getByRole("button", { name: "Affordability", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Affordability scenario" })).toBeInViewport();
+});
+
 test("decision state survives refresh and dossier has print state", async ({ page }) => {
   const [query, area, beds, price] = presets[0];
   await routeRun(page, query, area, beds, price);

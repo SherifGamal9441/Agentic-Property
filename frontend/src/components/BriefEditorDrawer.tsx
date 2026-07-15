@@ -21,7 +21,7 @@ export default function BriefEditorDrawer({ brief, highlightedId, onClose, onApp
 
   return <div className="dialog-backdrop" onMouseDown={onClose}><aside ref={drawer} className="brief-drawer" role="dialog" aria-modal="true" aria-label="Edit buyer brief" onMouseDown={(event) => event.stopPropagation()}>
     <button type="button" className="icon-button" onClick={onClose} aria-label="Close brief editor">×</button>
-    <p className="eyebrow">Buyer-controlled criteria</p><h2>Edit your brief</h2><p className="muted">Changes apply only when you run the research again.</p>
+    <p className="eyebrow">Buyer-controlled criteria</p><h2>Edit your brief</h2><p className="brief-drawer-query">{brief.original_query}</p><p className="brief-drawer-count">{brief.criteria.length} {brief.criteria.length === 1 ? "criterion" : "criteria"} · changes apply only when you run the research again.</p>
     {priorities.map((priority) => <section className="criterion-group" key={priority}><h3>{priority.replaceAll("_", " ")}</h3><div className="criterion-list">{draft.criteria.filter((criterion) => criterion.priority === priority).map((criterion) => <div className={`criterion-chip ${!criterion.verifiable ? "is-unverifiable" : ""} ${criterion.id === highlightedId ? "is-highlighted" : ""}`} key={criterion.id}>
       <input aria-label={`Label for ${criterion.label}`} value={criterion.label} onChange={(event) => update(criterion.id, { label: event.target.value })} />
       <input aria-label={`Value for ${criterion.label}`} value={criterion.value == null ? "Not verifiable" : String(criterion.value)} disabled={!criterion.verifiable} onChange={(event) => update(criterion.id, { value: typeof criterion.value === "number" ? Number(event.target.value) : event.target.value })} />

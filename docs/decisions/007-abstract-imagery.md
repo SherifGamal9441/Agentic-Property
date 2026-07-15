@@ -2,4 +2,4 @@
 
 **Status:** Accepted
 
-Listing photography is unavailable and must not be fabricated. Aizen uses code-native architectural geometry, material color, typography, and the evidence map. The visual language signals luxury without inventing a home.
+Listing photography is intentionally out of scope. Aizen uses deterministic code-native architectural geometry seeded by stable property identity and area. This keeps the visual language luxurious without inventing a home, and the visuals never affect ranking or evidence.
