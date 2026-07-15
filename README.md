@@ -50,8 +50,8 @@ Property searches follow the eight-node LangGraph path above. Questions about la
 ```mermaid
 flowchart LR
   browser[React buyer workspace] <-->|SSE + JSON| api[FastAPI agent API]
-  api --> graph[LangGraph workflow]
-  graph --> mcp[Persistent MCP client]
+  api --> langgraph[LangGraph workflow]
+  langgraph --> mcp[Persistent MCP client]
   mcp --> server[MCP listing server]
   server --> data[FastAPI data service]
   data --> pg[(PostgreSQL primary)]
