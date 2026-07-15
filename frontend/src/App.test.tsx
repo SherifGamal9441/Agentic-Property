@@ -1,8 +1,35 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 
 import App, { type Property } from "./App";
+
+const mapMocks = vi.hoisted(() => ({ options: [] as Array<Record<string, unknown>>, failsToLoad: false }));
+
+vi.mock("maplibre-gl", () => {
+  class Map {
+    constructor(options: Record<string, unknown>) { this.options = options; mapMocks.options.push(options); }
+    options: Record<string, unknown>;
+    addControl() { return this; }
+    on(event: string, callback: () => void) {
+      if (event === "load" && !mapMocks.failsToLoad) callback();
+      if (event === "error" && mapMocks.failsToLoad) callback();
+      return this;
+    }
+    fitBounds() { return this; }
+    flyTo() { return this; }
+    remove() { return this; }
+  }
+  class Marker {
+    constructor({ element }: { element: HTMLElement }) { this.element = element; }
+    element: HTMLElement;
+    setLngLat() { return this; }
+    addTo(map: { options?: { container?: HTMLElement } }) { (map.options?.container as HTMLElement | undefined)?.append(this.element); return this; }
+    remove() { this.element.remove(); return this; }
+  }
+  class NavigationControl {}
+  return { default: { Map, Marker, NavigationControl } };
+});
 
 const properties: Property[] = Array.from({ length: 5 }, (_, index) => ({
   id: `property-${index + 1}`,
@@ -35,7 +62,23 @@ const properties: Property[] = Array.from({ length: 5 }, (_, index) => ({
   data_source: "active",
 }));
 
-afterEach(() => { localStorage.clear(); vi.unstubAllGlobals(); });
+afterEach(() => { localStorage.clear(); mapMocks.options.length = 0; mapMocks.failsToLoad = false; vi.unstubAllGlobals(); });
+
+test("uses a real OpenFreeMap basemap with accessible exact-coordinate pins", () => {
+  render(<App initialProperties={properties} />);
+
+  expect(mapMocks.options.at(-1)).toMatchObject({ style: "https://tiles.openfreemap.org/styles/liberty" });
+  expect(screen.getByText(/exact supplied listing coordinates/i)).toBeInTheDocument();
+  expect(within(screen.getByLabelText("Property location view")).getAllByRole("button", { name: /open property/i })).toHaveLength(4);
+});
+
+test("keeps exact location evidence available when the basemap fails", () => {
+  mapMocks.failsToLoad = true;
+  render(<App initialProperties={properties.slice(0, 1)} />);
+
+  expect(screen.getByRole("status")).toHaveTextContent(/basemap unavailable/i);
+  expect(screen.getByText(/exact supplied listing coordinates/i)).toBeInTheDocument();
+});
 
 test("starts with an editorial empty workspace without ingestion jargon", () => {
   render(<App />);
@@ -132,12 +175,56 @@ test("sorts visible results and keeps buyer decision evidence", async () => {
 test("restores a visible research conversation from the current browser session", async () => {
   localStorage.setItem("aizen-thread-id", "8f9d67d9-61de-44d9-a95d-8d0c5c8a9d4f");
   localStorage.setItem("aizen-research-sessions", JSON.stringify([{ threadId: "8f9d67d9-61de-44d9-a95d-8d0c5c8a9d4f", title: "Marina search", lastActivityAt: "2026-07-14T00:00:00.000Z" }]));
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ messages: [{ role: "user", content: "2BR in Dubai Marina" }, { role: "assistant", content: "Here are reported matches." }] }) }));
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ messages: [{ role: "user", content: "2BR in Dubai Marina" }, { role: "assistant", content: "Here are reported matches." }], properties: [properties[0]] }) }));
 
   render(<App />);
 
   expect(await screen.findByRole("region", { name: "Research conversation" })).toHaveTextContent("Here are reported matches.");
   expect(screen.getByRole("region", { name: "Research sessions" })).toHaveTextContent("Marina search");
+  expect(screen.getByRole("region", { name: "Property results" })).toHaveTextContent("Property 1");
+  await userEvent.setup().click(screen.getAllByRole("button", { name: "Add to comparison" })[0]);
+  await userEvent.setup().click(screen.getByRole("button", { name: "View decision sheet" }));
+  expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Property 1");
+  expect(screen.queryByText(/guided starts/i)).not.toBeInTheDocument();
+});
+
+test("hides guided starts after a valid submit and restores them for a new conversation", async () => {
+  const user = userEvent.setup();
+  const encoder = new TextEncoder();
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, body: new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode("event: run_completed\ndata: {}\n\n"));
+      controller.close();
+    },
+  }) }));
+  render(<App />);
+
+  await user.click(screen.getByRole("button", { name: /ready 2br/i }));
+  expect(screen.getByRole("textbox", { name: "Property brief" })).toHaveValue("A ready 2BR in Dubai Marina under AED 2M");
+  expect(screen.getByText(/guided starts/i)).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Research properties" }));
+
+  await waitFor(() => expect(screen.queryByText(/guided starts/i)).not.toBeInTheDocument());
+  await user.click(screen.getByRole("button", { name: /new conversation/i }));
+  expect(screen.getByText(/guided starts/i)).toBeInTheDocument();
+});
+
+test("removes guided starts immediately when reduced motion is preferred", async () => {
+  const user = userEvent.setup();
+  const encoder = new TextEncoder();
+  vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, body: new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode("event: run_completed\ndata: {}\n\n"));
+      controller.close();
+    },
+  }) }));
+  render(<App />);
+
+  await user.type(screen.getByRole("textbox", { name: "Property brief" }), "2BR in Dubai Marina");
+  await user.click(screen.getByRole("button", { name: "Research properties" }));
+
+  expect(screen.queryByText(/guided starts/i)).not.toBeInTheDocument();
 });
 
 test("shows reported historical context and keeps buyer decisions local", async () => {
@@ -152,4 +239,16 @@ test("shows reported historical context and keeps buyer decisions local", async 
 
   expect(await screen.findByText(/12 reported transactions/i)).toBeInTheDocument();
   expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Historical market context only—not active inventory or a valuation.");
+});
+
+test("uses shared drawer controls for historical context and feedback", async () => {
+  const user = userEvent.setup();
+  render(<App initialProperties={properties.slice(0, 1)} />);
+
+  await user.click(screen.getAllByRole("button", { name: "Open Property 1" })[0]);
+  const drawer = screen.getByRole("dialog", { name: /property intelligence/i });
+
+  expect(within(drawer).getByRole("button", { name: "Load historical context" })).toHaveClass("drawer-control");
+  expect(within(drawer).getByRole("button", { name: "Useful result" })).toHaveClass("drawer-control");
+  expect(within(drawer).getByRole("button", { name: "Missing or incorrect detail" })).toHaveClass("drawer-control");
 });

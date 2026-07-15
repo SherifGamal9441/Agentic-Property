@@ -55,7 +55,7 @@ def test_market_context_proxy_forwards_available_comparable_facts():
     market_context.assert_called_once_with("Dubai Marina", "Apartments", 2)
 
 
-def test_conversation_endpoint_returns_only_saved_messages(monkeypatch):
+def test_conversation_endpoint_restores_saved_messages_and_latest_properties(monkeypatch):
     class Connection:
         async def close(self):
             pass
@@ -65,11 +65,18 @@ def test_conversation_endpoint_returns_only_saved_messages(monkeypatch):
 
     class Graph:
         async def aget_state(self, _config):
-            return type("State", (), {"values": {"conversation_history": [
-                {"role": "user", "content": "2BR in Dubai Marina"},
-                {"role": "assistant", "content": "Here are matches."},
-                {"role": "system", "content": "hidden"},
-            ]}})()
+            return type("State", (), {"values": {
+                "conversation_history": [
+                    {"role": "user", "content": "2BR in Dubai Marina"},
+                    {"role": "assistant", "content": "Here are matches."},
+                    {"role": "system", "content": "hidden"},
+                ],
+                "parsed_query": {"area_name": "Dubai Marina", "property_beds_minimum": 2},
+                "retrieved_properties": [{"id": "marina-1", "title": "Marina home", "area_name": "Dubai Marina", "beds": 2, "price": 1_500_000}],
+                "comparison_result": {"properties": [{"id": "marina-1", "fit_score": 1.0}]},
+                "data_source": "active",
+                "data_intent": "recommend",
+            }})()
 
     async def create_checkpointer():
         return Checkpointer()
@@ -88,3 +95,36 @@ def test_conversation_endpoint_returns_only_saved_messages(monkeypatch):
         {"role": "user", "content": "2BR in Dubai Marina"},
         {"role": "assistant", "content": "Here are matches."},
     ]
+    assert response.json()["properties"][0]["id"] == "marina-1"
+    assert response.json()["properties"][0]["score_factors"] == ["Matches Dubai Marina", "Meets 2+ bedrooms"]
+
+
+def test_conversation_endpoint_returns_empty_properties_for_a_transcript_only_session(monkeypatch):
+    class Connection:
+        async def close(self):
+            pass
+
+    class Checkpointer:
+        conn = Connection()
+
+    class Graph:
+        async def aget_state(self, _config):
+            return type("State", (), {"values": {"conversation_history": [
+                {"role": "user", "content": "Tell me about Dubai Marina"},
+                {"role": "assistant", "content": "It is a waterfront district."},
+            ]}})()
+
+    async def create_checkpointer():
+        return Checkpointer()
+
+    memory_module = ModuleType("src.memory.long_term_memory")
+    memory_module.create_async_checkpointer = create_checkpointer
+    graph_module = ModuleType("src.agents.graph")
+    graph_module.build_graph = lambda checkpointer: Graph()
+    monkeypatch.setitem(sys.modules, "src.memory.long_term_memory", memory_module)
+    monkeypatch.setitem(sys.modules, "src.agents.graph", graph_module)
+
+    response = TestClient(app).get("/api/conversations/8f9d67d9-61de-44d9-a95d-8d0c5c8a9d4f")
+
+    assert response.status_code == 200
+    assert response.json()["properties"] == []

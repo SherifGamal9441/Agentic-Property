@@ -1,4 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 export type Property = {
   id: string;
@@ -43,6 +45,7 @@ type MapScope = "all" | "shortlist" | "comparison";
 type SortBy = "fit" | "price-low" | "price-per-sqft";
 
 const API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8002";
+const OPEN_FREE_MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const emptyValue = "Not reported";
 const guidedBriefs = ["A ready 2BR in Dubai Marina under AED 2M", "Compare off-plan investment options", "A family home with room to grow"];
 
@@ -52,6 +55,7 @@ const price = (amount: number | null, currency = "AED") =>
 const value = (item: string | number | null | undefined) => item ?? emptyValue;
 const pricePerSqft = (property: Property) => property.price !== null && property.size_sqft ? price(property.price / property.size_sqft, property.currency) : emptyValue;
 const validCoordinates = (property: Property) => property.location_status === "exact" && Number.isFinite(property.latitude) && Number.isFinite(property.longitude);
+const prefersReducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 function savedSearchesFromStorage() {
   try {
@@ -96,14 +100,13 @@ function LocationView({ properties, selectedId, shortlistIds, compareIds, onSele
 }) {
   const [scope, setScope] = useState<MapScope>("all");
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [basemapUnavailable, setBasemapUnavailable] = useState(false);
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<maplibregl.Map | null>(null);
+  const markers = useRef<maplibregl.Marker[]>([]);
   const scopedProperties = scope === "all" ? properties : properties.filter((property) => (scope === "shortlist" ? shortlistIds : compareIds).includes(property.id));
   const mapped = scopedProperties.filter(validCoordinates);
-  const bounds = useMemo(() => {
-    if (!mapped.length) return null;
-    const lats = mapped.map(({ latitude }) => latitude as number);
-    const lngs = mapped.map(({ longitude }) => longitude as number);
-    return { minLat: Math.min(...lats), maxLat: Math.max(...lats), minLng: Math.min(...lngs), maxLng: Math.max(...lngs) };
-  }, [mapped]);
   const groups = useMemo(() => {
     // ponytail: group only exact supplied coordinates; add proximity grouping when coordinate precision exists.
     const grouped = new Map<string, Property[]>();
@@ -115,7 +118,6 @@ function LocationView({ properties, selectedId, shortlistIds, compareIds, onSele
   }, [mapped]);
   const missing = scopedProperties.filter((property) => !validCoordinates(property));
   const selectedGroup = groups.find((group) => group.key === expandedGroup);
-  const areas = [...new Set(mapped.map((property) => property.area))];
   const scopeLabel = scope === "all" ? "results" : scope;
 
   const changeScope = (nextScope: MapScope) => {
@@ -123,35 +125,74 @@ function LocationView({ properties, selectedId, shortlistIds, compareIds, onSele
     setExpandedGroup(null);
   };
 
+  useEffect(() => {
+    if (!mapContainer.current) return;
+    let loaded = false;
+    let instance: maplibregl.Map;
+    try {
+      instance = new maplibregl.Map({
+        container: mapContainer.current,
+        style: OPEN_FREE_MAP_STYLE,
+        center: [55.2708, 25.2048],
+        zoom: 10,
+        cooperativeGestures: true,
+      });
+    } catch {
+      setBasemapUnavailable(true);
+      return;
+    }
+    map.current = instance;
+    instance.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+    instance.on("load", () => { loaded = true; setMapReady(true); });
+    instance.on("error", () => { if (!loaded) setBasemapUnavailable(true); });
+    return () => { markers.current.forEach((marker) => marker.remove()); instance.remove(); };
+  }, []);
+
+  useEffect(() => {
+    const instance = map.current;
+    markers.current.forEach((marker) => marker.remove());
+    markers.current = [];
+    if (!instance || !mapReady || basemapUnavailable || !groups.length) return;
+
+    const coordinates = groups.map(({ homes: [property] }) => [property.longitude as number, property.latitude as number] as [number, number]);
+    if (coordinates.length === 1) {
+      instance.flyTo({ center: coordinates[0], zoom: 14 });
+    } else {
+      const longitudes = coordinates.map(([longitude]) => longitude);
+      const latitudes = coordinates.map(([, latitude]) => latitude);
+      instance.fitBounds([[Math.min(...longitudes), Math.min(...latitudes)], [Math.max(...longitudes), Math.max(...latitudes)]], { padding: 44, maxZoom: 14 });
+    }
+
+    groups.forEach((group) => {
+      const property = group.homes[0];
+      const marker = document.createElement("div");
+      const button = document.createElement("button");
+      const isSelected = group.homes.some((home) => home.id === selectedId);
+      const isShortlisted = group.homes.some((home) => shortlistIds.includes(home.id));
+      const isComparing = group.homes.some((home) => compareIds.includes(home.id));
+      button.type = "button";
+      button.className = `map-pin ${isSelected ? "selected" : ""} ${isShortlisted ? "shortlisted" : ""} ${isComparing ? "comparing" : ""}`;
+      button.textContent = group.homes.length === 1 ? property.title : `${group.homes.length} homes`;
+      button.setAttribute("aria-label", group.homes.length === 1 ? `Open ${property.title}` : `Open ${group.homes.length} homes in ${property.area}`);
+      button.addEventListener("click", () => group.homes.length === 1 ? onSelect(property) : setExpandedGroup(group.key));
+      marker.append(button);
+      markers.current.push(new maplibregl.Marker({ element: marker, anchor: "center" }).setLngLat([property.longitude as number, property.latitude as number]).addTo(instance));
+    });
+  }, [basemapUnavailable, compareIds, groups, mapReady, onSelect, selectedId, shortlistIds]);
+
   return <section className="map-rail">
-    <div className="map-header"><div><p className="section-label">Location evidence</p><h3>Relative location view</h3></div><span>{mapped.length} pins</span></div>
+    <div className="map-header"><div><p className="section-label">Location evidence</p><h3>Property location map</h3></div><span>{mapped.length} pins</span></div>
     <div className="map-scopes" aria-label="Map location scope">
       <button type="button" aria-pressed={scope === "all"} aria-label="Show all result locations" onClick={() => changeScope("all")}>All</button>
       <button type="button" aria-pressed={scope === "shortlist"} aria-label="Show shortlist locations" onClick={() => changeScope("shortlist")}>Shortlist</button>
       <button type="button" aria-pressed={scope === "comparison"} aria-label="Show comparison locations" onClick={() => changeScope("comparison")}>Compare</button>
     </div>
-    <div className="map" aria-label="Property location view">
-      <div className="map-water" />
-      {areas.map((area, index) => <span className="map-label" key={area} style={{ left: `${18 + index * 32}%`, top: `${18 + index * 18}%` }}>{area}</span>)}
-      {groups.map((group, index) => {
-        const property = group.homes[0];
-        const latitude = property.latitude as number;
-        const longitude = property.longitude as number;
-        const latRange = Math.max((bounds?.maxLat ?? latitude) - (bounds?.minLat ?? latitude), 0.002);
-        const lngRange = Math.max((bounds?.maxLng ?? longitude) - (bounds?.minLng ?? longitude), 0.002);
-        const left = 14 + ((longitude - (bounds?.minLng ?? longitude)) / lngRange) * 72 + (index % 2) * 1.5;
-        const top = 78 - ((latitude - (bounds?.minLat ?? latitude)) / latRange) * 58 + (index % 2) * 1.5;
-        const isSelected = group.homes.some((home) => home.id === selectedId);
-        const isShortlisted = group.homes.some((home) => shortlistIds.includes(home.id));
-        const isComparing = group.homes.some((home) => compareIds.includes(home.id));
-        const label = group.homes.length === 1 ? `Open ${property.title}` : `Open ${group.homes.length} homes in ${property.area}`;
-        return <button type="button" className={`map-pin ${isSelected ? "selected" : ""} ${isShortlisted ? "shortlisted" : ""} ${isComparing ? "comparing" : ""}`} key={group.key} onClick={() => group.homes.length === 1 ? onSelect(property) : setExpandedGroup(group.key)} style={{ left: `${left}%`, top: `${top}%` }} aria-label={label}><span>{group.homes.length === 1 ? property.title : `${group.homes.length} homes`}</span></button>;
-      })}
-      <div className="map-attribution">Relative positions from supplied listing coordinates</div>
-    </div>
+    <div className="map map-live" aria-label="Property location view" ref={mapContainer} hidden={basemapUnavailable} />
+    {basemapUnavailable && <p className="map-note" role="status">Basemap unavailable. Exact home locations remain available below.</p>}
     {selectedGroup && <section className="map-cluster" aria-label="Location group"><p>Choose a home at this location</p>{selectedGroup.homes.map((property) => <button type="button" key={property.id} onClick={() => { onSelect(property); setExpandedGroup(null); }}>Open {property.title}</button>)}</section>}
     {!mapped.length && <p className="map-note">No exact {scopeLabel} locations are available.</p>}
     {missing.map((property) => <p className="map-note" key={property.id}>{property.title} has area-only location evidence.</p>)}
+    <p className="map-attribution">Exact supplied listing coordinates · Map data © OpenFreeMap, OpenMapTiles, and OpenStreetMap contributors</p>
   </section>;
 }
 
@@ -201,6 +242,8 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
   const [isRunning, setIsRunning] = useState(false);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(() => Boolean(localStorage.getItem("aizen-thread-id")));
+  const [hasSubmittedBrief, setHasSubmittedBrief] = useState(false);
   const [mustHave, setMustHave] = useState("");
   const [niceToHave, setNiceToHave] = useState("");
   const [dealBreaker, setDealBreaker] = useState("");
@@ -212,20 +255,28 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
   const [transcript, setTranscript] = useState<ConversationMessage[]>([]);
   const [buyerDecisions, setBuyerDecisions] = useState<Record<string, BuyerDecision>>(() => storageValue("aizen-buyer-decisions", {}));
   const propertyCloseButton = useRef<HTMLButtonElement>(null);
+  const [guidedStartsMounted, setGuidedStartsMounted] = useState(() => !localStorage.getItem("aizen-thread-id"));
+
+  const shouldHideGuidedStarts = isLoadingConversation || hasSubmittedBrief || transcript.some((message) => message.role === "user");
 
   const rememberSession = (threadId: string, title: string) => setSessions((current) => [{
     threadId, title: title.trim().slice(0, 56) || "Untitled research", lastActivityAt: new Date().toISOString(),
   }, ...current.filter((session) => session.threadId !== threadId)]);
 
   const loadConversation = async (threadId: string, reportUnavailable = false) => {
+    setIsLoadingConversation(true);
     try {
       const response = await fetch(`${API_URL}/api/conversations/${threadId}`);
       if (!response.ok) throw new Error("Research conversation is unavailable.");
       const data = await response.json();
       setTranscript(Array.isArray(data.messages) ? data.messages : []);
+      setProperties(Array.isArray(data.properties) ? data.properties : []);
     } catch {
       setTranscript([]);
+      setProperties([]);
       if (reportUnavailable) setNotice("Research conversation is unavailable. You can continue with a new brief.");
+    } finally {
+      setIsLoadingConversation(false);
     }
   };
 
@@ -241,6 +292,18 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
   // Restore only once; later interactions own the active session.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    if (!shouldHideGuidedStarts) {
+      setGuidedStartsMounted(true);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      setGuidedStartsMounted(false);
+      return;
+    }
+    const timeout = window.setTimeout(() => setGuidedStartsMounted(false), 180);
+    return () => window.clearTimeout(timeout);
+  }, [shouldHideGuidedStarts]);
   useEffect(() => {
     if (!selected && !showDecisionSheet) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -334,12 +397,16 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
   const startNewConversation = () => {
     localStorage.removeItem("aizen-thread-id");
     setTranscript([]);
+    setProperties([]);
+    setIsLoadingConversation(false);
+    setHasSubmittedBrief(false);
     clearBrief();
     setNotice("New conversation started.");
   };
 
   const selectSession = (session: ResearchSession) => {
     localStorage.setItem("aizen-thread-id", session.threadId);
+    setHasSubmittedBrief(false);
     setAnswer(""); setProperties([]); setCompareIds([]); setSelected(null); setNotice("");
     void loadConversation(session.threadId, true);
   };
@@ -368,6 +435,7 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
     const threadId = localStorage.getItem("aizen-thread-id") || crypto.randomUUID();
     localStorage.setItem("aizen-thread-id", threadId);
     rememberSession(threadId, query);
+    setHasSubmittedBrief(true);
     setIsRunning(true); setNotice(""); setAnswer(""); setProperties([]); setCompareIds([]); setTrace([]); setSelected(null);
     try {
       const decisionBrief = [query, ...profile.map(([label, item]) => `${label}: ${item}`)].join("\n");
@@ -398,7 +466,7 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
       <section className="hero"><div><p className="eyebrow">Dubai property intelligence</p><h1>Find a home.<br /><em>Know why it fits.</em></h1><p className="hero-copy">Aizen turns a property brief into an inspectable decision: active dataset research, ranked homes, and trade-offs you can see.</p><a className="primary-link" href="#workspace">Start a property brief <span>↓</span></a></div><div className="hero-card"><p>Data promise</p><strong>Active<span> dataset</span></strong><div className="confidence-bar"><span /></div></div></section>
       <section className="proof-strip" id="how-it-works" aria-label="How Aizen works"><p><b>01</b> Understand your brief</p><p><b>02</b> Search active data</p><p><b>03</b> Compare and audit</p><p><b>04</b> Make a decision with confidence</p></section>
       <section className={`workspace ${properties.length ? "has-results" : ""}`} id="workspace" aria-label="Aizen property workspace">
-        <aside className="brief-rail"><p className="section-label">Guided starts</p><h2>What are you looking for?</h2>{guidedBriefs.map((brief) => <button type="button" key={brief} onClick={() => setQuery(brief)}>{brief}<span>↗</span></button>)}{sessions.length > 0 && <section className="research-sessions" aria-label="Research sessions"><p className="section-label">Your research</p>{sessions.map((session) => <button type="button" key={session.threadId} aria-current={localStorage.getItem("aizen-thread-id") === session.threadId ? "page" : undefined} onClick={() => selectSession(session)}><span>{session.title}</span><small>{new Date(session.lastActivityAt).toLocaleDateString()}</small></button>)}</section>}<p className="rail-note"><span className="pulse" />Research with source, snapshot, and decision evidence.</p></aside>
+        <aside className="brief-rail">{guidedStartsMounted && <section className={`guided-starts ${shouldHideGuidedStarts ? "is-exiting" : ""}`} aria-hidden={shouldHideGuidedStarts}><p className="section-label">Guided starts</p><h2>What are you looking for?</h2>{guidedBriefs.map((brief) => <button type="button" key={brief} tabIndex={shouldHideGuidedStarts ? -1 : undefined} onClick={() => setQuery(brief)}>{brief}<span>↗</span></button>)}</section>}{sessions.length > 0 && <section className="research-sessions" aria-label="Research sessions"><p className="section-label">Your research</p>{sessions.map((session) => <button type="button" key={session.threadId} aria-current={localStorage.getItem("aizen-thread-id") === session.threadId ? "page" : undefined} onClick={() => selectSession(session)}><span>{session.title}</span><small>{new Date(session.lastActivityAt).toLocaleDateString()}</small></button>)}</section>}<p className="rail-note"><span className="pulse" />Research with source, snapshot, and decision evidence.</p></aside>
         <section className="agent-canvas">
           <div className="canvas-header"><div><p className="section-label">Your property brief</p><h2>Tell Aizen what matters</h2></div><span className="source-badge">{snapshot ? `Snapshot ${snapshot}` : "Active dataset research"}</span></div>
           <form className="query-box" onSubmit={runAgent}><textarea value={query} onChange={(event) => setQuery(event.target.value)} aria-label="Property brief" rows={2} placeholder="A ready 2BR in Dubai Marina under AED 2M" /><button type="submit" disabled={isRunning}>{isRunning ? "Researching…" : "Research properties"}</button></form>
@@ -418,7 +486,7 @@ function App({ initialProperties = [] }: { initialProperties?: Property[] }) {
       </section>
       <section className="compare-tray" role="region" aria-label="Comparison shortlist"><div><p className="section-label">Decision tray</p><h2>Compare your shortlist</h2><p>{shortlist.length} saved home{shortlist.length === 1 ? "" : "s"} · select one to four homes for side-by-side evidence.</p></div><div className="compare-slots">{comparison.map((property) => <button type="button" key={property.id} onClick={() => setSelected(property)}><span>{property.fit_score === null ? "Evidence pending" : `${Math.round(property.fit_score * 100)}% match`}</span>{property.title}<b>↗</b></button>)}{Array.from({ length: Math.max(0, 4 - comparison.length) }, (_, index) => <div className="empty-slot" key={index}>Add a home</div>)}</div>{comparison.length > 0 && <button type="button" className="dark-button" onClick={() => setShowDecisionSheet(true)}>View decision sheet</button>}</section>
     </main>
-    {selected && <div className="drawer-backdrop" onClick={() => setSelected(null)}><aside className="intelligence-drawer" role="dialog" aria-modal="true" aria-label="Property intelligence" onClick={(event) => event.stopPropagation()}><button ref={propertyCloseButton} type="button" className="close" onClick={() => setSelected(null)} aria-label="Close property intelligence">×</button><p className="section-label">Property evidence</p><h2>{selected.title}</h2><p>{selected.area} · {selected.data_status === "historical_insight" ? "Historical market signal" : "Active dataset record"}</p><strong className="drawer-price">{price(selected.price, selected.currency)}</strong><div className="drawer-actions"><button type="button" aria-pressed={shortlistIds.includes(selected.id)} onClick={() => toggleShortlist(selected.id)}>{shortlistIds.includes(selected.id) ? "Remove from shortlist" : "Add to shortlist"}</button><button type="button" className="dark-button" aria-pressed={compareIds.includes(selected.id)} onClick={() => toggleCompare(selected.id)}>{compareIds.includes(selected.id) ? "Remove from comparison" : "Add to comparison"}</button></div><section className="buyer-decision-controls"><h3>Your decision</h3><div className="drawer-actions"><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "saved"} onClick={() => setBuyerDecision(selected.id, "saved")}>Save</button><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "maybe"} onClick={() => setBuyerDecision(selected.id, "maybe")}>Maybe</button><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "ruled_out"} onClick={() => setBuyerDecision(selected.id, "ruled_out")}>Rule out</button></div><label>Private note<textarea aria-label="Private note" value={buyerDecisions[selected.id]?.note || ""} onChange={(event) => setBuyerNote(selected.id, event.target.value)} placeholder="What should you remember about this home?" /></label></section><section><h3>Why it was selected</h3><ul>{selected.score_factors.map((factor) => <li key={factor}>✓ {factor}</li>)}{selected.unmatched_criteria.map((gap) => <li className="gap" key={gap}>△ {gap}</li>)}</ul></section><section className="spec-grid"><h3>Reported details</h3><div><span>Bedrooms</span><b>{value(selected.beds)}</b></div><div><span>Bathrooms</span><b>{value(selected.baths)}</b></div><div><span>Size</span><b>{value(selected.size_sqft)}</b></div><div><span>Price / sq ft</span><b>{pricePerSqft(selected)}</b></div><div><span>Location evidence</span><b>{validCoordinates(selected) ? "Exact supplied coordinate" : selected.area ? "Area-only" : "Unavailable"}</b></div><div><span>Snapshot</span><b>{selected.dataset_snapshot_at || emptyValue}</b></div></section><section><h3>Historical area context</h3><button type="button" onClick={() => void loadMarketContext(selected)}>Load historical context</button>{marketContext && (marketContext.unavailable || !marketContext.record_count ? <p>Insufficient historical evidence for this area.</p> : <p>{marketContext.record_count} reported records · {marketContext.period_start} to {marketContext.period_end} · {price(marketContext.price_min ?? null)}–{price(marketContext.price_max ?? null)}</p>)}</section><section><h3>Research feedback</h3><button type="button" onClick={() => recordFeedback(selected, "useful")}>Useful result</button><button type="button" onClick={() => recordFeedback(selected, "issue")}>Missing or incorrect detail</button></section></aside></div>}
+    {selected && <div className="drawer-backdrop" onClick={() => setSelected(null)}><aside className="intelligence-drawer" role="dialog" aria-modal="true" aria-label="Property intelligence" onClick={(event) => event.stopPropagation()}><button ref={propertyCloseButton} type="button" className="close" onClick={() => setSelected(null)} aria-label="Close property intelligence">×</button><p className="section-label">Property evidence</p><h2>{selected.title}</h2><p>{selected.area} · {selected.data_status === "historical_insight" ? "Historical market signal" : "Active dataset record"}</p><strong className="drawer-price">{price(selected.price, selected.currency)}</strong><div className="drawer-actions"><button type="button" aria-pressed={shortlistIds.includes(selected.id)} onClick={() => toggleShortlist(selected.id)}>{shortlistIds.includes(selected.id) ? "Remove from shortlist" : "Add to shortlist"}</button><button type="button" className="dark-button" aria-pressed={compareIds.includes(selected.id)} onClick={() => toggleCompare(selected.id)}>{compareIds.includes(selected.id) ? "Remove from comparison" : "Add to comparison"}</button></div><section className="buyer-decision-controls"><h3>Your decision</h3><div className="drawer-actions"><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "saved"} onClick={() => setBuyerDecision(selected.id, "saved")}>Save</button><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "maybe"} onClick={() => setBuyerDecision(selected.id, "maybe")}>Maybe</button><button type="button" aria-pressed={buyerDecisions[selected.id]?.status === "ruled_out"} onClick={() => setBuyerDecision(selected.id, "ruled_out")}>Rule out</button></div><label>Private note<textarea aria-label="Private note" value={buyerDecisions[selected.id]?.note || ""} onChange={(event) => setBuyerNote(selected.id, event.target.value)} placeholder="What should you remember about this home?" /></label></section><section><h3>Why it was selected</h3><ul>{selected.score_factors.map((factor) => <li key={factor}>✓ {factor}</li>)}{selected.unmatched_criteria.map((gap) => <li className="gap" key={gap}>△ {gap}</li>)}</ul></section><section className="spec-grid"><h3>Reported details</h3><div><span>Bedrooms</span><b>{value(selected.beds)}</b></div><div><span>Bathrooms</span><b>{value(selected.baths)}</b></div><div><span>Size</span><b>{value(selected.size_sqft)}</b></div><div><span>Price / sq ft</span><b>{pricePerSqft(selected)}</b></div><div><span>Location evidence</span><b>{validCoordinates(selected) ? "Exact supplied coordinate" : selected.area ? "Area-only" : "Unavailable"}</b></div><div><span>Snapshot</span><b>{selected.dataset_snapshot_at || emptyValue}</b></div></section><section><h3>Historical area context</h3><button type="button" className="drawer-control" onClick={() => void loadMarketContext(selected)}>Load historical context</button>{marketContext && (marketContext.unavailable || !marketContext.record_count ? <p>Insufficient historical evidence for this area.</p> : <p>{marketContext.record_count} reported records · {marketContext.period_start} to {marketContext.period_end} · {price(marketContext.price_min ?? null)}–{price(marketContext.price_max ?? null)}</p>)}</section><section><h3>Research feedback</h3><button type="button" className="drawer-control" onClick={() => recordFeedback(selected, "useful")}>Useful result</button><button type="button" className="drawer-control" onClick={() => recordFeedback(selected, "issue")}>Missing or incorrect detail</button></section></aside></div>}
     {showDecisionSheet && <DecisionSheet properties={comparison} decisions={buyerDecisions} onClose={() => setShowDecisionSheet(false)} />}
   </div>;
 }

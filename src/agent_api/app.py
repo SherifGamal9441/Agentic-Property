@@ -236,7 +236,7 @@ async def conversation_history(thread_id: uuid.UUID) -> dict[str, Any]:
         ]
         if not messages:
             raise HTTPException(status_code=404, detail="Research conversation is unavailable.")
-        return {"thread_id": str(thread_id), "messages": messages}
+        return {"thread_id": str(thread_id), "messages": messages, "properties": _property_payloads(values)}
     finally:
         if getattr(checkpointer, "conn", None):
             await checkpointer.conn.close()
