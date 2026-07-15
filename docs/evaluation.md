@@ -2,7 +2,7 @@
 
 ## Automated release record
 
-Update this table only from a complete release-gate run.
+This table records the latest complete release-gate run.
 
 | Gate | Verified result |
 |---|---|
@@ -36,4 +36,4 @@ The 2026-07-15 release rehearsal verified the production property-search sequenc
 - Provider outage shows a calm live-run error and never a cached result.
 - Three presets return genuine snapshot matches.
 
-No number is published in the product case study unless it comes from this release record or is derived from the static architecture contract.
+The product case study uses numbers from this release record or values derived from the static architecture contract.

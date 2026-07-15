@@ -1,31 +1,31 @@
 # Aizen
 
-**Find what fits. See what matters.**<br />
-*Search less. Decide better.*
+Aizen is a Dubai home-buying workspace. It turns a request in plain language into a shortlist you can inspect, compare, and act on.
 
-Aizen is a Dubai home-buying decision workspace. Describe a home once, watch a live eight-node investigation, and move from a clear brief to an evidence-ranked shortlist, comparison matrix, affordability scenario, and printable buyer dossier.
+Try something like: `Ready 2BR in Dubai Marina under AED 2M, no off-plan.`
 
-![Aizen flagship buyer workspace](docs/assets/aizen-home.png)
+![Aizen home-buying workspace](docs/assets/aizen-home.png)
 
-## The 60-second demo
+## What you get
 
-1. Choose a live preset or describe a home in your own words.
-2. Select **Find matching homes**; Aizen interprets and immediately runs the validated brief.
-3. Meet the completion takeover, review its evidence metrics, and open the leading home's profile.
-4. Edit and rerun the compact brief, compare up to four homes, enter an affordability scenario, and print the buyer dossier.
+1. Aizen turns the request into a validated `BuyerBrief` before it searches.
+2. The agent searches the active listing snapshot and streams its progress in the browser.
+3. Each result shows its matched criteria, evidence coverage, source, observation date, and snapshot identity.
+4. You can compare up to four homes, check an affordability scenario, open the map, and print a buyer dossier.
 
-## Why it is technically credible
+The search brief stays in your control. The first submission authorizes a run; later edits use **Apply & rerun**.
 
-- A validated `BuyerBrief` turns natural language into editable criteria before search execution; submit authorizes the first run and later edits require **Apply & rerun**.
-- `PropertyGuidance` references audited properties and criteria instead of trusting free-form factual prose.
-- MCP isolates listing retrieval behind typed filters and preserves provider flexibility.
-- Deterministic code—not an LLM—evaluates criteria, weights fit, and audits invariants.
-- Active listing evidence and historical transaction context never substitute for one another.
-- PostgreSQL is primary; SQLite keeps the local demo resilient when PostgreSQL is unavailable.
-- React loads the OpenFreeMap/MapLibre location surface only when requested.
-- Every shown property exposes its source reference, observation date, data-snapshot identity, matched criteria, and evidence coverage.
-- Warm editorial surfaces carry reading and decision work. Dark cinematic surfaces mark research and evidence moments. Abstract architectural geometry gives every home a distinct visual identity without implying listing photography.
-- Property visuals are deterministic editorial architecture generated from each property's stable identity; no listing photography is implied.
+## Where the model stops
+
+The model handles scope, brief interpretation, and written guidance. It does not calculate fit, fees, valuation, or market benchmarks. Those decisions stay in code.
+
+- `BuyerBrief` is validated before retrieval.
+- MCP passes typed filters to the listing service.
+- The comparison engine evaluates criteria and ranks homes locally.
+- Reflection checks IDs, hard rules, arithmetic, sources, and snapshot identity.
+- Missing data never becomes a verified match.
+
+## The search path
 
 ```mermaid
 flowchart TD
@@ -43,23 +43,14 @@ flowchart TD
   answer_generation --> END2([END])
 ```
 
-| Node | Responsibility |
-| --- | --- |
-| `memory` | Restores bounded, thread-isolated session context |
-| `query_relevancy` | Validates Dubai property scope |
-| `query_understanding` | Normalizes the confirmed `BuyerBrief` |
-| `query_routing` | Maps supported hard criteria to MCP filters |
-| `web_search` | Handles laws, areas, and general market questions with citations |
-| `comparison_engine` | Evaluates, weights, and orders candidates locally |
-| `reflection` | Checks IDs, hard rules, arithmetic, sources, and snapshot identity |
-| `answer_generation` | Turns audited references into concise guidance |
+Property searches follow the eight-node LangGraph path above. Questions about laws, areas, or the wider market use a separate web-search route with citations.
 
-## Browser-to-data architecture
+## How the pieces fit
 
 ```mermaid
 flowchart LR
   browser[React buyer workspace] <-->|SSE + JSON| api[FastAPI agent API]
-  api --> graph[LangGraph eight-node workflow]
+  api --> graph[LangGraph workflow]
   graph --> mcp[Persistent MCP client]
   mcp --> server[MCP listing server]
   server --> data[FastAPI data service]
@@ -70,17 +61,17 @@ flowchart LR
   graph -. historical context .-> data
 ```
 
-The browser owns presentation and private workspace state. The agent API owns validation and SSE. The graph owns routing. MCP is the typed boundary for property retrieval. The data service owns database selection and snapshot identity.
+The browser owns presentation and private workspace state. The agent API validates requests and streams progress. MCP keeps listing retrieval behind a typed boundary. PostgreSQL is primary, with SQLite as the local fallback.
 
-## Data and evidence
+## The data
 
-The schema-v2 data snapshot contains **3,087 captured active listings** and **28,809 historical transaction rows**, collected through the existing project source pipeline on **2026-07-02**. DVC pointers, checksums, field definitions, and validation results are documented in [data provenance](docs/data-provenance.md).
+The versioned schema-v2 snapshot contains 3,087 active listings and 28,809 historical transaction rows, collected on 2026-07-02. Active listings and historical transactions stay separate, so historical context cannot quietly become a current listing result.
 
-The product keeps property-level and building-level fields distinct. Historical context uses robust reported-price distributions, sample size, period, and property mix; it is presented as an orientation lens for the buyer workspace.
+See [data provenance](docs/data-provenance.md) for DVC pointers, checksums, field definitions, and validation results.
 
-## One-command local startup
+## Run it locally
 
-Prerequisites: Docker Desktop, Git, DVC access to the configured remote, and one configured live LLM provider.
+You need Docker Desktop, Git, DVC access to the configured remote, and one live LLM provider.
 
 ```powershell
 Copy-Item .env.example .env
@@ -91,32 +82,29 @@ uv run python scripts/preflight.py
 docker compose up --build -d
 ```
 
-Open [http://localhost:5173](http://localhost:5173) and walk through any preset with the configured live provider.
-
-## Preset recruiter scenarios
+Open [http://localhost:5173](http://localhost:5173), then try one of these searches:
 
 - Ready 2BR in Dubai Marina under AED 2M, no off-plan.
 - Ready 3BR in Al Furjan under AED 3M.
 - Furnished 1BR in Business Bay under AED 1.5M.
 
-Presets populate the query, then the same one-action path interprets and runs the complete live agent.
+## Checks
 
-## Verification
+The current release record includes 75 Python tests, 13 React/Vitest tests, 9 Chromium journeys, a passing production build, a healthy Compose stack, and a passing data preflight. See the full [evaluation record](docs/evaluation.md) for the release gates, live-provider rehearsal, and manual acceptance checks.
 
-```powershell
-uv run pytest -q
-Push-Location frontend
-npm run test:gate
-npm run build
-npm run test:e2e
-Pop-Location
-docker compose config --quiet
-git diff --check
-```
+### LangSmith snapshot
 
-The release record, accessibility checks, mobile checks, print checks, and current verified counts live in [evaluation](docs/evaluation.md). The in-product `#/case-study` route presents the same engineering story for a recruiter walkthrough.
+Experiment #3, `structural-4121c378`:
 
-## Documentation
+| Feedback metric | Average |
+| --- | ---: |
+| `data_intent` | 0.92 |
+| `data_source` | 0.92 |
+| `is_relevant` | 1.00 |
+| `parsed_query` | 0.91 |
+| `rejection` | 0.85 |
+
+## More detail
 
 - [Architecture](docs/architecture.md)
 - [Data provenance](docs/data-provenance.md)
@@ -125,9 +113,8 @@ The release record, accessibility checks, mobile checks, print checks, and curre
 - [Demo runbook](docs/demo-runbook.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Design system](docs/design-system.md)
-- [Active specification](specs/006-aizen-flagship-remaster/spec.md)
 - [Architecture decisions](docs/decisions/)
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

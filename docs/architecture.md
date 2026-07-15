@@ -32,6 +32,6 @@ There is no reflection retry edge. Transport retry, when safe, belongs inside th
 
 ## Frontend composition
 
-`App.tsx` orchestrates an abortable `idle → interpreting → running → completed | failed | cancelled` lifecycle. A disposable brief drawer commits changes only through **Apply & rerun**. The cinematic run surface transforms in place into the completion takeover; partial property prose is never shown. Public types, SSE, storage, formatting, and finance remain isolated. The MapLibre/OpenFreeMap component is dynamically imported so the initial recruiter-facing bundle stays compact.
+`App.tsx` orchestrates an abortable `idle → interpreting → running → completed | failed | cancelled` lifecycle. A disposable brief drawer commits changes only through **Apply & rerun**. The run surface transforms in place into the completion view; partial property prose is never shown. Public types, SSE, storage, formatting, and finance remain isolated. The MapLibre/OpenFreeMap component is dynamically imported so the initial browser bundle stays compact.
 
 The comparison workspace accepts one through four audited homes. Its selection is shared with the tray, affordability target, evidence drawer, and dossier. Browser-local recent searches store validated briefs, not prior responses.

@@ -10,7 +10,7 @@ Do not seed the database. Run `uv run dvc pull`, then rerun preflight. A missing
 
 ## PostgreSQL unavailable
 
-The data service reports `database_backend=sqlite` and `degraded=true`. This is supported fallback behavior, not an invisible success. Restore PostgreSQL before the flagship rehearsal when possible.
+The data service reports `database_backend=sqlite` and `degraded=true`. This is supported fallback behavior, not an invisible success. Restore PostgreSQL before a full release rehearsal when possible.
 
 ## Provider error in the UI
 
