@@ -21,10 +21,8 @@ def test_active_snapshot_success(mock_active):
 
 @patch("src.nodes.query_routing._call_active_tool", return_value=([], None))
 def test_no_result_does_not_fall_back_to_historical(mock_active):
-    with patch("src.nodes.query_routing._call_historical_tool") as historical:
-        result = query_routing_node(_state())
+    result = query_routing_node(_state())
 
-    historical.assert_not_called()
     assert result["data_source"] == "active"
     assert result["data_intent"] == "recommend"
     assert result["retrieved_properties"] == []

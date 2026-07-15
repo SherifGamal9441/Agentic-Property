@@ -138,7 +138,7 @@ def test_excluded_properties_never_enter_buyer_guidance():
     messages = _build_messages(state)
 
     assert "Do not recommend" not in formatted
-    assert "No property in the frozen listing snapshot" in messages[1].content
+    assert "No property in the listing data snapshot" in messages[1].content
 
 
 @patch("src.nodes.answer_generation.get_llm")

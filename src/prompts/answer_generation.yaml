@@ -55,14 +55,14 @@ web_search_template: |
 
   Answer the user's question clearly and concisely using the information above.
   Every factual web claim must use a numbered clickable Markdown citation in the form [1](URL).
-  Preserve publication and retrieval dates when available. Do not present web claims as frozen listing facts.
+  Preserve publication and retrieval dates when available. Do not present web claims as listing data-snapshot facts.
   If the information is incomplete, say so honestly.
 
 no_results_template: |
   User's request:
   {query}
 
-  No property in the frozen listing snapshot met the confirmed hard criteria.
+  No property in the listing data snapshot met the confirmed hard criteria.
 
   Write a helpful response that:
   1. Acknowledges that no results were found.

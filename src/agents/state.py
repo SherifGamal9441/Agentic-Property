@@ -9,7 +9,7 @@ Ownership map:
   retrieved_properties                        → set by query_routing
   web_search_*                                → set by web_search sub-graph (teammate)
   comparison_result                           → set by comparison_engine
-  reflection_output, needs_retry, retry_*     → set by reflection
+  reflection_output                            → set by reflection
   final_answer                                → set by answer_generation (all paths)
                                                  also carries rejection messages when
                                                  is_relevant=False — the API layer
@@ -80,7 +80,7 @@ class AgentState(BaseModel):
 
     # ── Set by comparison_engine ──────────────────────────────────────────────
     comparison_result: dict | None = None
-    """LLM comparison output.
+    """Deterministic comparison output.
     Shape: {
         properties: [
             {
@@ -96,18 +96,7 @@ class AgentState(BaseModel):
 
     # ── Set by reflection ─────────────────────────────────────────────────────
     reflection_output: dict | None = None
-    """Audit of the comparison engine's output.
-    Shape: {
-        ok: bool,
-        issues: list[str],
-        confidence: float,
-    }"""
-
-    needs_retry: bool = False
-    """True when reflection finds the comparison insufficient and retry is warranted."""
-
-    retry_count: int = 0
-    """Number of retries consumed. Caps at settings.max_retries."""
+    """Audit of comparison identities, source fields, and score arithmetic."""
 
     # ── Set by answer_generation ──────────────────────────────────────────────
     final_answer: str | None = None

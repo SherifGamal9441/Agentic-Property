@@ -36,14 +36,12 @@ def _make_stream_mock(tokens: list[str]):
 
 
 @patch("src.nodes.answer_generation.get_llm")
-@patch("src.nodes.reflection.get_llm")
-@patch("src.nodes.comparison_engine.get_llm")
 @patch("src.nodes.query_routing.search_active_sync")
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
 def test_thread_isolation(
     mock_rel_llm, mock_und_llm,
-    mock_search, mock_comp_llm, mock_refl_llm, mock_ans_llm,
+    mock_search, mock_ans_llm,
 ):
     """Two different thread_ids produce independent conversation histories."""
     # Relevancy: accept
@@ -62,9 +60,6 @@ def test_thread_isolation(
          "location": "Dubai Marina", "bedrooms": 2, "link": "https://example.test/1",
          "post_date": "2026-07-02"}
     ]
-    mock_comp_llm.return_value = _make_invoke_mock(json.dumps(COMPARISON_RESULT))
-    mock_refl_llm.return_value = _make_invoke_mock(json.dumps(REFLECTION_OK))
-
     graph = build_graph()
 
     thread_a = f"thread-a-{uuid.uuid4()}"

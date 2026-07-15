@@ -2,7 +2,7 @@
 
 ## Runtime boundaries
 
-The browser calls the agent API on port 8002. The agent API owns public validation, SSE sanitation, and conversation restoration. LangGraph owns the eight-node workflow. Property access crosses MCP into the data service on port 8000. PostgreSQL is primary; `src/data_service/database.py` exposes SQLite as a visible degraded fallback. DVC owns frozen CSV delivery.
+The browser calls the agent API on port 8002. The agent API owns public validation, SSE sanitation, and conversation restoration. LangGraph owns the eight-node workflow. Property access crosses MCP into the data service on port 8000. PostgreSQL is primary; `src/data_service/database.py` exposes SQLite as an explicit service fallback. DVC owns data-snapshot delivery.
 
 ```mermaid
 flowchart TD
@@ -11,8 +11,8 @@ flowchart TD
   LG -->|"typed filters"| MCP["MCP client/server"]
   MCP --> DS["FastAPI data service"]
   DS --> PG[("PostgreSQL primary")]
-  DS -. degraded .-> SQ[("SQLite fallback")]
-  DVC["DVC frozen CSVs"] --> PG
+  DS -. service fallback .-> SQ[("SQLite fallback")]
+  DVC["DVC data snapshot"] --> PG
   DVC --> SQ
   LG --> WEB["Cited web research mode"]
 ```

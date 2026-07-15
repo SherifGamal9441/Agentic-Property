@@ -95,7 +95,7 @@ def test_ready_and_completed_are_the_same_verified_status():
     assert result["conflicting_criteria"] == []
 
 
-def test_reflection_withholds_invalid_identity_or_source_without_retry():
+def test_reflection_withholds_invalid_identity_or_source():
     state = AgentState(
         query="buyer brief",
         buyer_brief=BuyerBrief(original_query="buyer brief", criteria=[]),
@@ -110,7 +110,6 @@ def test_reflection_withholds_invalid_identity_or_source_without_retry():
 
     result = reflection_node(state)
 
-    assert result["needs_retry"] is False
     assert result["reflection_output"]["ok"] is False
     assert result["withheld_count"] == 1
     assert result["comparison_result"]["properties"] == []

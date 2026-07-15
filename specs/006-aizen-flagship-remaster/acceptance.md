@@ -8,6 +8,9 @@
 - [x] Every preset returns genuine snapshot matches or is replaced.
 - [x] Provider failure is calm, retryable, and never cached.
 - [ ] README setup succeeds from a clean clone.
+- [x] Primary motto is “Find what fits. See what matters.” and supporting motto is “Search less. Decide better.”
+- [x] Warm editorial tokens are shared by hero, brief ledger, cards, drawers, comparison, affordability, and dossier; no pure-white content surface remains.
+- [x] Recruiter graph visualization shows all eight nodes and property/web/no-match routing paths.
 - [x] One action interprets and starts each preset; the deleted confirmation page never appears.
 - [x] Completion receives one polite focus/scroll reveal and the trace collapses under native details.
 - [x] Guidance references audited properties/criteria and never promotes unknowns into positive claims.

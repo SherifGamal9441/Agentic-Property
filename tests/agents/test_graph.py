@@ -62,14 +62,12 @@ def _make_stream_mock(tokens: list[str]):
 # ── Path A — Recommendation path ──────────────────────────────────────────────
 
 @patch("src.nodes.answer_generation.get_llm")
-@patch("src.nodes.reflection.get_llm")
-@patch("src.nodes.comparison_engine.get_llm")
 @patch("src.nodes.query_routing.search_active_sync")
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
 def test_recommendation_path(
     mock_rel_llm, mock_und_llm,
-    mock_search, mock_comp_llm, mock_refl_llm, mock_ans_llm
+    mock_search, mock_ans_llm
 ):
     """
     Full recommendation path with fake properties from active search.
@@ -92,10 +90,6 @@ def test_recommendation_path(
          "location": "Dubai Marina", "bedrooms": 2, "link": "https://example.test/1",
          "post_date": "2026-07-02", "amenities": ["sea view"]}
     ]
-    # Comparison engine
-    mock_comp_llm.return_value = _make_invoke_mock(json.dumps(COMPARISON_RESULT))
-    # Reflection
-    mock_refl_llm.return_value = _make_invoke_mock(json.dumps(REFLECTION_OK))
     # Answer generation
     mock_ans_llm.return_value = _make_stream_mock(FINAL_ANSWER_TOKENS)
 

@@ -30,7 +30,7 @@ DATA_SERVICE_URL = os.getenv("DATA_SERVICE_URL", "http://localhost:8000").rstrip
 RUN_TIMEOUT_SECONDS = float(os.getenv("AIZEN_RUN_TIMEOUT_SECONDS", "120"))
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Aizen Agent API", version="0.2.0")
+app = FastAPI(title="Aizen Agent API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:4173"],
@@ -59,7 +59,7 @@ _NODE_LABELS = {
     "memory": "Restoring this research session",
     "query_relevancy": "Checking Dubai property scope",
     "query_understanding": "Validating your structured brief",
-    "query_routing": "Searching the frozen listing snapshot",
+    "query_routing": "Searching the listing data snapshot",
     "web_search": "Checking cited market sources",
     "comparison_engine": "Evaluating criteria deterministically",
     "reflection": "Auditing evidence and score arithmetic",
@@ -120,19 +120,6 @@ def _market_context(area: str, property_type: str | None = None, beds: int | Non
         return {"area": area, "unavailable": True, "evidence_quality": "insufficient"}
 
 
-def _legacy_score_factors(raw: dict[str, Any], parsed_query: dict[str, Any]) -> tuple[list[str], list[str]]:
-    matches: list[str] = []
-    gaps: list[str] = []
-    area = parsed_query.get("area_name")
-    if area:
-        (matches if str(area).casefold() in str(raw.get("area_name") or "").casefold() else gaps).append(f"Matches {area}" if str(area).casefold() in str(raw.get("area_name") or "").casefold() else f"Outside {area}")
-    beds = parsed_query.get("property_beds_minimum")
-    if beds is not None:
-        actual = raw.get("beds")
-        (matches if isinstance(actual, (int, float)) and actual >= beds else gaps).append(f"Meets {beds}+ bedrooms" if isinstance(actual, (int, float)) and actual >= beds else f"Below {beds} bedrooms")
-    return matches, gaps
-
-
 def _property_payloads(state: dict[str, Any]) -> list[dict[str, Any]]:
     listings = state.get("retrieved_properties") or []
     raw_by_id = {str(item.get("property_id") or item.get("id") or index): item for index, item in enumerate(listings)}
@@ -147,10 +134,8 @@ def _property_payloads(state: dict[str, Any]) -> list[dict[str, Any]]:
             continue
         area = raw.get("area_name") or raw.get("location") or "Dubai"
         latitude, longitude = raw.get("latitude"), raw.get("longitude")
-        matched = comparison.get("matched_criteria")
-        conflicts = comparison.get("conflicting_criteria")
-        if matched is None:
-            matched, conflicts = _legacy_score_factors(raw, state.get("parsed_query") or {})
+        matched = comparison.get("matched_criteria") or []
+        conflicts = comparison.get("conflicting_criteria") or []
         properties.append({
             "id": key,
             "title": comparison.get("title") or raw.get("title") or raw.get("building_name") or raw.get("address") or f"{area} residence",

@@ -6,7 +6,6 @@ import math
 from typing import Any
 
 from src.agents.state import AgentState
-from src.llm.factory import get_llm  # compatibility seam; deterministic audit never calls it
 
 
 def _valid_score(item: dict[str, Any]) -> bool:
@@ -58,8 +57,6 @@ def reflection_node(state: AgentState) -> dict:
         "candidate_count": state.candidate_count or min(20, len(state.retrieved_properties)),
         "audited_count": state.audited_count or len((state.comparison_result or {}).get("properties", [])),
         "withheld_count": withheld_count,
-        "needs_retry": False,
-        "retry_count": state.retry_count,
     }
 
 

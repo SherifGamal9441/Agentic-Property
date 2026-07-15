@@ -19,8 +19,8 @@ def test_reflection_accepts_auditable_active_snapshot_scoring():
     result = reflection_node(state)
 
     assert result["reflection_output"]["ok"] is True
-    assert result["needs_retry"] is False
+    assert result["reflection_output"]["withheld_count"] == 0
 
 
 def test_reflection_never_routes_to_a_fake_retrieval_retry():
-    assert route_after_reflection(AgentState(query="brief", needs_retry=True)) == "answer_generation"
+    assert route_after_reflection(AgentState(query="brief")) == "answer_generation"

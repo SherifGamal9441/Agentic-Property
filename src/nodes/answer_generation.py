@@ -93,9 +93,6 @@ def answer_generation_node(state: AgentState) -> dict:
     for chunk in llm.stream(messages):
         token = chunk.content
         chunks.append(token)
-        print(token, end="", flush=True)
-
-    print()
     final_answer = "".join(chunks)
 
     # Append this turn to conversation history
@@ -181,7 +178,7 @@ def _guidance_history_text(
     """Keep conversation memory readable without trusting generated property prose."""
     by_id = {str(item.get("id")): item for item in properties}
     if guidance.outcome == "no_match":
-        return "No exact frozen-snapshot match met the structured brief; no criterion was relaxed."
+        return "No exact data-snapshot match met the structured brief; no criterion was relaxed."
     best = by_id.get(str(guidance.best_match_id), {})
     parts = [f"Best match: {best.get('title', guidance.best_match_id)}."]
     if guidance.runner_up_id:
@@ -267,7 +264,7 @@ def _build_messages(state: AgentState) -> list:
             user_content += f"\n\n{currency_note}"
         return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
-    # Recommend — frozen listing snapshot
+    # Recommend — listing data snapshot
     logger.info("answer_generation: recommend path (listing snapshot)")
     user_content = _RECOMMEND_TEMPLATE.format(
         query=state.query,

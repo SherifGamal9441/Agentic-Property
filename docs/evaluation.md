@@ -8,10 +8,10 @@ Update this table only from a complete release-gate run.
 |---|---|
 | Python | 75 passed |
 | React/Vitest | 13 passed |
-| Production build | Passed; 240.45 kB initial JS, MapLibre isolated in a lazy 1,055.14 kB chunk, no Vite size warning |
+| Production build | Passed; 242.45 kB initial JS, MapLibre isolated in a lazy 1,055.12 kB chunk, no Vite size warning |
 | Playwright journeys | 9 passed in Chromium |
 | Compose configuration and health | Passed; PostgreSQL, data service, agent API, and frontend healthy |
-| Frozen data preflight | Passed; provider, checksums, Compose, services, and ports verified |
+| Data snapshot preflight | Passed; provider, checksums, Compose, services, and ports verified |
 | Diff whitespace | Passed |
 
 ## Live provider rehearsal
@@ -24,7 +24,7 @@ Each preset was interpreted by the configured live model and executed through th
 | Ready 3BR in Al Furjan under AED 3M | 5 | 5 | EQUITI HOME-A, `15646637` | Strong |
 | Furnished 1BR in Business Bay under AED 1.5M | 17 | 9 | Reva Residences, `15687720` | Strong |
 
-The 2026-07-15 release rehearsal verified the production property-search sequence `run_started → agent_step* → properties → sources → guidance → run_completed` for the structured completion contract. Deterministic retrieval, comparison, and evidence audit account for candidate/match counts; model-backed scope classification and structured guidance account for most latency.
+The 2026-07-15 release rehearsal verified the production property-search sequence `run_started → agent_step* → properties → sources → guidance → run_completed` for the structured completion contract. Deterministic retrieval, comparison, and evidence audit account for candidate/match counts; model-backed scope classification and structured guidance account for most latency. The final browser gate runs nine Chromium journeys with one worker for deterministic screenshot capture.
 
 ## Manual acceptance
 

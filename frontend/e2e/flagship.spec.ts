@@ -55,8 +55,8 @@ test("no-result run asks before relaxation", async ({ page }) => {
   await routeRun(page, query, area, beds, price, true);
   await page.goto("/");
   await runQuery(page, query);
-  await expect(page.getByRole("heading", { name: "No exact snapshot match" })).toBeVisible();
-  await expect(page.getByText("Aizen did not silently relax your brief.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No homes align with every priority yet." })).toBeVisible();
+  await expect(page.getByText("Review a possible adjustment to your brief", { exact: false })).toBeVisible();
   await expect(page.getByText("4 resulting matches")).toBeVisible();
   await page.getByRole("button", { name: "Review this change" }).click();
   await expect(page.getByRole("dialog", { name: "Edit buyer brief" })).toBeVisible();

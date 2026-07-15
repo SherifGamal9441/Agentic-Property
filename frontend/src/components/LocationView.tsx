@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import type { Property } from "../types";
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/liberty";
+const STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 
 export default function LocationView({ properties, selectedId, onSelect }: { properties: Property[]; selectedId?: string; onSelect: (property: Property) => void }) {
   const container = useRef<HTMLDivElement>(null);
@@ -41,5 +41,5 @@ export default function LocationView({ properties, selectedId, onSelect }: { pro
     });
   }, [located, onSelect, selectedId]);
 
-  return <section className="location-panel dark-surface" aria-label="Location evidence"><div className="map-copy"><p className="eyebrow">OpenFreeMap · exact supplied coordinates</p><h2>Location is evidence, not decoration.</h2><p>{located.length} of {properties.length} homes include exact coordinates. Missing coordinates remain explicit.</p></div><div ref={container} className="map-canvas" />{failed && <div className="map-fallback"><b>Basemap unavailable</b><p>Exact coordinate evidence remains listed below.</p></div>}<ol className="coordinate-list">{properties.map((property) => <li key={property.id}><button type="button" onClick={() => onSelect(property)}><span>{property.title}</span><small>{property.location_status === "exact" ? `${property.latitude}, ${property.longitude}` : "Area-only; exact coordinate unavailable"}</small></button></li>)}</ol></section>;
+  return <section className="location-panel dark-surface" aria-label="Location evidence"><div className="map-copy"><p className="eyebrow">OpenFreeMap · supplied coordinates</p><h2>See where each home sits.</h2><p>{located.length} of {properties.length} homes include exact coordinates, presented alongside their property profiles.</p></div><div ref={container} className="map-canvas" />{failed && <div className="map-fallback"><b>Location view is ready below</b><p>Explore each home’s location details in the list.</p></div>}<ol className="coordinate-list">{properties.map((property) => <li key={property.id}><button type="button" onClick={() => onSelect(property)}><span>{property.title}</span><small>{property.location_status === "exact" ? `${property.latitude}, ${property.longitude}` : "Area-level location"}</small></button></li>)}</ol></section>;
 }

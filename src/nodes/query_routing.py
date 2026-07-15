@@ -1,7 +1,7 @@
 """
 Query Routing Node
 
-Property runs search only the frozen active-listing snapshot. Historical records
+Property runs search only the active-listing data snapshot. Historical records
 remain an explicitly separate context endpoint and are never fallback inventory.
 
 Writes to state:
@@ -71,16 +71,11 @@ def _call_active_tool(parsed_query: dict) -> tuple[list[dict], str | None]:
         return [], f"MCP active search failed: {e}"
 
 
-def _call_historical_tool(_: dict) -> tuple[list[dict], str | None]:
-    """Compatibility seam; historical data is never fallback inventory."""
-    return [], None
-
-
 ##node itself
 def query_routing_node(state: AgentState) -> dict:
     """
     LangGraph node: fetch properties via active or historical tool.
-    Search the active frozen snapshot once. Empty results stay empty so the API
+    Search the active data snapshot once. Empty results stay empty so the API
     can offer explicit, buyer-approved relaxation options.
     """
     parsed_query = dict(state.parsed_query)
@@ -95,7 +90,7 @@ def query_routing_node(state: AgentState) -> dict:
     active_results, active_error = _call_active_tool(parsed_query)
 
     if active_error:
-        raise RuntimeError("The frozen listing snapshot is temporarily unavailable.")
+        raise RuntimeError("The listing data snapshot is temporarily unavailable.")
     logger.info("query_routing: active snapshot returned %d candidates", len(active_results))
     return {
         **base_result,

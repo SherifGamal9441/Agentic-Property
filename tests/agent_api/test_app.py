@@ -29,7 +29,7 @@ def test_property_payload_exposes_snapshot_evidence_and_safe_nulls():
     assert payload[0]["observed_at"] == "2026-07-01"
     assert payload[0]["price"] is None
     assert payload[0]["location_status"] == "unavailable"
-    assert payload[0]["score_factors"] == ["Matches Dubai Marina", "Meets 2+ bedrooms"]
+    assert payload[0]["score_factors"] == []
 
 
 def test_safe_failure_hides_internal_exception_text():
@@ -96,7 +96,7 @@ def test_conversation_endpoint_restores_saved_messages_and_latest_properties(mon
         {"role": "assistant", "content": "Here are matches."},
     ]
     assert response.json()["properties"][0]["id"] == "marina-1"
-    assert response.json()["properties"][0]["score_factors"] == ["Matches Dubai Marina", "Meets 2+ bedrooms"]
+    assert response.json()["properties"][0]["score_factors"] == []
 
 
 def test_conversation_endpoint_returns_empty_properties_for_a_transcript_only_session(monkeypatch):

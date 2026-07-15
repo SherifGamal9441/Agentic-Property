@@ -12,6 +12,8 @@ Keep `memory → query_relevancy → query_understanding → query_routing → c
 4. Recompose React around one-action interpretation/run, compact correction, completion takeover, ranked homes, comparison, map, affordability, area evidence, and dossier.
 5. Add recruiter case study, documentation, preflight, browser E2E, cancellation, recent live reruns, and clean-clone runbook.
 6. Run every release gate and publish only verified counts.
+7. Final presentation pass: use **Find what fits. See what matters.** as primary motto, **Search less. Decide better.** as supporting line, keep warm editorial surfaces and selective dark cinematic moments, and keep visible copy consistent across cards, drawers, trace, evidence, and dossier.
+8. Final recruiter pass: keep README diagrams aligned with the graph source, link to the deep documentation set, and publish only release-gate facts.
 
 ## Constraints for Luna
 

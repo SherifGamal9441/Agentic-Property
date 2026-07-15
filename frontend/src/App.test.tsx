@@ -79,7 +79,7 @@ test("interprets and automatically starts the live run with one action", async (
 
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   expect(screen.queryByText("Confirm what Aizen understood")).not.toBeInTheDocument();
-  expect(await screen.findByText("No exact snapshot match")).toBeInTheDocument();
+  expect(await screen.findByText("No homes align with every priority")).toBeInTheDocument();
   expect(screen.getAllByRole("button", { name: "Edit brief" })).toHaveLength(2);
 });
 
@@ -88,6 +88,8 @@ test("shows six ranked homes first and reveals the rest on demand", async () => 
   render(<App initialProperties={properties} initialBrief={brief} />);
 
   expect(screen.getAllByRole("article", { name: /Marina Residence/ })).toHaveLength(6);
+  expect(screen.getByText("Aizen’s read")).toBeInTheDocument();
+  expect(screen.getByText(/Marina Residence 1 leads this set with 100% fit and 100% evidence coverage/)).toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "View 2 more homes" }));
   expect(screen.getAllByRole("article", { name: /Marina Residence/ })).toHaveLength(8);
 });
@@ -146,8 +148,8 @@ test("offers the recruiter case study through hash navigation", () => {
   fireEvent(window, new HashChangeEvent("hashchange"));
   render(<App />);
 
-  expect(screen.getByRole("heading", { name: "From prompt to auditable buyer decision" })).toBeInTheDocument();
-  expect(screen.getByText("Eight nodes, one evidence contract")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Find what fits. See what matters." })).toBeInTheDocument();
+  expect(screen.getByText("Eight nodes, one clear journey")).toBeInTheDocument();
 });
 
 test("brief drawer applies edits and reruns the structured brief", async () => {

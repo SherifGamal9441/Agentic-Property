@@ -1,7 +1,7 @@
 [project]
 name = "agentic-property"
-version = "0.2.0"
-description = "Aizen — auditable Dubai home-buying intelligence"
+version = "1.0.0"
+description = "Aizen — Dubai home-buying decision workspace"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

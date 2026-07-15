@@ -14,3 +14,8 @@
 - [x] Provider-safe environment template and read-only preflight.
 - [x] Authoritative spec and deep documentation.
 - [x] Refresh the full release gate and three-preset live provider rehearsal in `docs/evaluation.md`.
+- [x] Apply final Aizen mottos and positive customer-facing vocabulary across product surfaces.
+- [x] Unify warm editorial surfaces and remove pure-white content panels; retain dark cinematic research and evidence moments.
+- [x] Replace flat recruiter graph artwork with branch-aware eight-node routing visualization.
+- [x] Refresh README architecture diagrams, node responsibilities, product walkthrough, and documentation index.
+- [x] Re-run release gates, refresh screenshot assets, and record final verified counts.

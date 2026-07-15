@@ -1,4 +1,4 @@
-"""Deterministic criterion evaluation for frozen active-listing evidence."""
+"""Deterministic criterion evaluation for active-listing data-snapshot evidence."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ from typing import Any
 
 from src.agents.state import AgentState
 from src.buyer_brief import BuyerBrief, Criterion, property_value
-from src.llm.factory import get_llm  # compatibility seam; deterministic scoring never calls it
 
 logger = logging.getLogger(__name__)
 
