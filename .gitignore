@@ -17,5 +17,6 @@ frontend/playwright-report/
 .specify/scripts/
 .specify/templates/
 .specify/
+specs/
 AGENTS.md
 output
