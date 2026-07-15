@@ -150,6 +150,8 @@ test("offers the recruiter case study through hash navigation", () => {
 
   expect(screen.getByRole("heading", { name: "Find what fits. See what matters." })).toBeInTheDocument();
   expect(screen.getByText("Eight nodes, one clear journey")).toBeInTheDocument();
+  expect(screen.getAllByText("answer_generation")).toHaveLength(1);
+  expect(screen.getByText("Shared response")).toBeInTheDocument();
 });
 
 test("brief drawer applies edits and reruns the structured brief", async () => {

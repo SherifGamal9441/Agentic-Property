@@ -303,11 +303,19 @@ main { width: 100%; }
 .node-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin: 50px 0; background: var(--line); }
 .node-flow div { display: grid; gap: 40px; min-height: 140px; padding: 22px; background: var(--paper); font: 600 22px var(--serif); }
 .node-flow span { color: var(--terracotta); font: 700 10px sans-serif; }
-.case-graph { display: grid; gap: 18px; margin: 50px 0 30px; padding: 24px; border: 1px solid rgba(199,166,106,.42); background: linear-gradient(135deg, rgba(199,166,106,.12), rgba(16,35,29,.04)), var(--paper); }
-.case-graph-row, .case-branch-line, .case-graph-footer { display: flex; align-items: center; gap: 10px; }
-.case-graph-branch { display: grid; gap: 12px; margin-left: 42px; padding-left: 18px; border-left: 1px solid var(--champagne); }
-.case-graph-branch-wide { margin-left: 84px; }
-.case-branch-line > span { min-width: 92px; color: var(--terracotta); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.case-graph { display: grid; gap: 18px; margin: 50px 0 30px; padding: 28px; border: 1px solid rgba(199,166,106,.42); background: linear-gradient(135deg, rgba(199,166,106,.12), rgba(16,35,29,.04)), var(--paper); }
+.case-graph-intake { display: grid; grid-template-columns: minmax(180px, 1fr) 28px minmax(180px, 1fr); gap: 10px; align-items: center; max-width: 620px; }
+.case-graph-scope { display: grid; gap: 14px; margin-left: 44px; padding: 18px 0 18px 20px; border-left: 1px solid var(--champagne); }
+.case-graph-route { display: grid; grid-template-columns: 120px 28px minmax(170px, 1fr) 28px minmax(170px, 1fr); gap: 10px; align-items: center; }
+.case-graph-route-secondary { grid-template-columns: 120px 28px auto; }
+.case-graph-label { color: var(--terracotta); font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.case-graph-route-caption { display: grid; justify-items: center; gap: 5px; color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.case-graph-lanes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; padding: 22px 0; border-block: 1px solid rgba(199,166,106,.28); }
+.case-graph-lane { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.case-graph-lane .case-graph-label { flex: 0 0 96px; }
+.case-graph-lane .case-graph-node { flex: 1 1 170px; }
+.case-graph-lane-tail { flex: 0 0 auto; color: var(--muted); font-size: 10px; white-space: nowrap; }
+.case-graph-shared { display: grid; grid-template-columns: auto 28px minmax(220px, 300px) 28px auto; gap: 10px; align-items: center; justify-content: center; }
 .case-graph-node { display: grid; gap: 4px; min-width: 154px; padding: 14px; border: 1px solid rgba(199,166,106,.48); background: rgba(222,211,194,.68); }
 .case-graph-node > span { color: var(--terracotta); font-size: 9px; font-weight: 800; letter-spacing: .12em; }
 .case-graph-node b { font-size: 12px; overflow-wrap: anywhere; }
@@ -371,9 +379,8 @@ main { width: 100%; }
   .case-header { padding: 12px 16px; }
   .node-flow { grid-template-columns: repeat(2, 1fr); }
   .case-graph { padding: 14px; overflow-x: auto; }
-  .case-graph-row, .case-branch-line { min-width: 620px; }
-  .case-graph-branch { margin-left: 12px; }
-  .case-graph-branch-wide { margin-left: 24px; }
+  .case-graph-intake, .case-graph-scope, .case-graph-lanes, .case-graph-shared { min-width: 760px; }
+  .case-graph-scope { margin-left: 12px; }
 }
 
 @media (max-width: 420px) {

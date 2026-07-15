@@ -18,3 +18,4 @@ frontend/playwright-report/
 .specify/templates/
 .specify/
 AGENTS.md
+output
