@@ -16,7 +16,9 @@ Ownership map:
                                                  always reads this one field.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from src.buyer_brief import BuyerBrief
 
 
 class AgentState(BaseModel):
@@ -37,7 +39,7 @@ class AgentState(BaseModel):
        "query_routing"  → user wants property recommendations / comparisons
        "web_search"     → user has a general question about Dubai real estate"""
 
-    parsed_query: dict = {}
+    parsed_query: dict = Field(default_factory=dict)
     """Structured intent extracted by query_understanding.
     Expected keys: location, budget, property_type, bedrooms, amenities, currency, etc."""
 
@@ -61,7 +63,7 @@ class AgentState(BaseModel):
        "insights_only" → historical data only; properties may be sold.
                          comparison engine derives market insights, does NOT recommend."""
 
-    retrieved_properties: list[dict] = []
+    retrieved_properties: list[dict] = Field(default_factory=list)
     """Properties returned by the active tool.
     Each dict should contain at minimum: id, title, price, area_sqm, location."""
 
@@ -69,7 +71,7 @@ class AgentState(BaseModel):
     web_search_query: str = ""
     """Rewritten web search query."""
 
-    web_search_results: list[dict] = []
+    web_search_results: list[dict] = Field(default_factory=list)
     """Raw results from the web search tool."""
 
     web_search_summary: str = ""
@@ -115,10 +117,12 @@ class AgentState(BaseModel):
     The API layer always reads this one field."""
 
     # ── Conversation memory ──────────────────────────────────────────────────
-    conversation_history: list[dict] = []
+    conversation_history: list[dict] = Field(default_factory=list)
     """Accumulated user/assistant message pairs across turns.
     Shape: [{"role": "user"|"assistant", "content": str}, ...]"""
 
     conversation_context: str = ""
     """Pre-formatted string of recent conversation history, ready to inject
     into LLM prompts. Built by the memory node at the start of each turn."""
+    buyer_brief: BuyerBrief | None = None
+    """Buyer-confirmed structured contract. Property runs require this value."""

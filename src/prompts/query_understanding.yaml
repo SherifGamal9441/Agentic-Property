@@ -31,32 +31,23 @@ system_prompt: |
       property_bathrooms_maximum: Optional[int] = None - maximum number of bathrooms
       year_of_completion_minimum: Optional[int] = None - "built after 2020" → 2020 (inclusive)
       year_of_completion_maximum: Optional[int] = None - maximum year of completion
-      parking_spaces_minimum: Optional[int] = None - minimum number of parking spaces
-      parking_spaces_maximum: Optional[int] = None - maximum number of parking spaces
-      total_floors_minimum: Optional[int] = None - minimum number of floors
-      total_floors_maximum: Optional[int] = None - maximum number of floors
-      total_building_area_sqft_minimum: Optional[float] = None - minimum total building area in sqft
-      total_building_area_sqft_maximum: Optional[float] = None - maximum total building area in sqft
       post_date_minimum: Optional[str] = None - minimum post date
       post_date_maximum: Optional[str] = None - maximum post date
   
   
   2. ROUTE: Decide which path to take. You MUST always include the "route" key.
-       "query_routing"  → MUST BE USED for ANY query where the user wants to find, buy, rent, or invest in a specific property.
+       "query_routing"  → MUST BE USED for a confirmed home-buyer listing request.
                           This includes:
                           - "1 bedroom in Business Bay" (looking for a listing)
-                          - "Furnished apartment for rent in Dubai Marina" (looking for a listing)
-                          - "I have 1M EUR to invest in Dubai property" (has a budget and wants property = query_routing)
                           - "Studio under 400k AED — is that possible?" (feasibility = they want active listings)
                           - "Dubai property" (short but valid property search)
                           - "Cheapest apartment for sale in Dubai right now" (looking for a listing)
                           - "Properties with swimming pool" / "5 bedrooms and a private pool" (amenity queries = query_routing)
                           - "Compare apartments in Downtown vs Business Bay" (comparison = query_routing)
                           - "Tell me about DAMAC Hills 2 properties" (specific area = query_routing)
-                          - "Are there any historical property records for JVC?" (historical DB = query_routing)
                           - ANY query with a budget, property criteria, or intent to find actual properties.
        "web_search"     → ONLY for general knowledge questions with NO intent to find a specific listing.
-                          Examples: market trends, area overviews, how mortgages work, laws, developer reputations, ROI/yield questions, schools, lifestyle.
+                          Examples: market trends, area overviews, how mortgages work, laws, developer reputations, schools, and lifestyle.
                           Do NOT use this if the user is looking for an actual property to buy or rent.
   PROPERTY TYPE NOTE: "Studio" or "Studio apartment" → `type: "studio"`.
   Do NOT confuse this with the neighborhood "Dubai Studio City" unless the user explicitly says "Studio City".

@@ -11,6 +11,8 @@ ACTIVE_PROPERTIES = [{
     "price": 1_750_000,
     "area_name": "Dubai Marina",
     "beds": 2,
+    "link": "https://example.test/1",
+    "post_date": "2026-07-02",
 }]
 
 
@@ -28,12 +30,10 @@ def _llm(content: str) -> MagicMock:
 @patch("src.nodes.query_routing._call_active_tool", return_value=(ACTIVE_PROPERTIES, None))
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
-@patch("src.nodes.memory.get_llm")
 def test_full_pipeline_uses_active_data(
-    mock_memory, mock_relevancy, mock_understanding, _mock_active, _mock_historical,
+    mock_relevancy, mock_understanding, _mock_active, _mock_historical,
     mock_comparison, mock_reflection, mock_answer,
 ):
-    mock_memory.return_value = _llm('{"category":"property_query"}')
     mock_relevancy.return_value = _llm('{"relevant":true}')
     mock_understanding.return_value = _llm('{"parsed_query":{"area_name":"Dubai Marina"},"route":"query_routing"}')
     mock_comparison.return_value = _llm('{"properties":[{"id":"prop-001","title":"Marina Crest 2BR Apartment","fit_score":0.9,"matched_criteria":["location"],"unmatched_criteria":[],"price_assessment":"fair"}]}')

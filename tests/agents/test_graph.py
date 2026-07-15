@@ -67,9 +67,8 @@ def _make_stream_mock(tokens: list[str]):
 @patch("src.nodes.query_routing.search_active_sync")
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
-@patch("src.nodes.memory.get_llm")
 def test_recommendation_path(
-    mock_mem_llm, mock_rel_llm, mock_und_llm,
+    mock_rel_llm, mock_und_llm,
     mock_search, mock_comp_llm, mock_refl_llm, mock_ans_llm
 ):
     """
@@ -77,11 +76,6 @@ def test_recommendation_path(
     memory → query_relevancy → query_understanding → query_routing
     → comparison → reflection → answer.
     """
-    # Memory node: classify as property_query (won't short-circuit)
-    mock_mem_llm.return_value = _make_invoke_mock(
-        json.dumps({"category": "property_query", "reason": "valid query"})
-    )
-
     # Relevancy: accept
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": True, "failed_rule": None, "reason": "valid Dubai query"})
@@ -95,7 +89,8 @@ def test_recommendation_path(
     # Active search: return one property
     mock_search.return_value = [
         {"id": "prop-001", "title": "Marina Crest 2BR", "price": 1_750_000,
-         "area_sqm": 110, "location": "Dubai Marina", "bedrooms": 2, "amenities": ["sea view"]}
+         "location": "Dubai Marina", "bedrooms": 2, "link": "https://example.test/1",
+         "post_date": "2026-07-02", "amenities": ["sea view"]}
     ]
     # Comparison engine
     mock_comp_llm.return_value = _make_invoke_mock(json.dumps(COMPARISON_RESULT))
@@ -126,17 +121,12 @@ def test_recommendation_path(
 @patch("src.nodes.answer_generation.get_llm")
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
-@patch("src.nodes.memory.get_llm")
-def test_web_search_path(mock_mem_llm, mock_rel_llm, mock_und_llm, mock_ans_llm):
+def test_web_search_path(mock_rel_llm, mock_und_llm, mock_ans_llm):
     """
     Web search path: memory → query_relevancy → query_understanding
     → web_search → answer_generation.
     We seed web_search_summary directly to bypass the real web_search sub-graph.
     """
-    mock_mem_llm.return_value = _make_invoke_mock(
-        json.dumps({"category": "property_query", "reason": "valid"})
-    )
-
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": True, "failed_rule": None, "reason": "valid general question"})
     )
@@ -168,16 +158,11 @@ def test_web_search_path(mock_mem_llm, mock_rel_llm, mock_und_llm, mock_ans_llm)
 
 @patch("src.nodes.query_understanding.get_llm")  # should NOT be called
 @patch("src.nodes.query_relevancy.get_llm")
-@patch("src.nodes.memory.get_llm")
-def test_rejection_path(mock_mem_llm, mock_rel_llm, mock_und_llm):
+def test_rejection_path(mock_rel_llm, mock_und_llm):
     """
     Rejection path: memory → query_relevancy rejects → END immediately.
     query_understanding must NOT be called.
     """
-    mock_mem_llm.return_value = _make_invoke_mock(
-        json.dumps({"category": "property_query", "reason": "let relevancy decide"})
-    )
-
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": False, "failed_rule": "topic", "reason": "not real estate"})
     )

@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, Float, String, Date, UniqueConstraint
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
 
@@ -20,10 +20,10 @@ class HistoricalListing(Base):
     post_date = Column(Date)
     building_name = Column(String)
     year_of_completion = Column(Integer)
-    total_parking_spaces = Column(Integer)
-    total_floors = Column(Integer)
-    total_building_area_sqft = Column(Float)
-    elevators = Column(Integer)
+    building_total_parking_spaces = Column("total_parking_spaces", Integer)
+    building_floors = Column("total_floors", Integer)
+    building_total_area_sqft = Column("total_building_area_sqft", Float)
+    building_elevators = Column("elevators", Integer)
     area_name = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)
@@ -48,10 +48,10 @@ class ActiveListing(Base):
     post_date = Column(Date)
     building_name = Column(String)
     year_of_completion = Column(Integer)
-    total_parking_spaces = Column(Integer)
-    total_floors = Column(Integer)
-    total_building_area_sqft = Column(Float)
-    elevators = Column(Integer)
+    building_total_parking_spaces = Column("total_parking_spaces", Integer)
+    building_floors = Column("total_floors", Integer)
+    building_total_area_sqft = Column("total_building_area_sqft", Float)
+    building_elevators = Column("elevators", Integer)
     area_name = Column(String)
     latitude = Column(Float)
     longitude = Column(Float)

@@ -144,11 +144,17 @@ def _build_messages(state: AgentState) -> list:
         state.reflection_output.get("issues", []) if state.reflection_output else []
     )
     reflection_text = "\n".join(f"- {i}" for i in reflection_issues) or "None"
+    compared_properties = (
+        state.comparison_result.get("properties", []) if state.comparison_result else []
+    )
+    eligible_properties = [
+        prop for prop in compared_properties if prop.get("suitability") != "excluded"
+    ]
     comparison_text = _format_comparison_for_prompt(state.comparison_result)
     currency_note = _build_currency_note(state)
 
-    # No properties found at all
-    if not state.retrieved_properties and not state.comparison_result:
+    # No eligible properties found. Excluded rows never enter buyer guidance.
+    if not eligible_properties and state.data_intent != "insights_only":
         logger.info("answer_generation: no-results path")
         user_content = _NO_RESULTS_TEMPLATE.format(query=state.query)
         return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
@@ -165,8 +171,8 @@ def _build_messages(state: AgentState) -> list:
             user_content += f"\n\n{currency_note}"
         return [SystemMessage(content=system_with_context), HumanMessage(content=user_content)]
 
-    # Recommend — current cached data
-    logger.info("answer_generation: recommend path (cached data)")
+    # Recommend — frozen listing snapshot
+    logger.info("answer_generation: recommend path (listing snapshot)")
     user_content = _RECOMMEND_TEMPLATE.format(
         query=state.query,
         comparison_result=comparison_text,
@@ -194,17 +200,27 @@ def _format_comparison_for_prompt(comparison_result: dict | None) -> str:
     if not comparison_result:
         return "No comparison data available."
 
-    properties = comparison_result.get("properties", [])
-    if not properties:
+    compared_properties = comparison_result.get("properties", [])
+    if not compared_properties:
         return "No properties were compared."
+
+    properties = [
+        prop
+        for prop in compared_properties
+        if prop.get("suitability") != "excluded"
+    ]
+    if not properties:
+        return "No eligible properties were compared."
 
     lines: list[str] = []
     for prop in sorted(properties, key=lambda p: p.get("fit_score", 0), reverse=True):
         lines.append(f"Property: {prop.get('title', 'Unknown')} (ID: {prop.get('id', '?')})")
         lines.append(f"  Fit score    : {prop.get('fit_score', 'N/A')}")
-        lines.append(f"  Price        : {prop.get('price_assessment', 'N/A')}")
+        lines.append(f"  Suitability  : {prop.get('suitability', 'conditional')}")
+        lines.append(f"  Evidence     : {prop.get('evidence_coverage', 'N/A')}")
         lines.append(f"  Matches      : {', '.join(prop.get('matched_criteria', [])) or 'none'}")
         lines.append(f"  Gaps         : {', '.join(prop.get('unmatched_criteria', [])) or 'none'}")
+        lines.append(f"  Unsupported  : {', '.join(prop.get('unsupported_criteria', [])) or 'none'}")
         lines.append("")
 
     return "\n".join(lines)

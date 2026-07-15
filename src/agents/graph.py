@@ -5,10 +5,9 @@ Graph topology:
                               ┌── END (is_relevant=False, final_answer set)
                               │
 START ──► memory ──► query_relevancy ──► query_understanding
-                │                                │
-                │ (meta question)                │
-                ▼                                ▼
-         answer_generation           ┌───────────┴───────────┐
+                                                 │
+                                                 ▼
+                                     ┌───────────┴───────────┐
                                      │ route="query_routing"  │ route="web_search"
                                      ▼                         ▼
                                query_routing            web_search (sub-graph)
@@ -25,9 +24,8 @@ START ──► memory ──► query_relevancy ──► query_understanding
                                                │
                                               END
 
-Retry loop (reflection → query_routing):
-    If reflection sets needs_retry=True and retry_count < max_retries,
-    the edge routes back to query_routing to try again with different tool tier.
+Reflection is a deterministic terminal audit. Transient transport retries belong
+inside the MCP client and never repeat the graph retrieval loop.
 """
 
 from langgraph.graph import END, START, StateGraph
@@ -40,7 +38,7 @@ from src.nodes.query_routing import query_routing_node, route_after_routing
 from src.nodes.query_understanding import query_understanding_node, route_after_understanding
 from src.nodes.reflection import reflection_node, route_after_reflection
 from src.nodes.web_search import create_web_search_agent
-from src.nodes.memory import memory_node, route_after_memory
+from src.nodes.memory import memory_node
 from src.memory.long_term_memory import checkpointer as _default_checkpointer
 
 def build_graph(checkpointer=None):
@@ -51,7 +49,7 @@ def build_graph(checkpointer=None):
         checkpointer: Optional checkpointer override.
                       If None, defaults to the module-level sync SqliteSaver.
                       If False, compiles without any checkpointer (stateless).
-                      Pass an AsyncSqliteSaver for Streamlit async streaming.
+                      Pass an AsyncSqliteSaver for async SSE streaming.
 
     Returns:
         A compiled LangGraph application ready to invoke.
@@ -75,16 +73,9 @@ def build_graph(checkpointer=None):
     graph.add_node("reflection", reflection_node)
     graph.add_node("answer_generation", answer_generation_node)
 
-    # ── Entry → memory → query_relevancy or answer_generation ─────────────────
+    # ── Entry → bounded memory restoration → scope classification ─────────────
     graph.add_edge(START, "memory")
-    graph.add_conditional_edges(
-        "memory",
-        route_after_memory,
-        {
-            "query_relevancy": "query_relevancy",
-            "answer_generation": "answer_generation",
-        },
-    )
+    graph.add_edge("memory", "query_relevancy")
 
     # ── After relevancy: proceed or end ───────────────────────────────────────
     graph.add_conditional_edges(
@@ -112,7 +103,7 @@ def build_graph(checkpointer=None):
         route_after_routing,
         {
             "comparison_engine": "comparison_engine",
-            "web_search": "web_search",
+            "answer_generation": "answer_generation",
         },
     )
     graph.add_edge("comparison_engine", "reflection")
@@ -122,8 +113,6 @@ def build_graph(checkpointer=None):
         route_after_reflection,
         {
             "answer_generation": "answer_generation",
-            # Retry: route back to query_routing to try the next tool tier
-            "tool_router": "query_routing",
         },
     )
 

@@ -30,6 +30,10 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
     Raises:
         ValueError: If LLM_PROVIDER is not a recognised provider.
     """
+    errors = settings.provider_errors()
+    if errors:
+        raise ValueError(" ".join(errors))
+
     match settings.llm_provider:
         case "ollama":
             # ChatOllama doesn't use a separate streaming flag — it streams by
@@ -37,12 +41,15 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
             return ChatOllama(
                 model=settings.ollama_model,
                 base_url=settings.ollama_base_url,
+                reasoning=False,
+                num_predict=512,
+                temperature=0,
             )
 
         case "vllm":
             # vLLM exposes an OpenAI-compatible API — reuse langchain-openai.
             return ChatOpenAI(
-                model="meta-llama/Meta-Llama-3.1-8B-Instruct",
+                model=settings.vllm_model,
                 base_url=settings.vllm_base_url,
                 api_key=settings.vllm_api_key,
                 streaming=streaming,
@@ -53,7 +60,9 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
                 base_url=settings.custom_openai_base_url,
                 api_key=settings.custom_openai_api_key,
                 streaming=streaming,
-                #extra_body={"enable_thinking": False},
+                temperature=0,
+                max_tokens=512,
+                extra_body={"chat_template_kwargs": {"enable_thinking": False}},
             )
         case "groq":
             # Only hide reasoning tokens during streaming (answer_generation).

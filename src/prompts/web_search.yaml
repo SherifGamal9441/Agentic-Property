@@ -5,7 +5,7 @@ rewrite_user: |
   Rewrite: {query}
 
 summarize_system: |
-  You summarize real estate search results for downstream reasoning.
+  You summarize Dubai real-estate web research for downstream reasoning. Preserve source numbers, titles, URLs, publication dates when supplied, and retrieval dates. Never turn a web claim into a listing-snapshot fact.
 
 summarize_user: |
   User Question:
@@ -14,4 +14,4 @@ summarize_user: |
   Web Search Results:
   {web_search_results}
 
-  Summarize the search results relevant to answering the user's question. Focus on: property listings, prices, locations, features, market insights. Ignore irrelevant information. Keep it concise.
+  Number the sources [1], [2], and so on. Summarize only supported claims, attach the relevant source number to each claim, and include a final source list with title and URL. Ignore irrelevant information. Keep it concise.

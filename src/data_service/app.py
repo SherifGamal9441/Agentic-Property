@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from datetime import date, datetime
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict, validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from src.mcp.schemas import BasePropertyFilters, HistoricalFilters
 
 from .database import get_database_status, get_db
@@ -15,7 +15,8 @@ from .db_tables import HistoricalListing, ActiveListing
 # ---------------------------------------------------------------------------
 
 class HistoricalSearchRequest(HistoricalFilters):
-    @validator('post_date_minimum', 'post_date_maximum', pre=True)
+    @field_validator('post_date_minimum', 'post_date_maximum', mode='before')
+    @classmethod
     def parse_date(cls, v):
         if isinstance(v, str):
             try:
@@ -47,10 +48,10 @@ class ListingResponse(BaseModel):
     post_date: Optional[date]
     building_name: Optional[str]
     year_of_completion: Optional[int]
-    total_parking_spaces: Optional[int]
-    total_floors: Optional[int]
-    total_building_area_sqft: Optional[float]
-    elevators: Optional[int]
+    building_total_parking_spaces: Optional[int] = Field(validation_alias=AliasChoices("building_total_parking_spaces", "total_parking_spaces"))
+    building_floors: Optional[int] = Field(validation_alias=AliasChoices("building_floors", "total_floors"))
+    building_total_area_sqft: Optional[float] = Field(validation_alias=AliasChoices("building_total_area_sqft", "total_building_area_sqft"))
+    building_elevators: Optional[int] = Field(validation_alias=AliasChoices("building_elevators", "elevators"))
     area_name: Optional[str]
     latitude: Optional[float]
     longitude: Optional[float]
@@ -62,25 +63,65 @@ class SearchResponse(BaseModel):
     listings: List[ListingResponse]
 
 
+def _percentile(values: list[float], percentile: float) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    position = (len(ordered) - 1) * percentile
+    lower = int(position)
+    upper = min(lower + 1, len(ordered) - 1)
+    fraction = position - lower
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * fraction
+
+
+def _iqr_prices(prices: list[float]) -> tuple[list[float], float | None, float | None]:
+    q1 = _percentile(prices, 0.25)
+    q3 = _percentile(prices, 0.75)
+    if q1 is None or q3 is None:
+        return prices, q1, q3
+    spread = q3 - q1
+    if spread == 0:
+        filtered = [price for price in prices if price == q1]
+    else:
+        lower, upper = q1 - 1.5 * spread, q3 + 1.5 * spread
+        filtered = [price for price in prices if lower <= price <= upper]
+    return filtered, _percentile(filtered, 0.25), _percentile(filtered, 0.75)
+
+
+def _evidence_quality(count: int) -> str:
+    if count >= 20:
+        return "strong"
+    if count >= 5:
+        return "limited"
+    return "insufficient"
+
+
 def build_market_context(area: str, listings: list[HistoricalListing], matching_basis: list[str] | None = None) -> dict:
-    """Summarize reported historical evidence without estimating missing values."""
-    prices = [listing.price for listing in listings if listing.price is not None]
-    unit_prices = [
-        listing.price / listing.total_building_area_sqft
-        for listing in listings
-        if listing.price is not None and listing.total_building_area_sqft and listing.total_building_area_sqft > 0
-    ]
+    """Summarize transaction prices; building area is never treated as unit area."""
+    prices = [float(listing.price) for listing in listings if listing.price is not None and listing.price >= 0]
+    usable_prices, q1, q3 = _iqr_prices(prices)
     dates = [listing.post_date for listing in listings if listing.post_date is not None]
+    property_types: dict[str, int] = {}
+    bedrooms: dict[str, int] = {}
+    for listing in listings:
+        if listing.type:
+            property_types[listing.type] = property_types.get(listing.type, 0) + 1
+        if listing.beds is not None:
+            key = str(listing.beds)
+            bedrooms[key] = bedrooms.get(key, 0) + 1
     return {
         "area": area,
         "matching_basis": matching_basis or ["area"],
         "record_count": len(listings),
+        "usable_record_count": len(usable_prices),
         "period_start": min(dates) if dates else None,
         "period_end": max(dates) if dates else None,
-        "price_min": min(prices) if prices else None,
-        "price_max": max(prices) if prices else None,
-        "price_per_sqft_min": min(unit_prices) if unit_prices else None,
-        "price_per_sqft_max": max(unit_prices) if unit_prices else None,
+        "price_median": _percentile(usable_prices, 0.5),
+        "price_q1": q1,
+        "price_q3": q3,
+        "evidence_quality": _evidence_quality(len(usable_prices)),
+        "property_type_mix": property_types,
+        "bedroom_mix": bedrooms,
     }
 
 # ---------------------------------------------------------------------------
@@ -150,9 +191,6 @@ def apply_filters(query, model, filters: BasePropertyFilters):
         ('beds', 'property_beds_minimum', 'property_beds_maximum'),
         ('baths', 'property_bathrooms_minimum', 'property_bathrooms_maximum'),
         ('year_of_completion', 'year_of_completion_minimum', 'year_of_completion_maximum'),
-        ('total_parking_spaces', 'parking_spaces_minimum', 'parking_spaces_maximum'),
-        ('total_floors', 'total_floors_minimum', 'total_floors_maximum'),
-        ('total_building_area_sqft', 'total_building_area_sqft_minimum', 'total_building_area_sqft_maximum'),
     ]
     for col, min_attr, max_attr in range_fields:
         min_val = filter_dict.get(min_attr)

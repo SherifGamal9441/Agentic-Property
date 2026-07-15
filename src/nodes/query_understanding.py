@@ -26,6 +26,7 @@ import re
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.agents.state import AgentState
+from src.buyer_brief import brief_to_filters
 from src.area_matcher import fuzzy_match_area
 from src.llm.factory import get_llm
 from src.utils import parse_llm_json
@@ -150,6 +151,10 @@ def query_understanding_node(state: AgentState) -> dict:
     Returns:
         Partial state dict with `parsed_query` and `route` populated.
     """
+    if state.buyer_brief is not None:
+        route = "query_routing" if state.buyer_brief.mode == "property_search" else "web_search"
+        return {"parsed_query": brief_to_filters(state.buyer_brief), "route": route}
+
     logger.info("query_understanding: parsing query and deciding route")
 
     llm = get_llm(streaming=False)

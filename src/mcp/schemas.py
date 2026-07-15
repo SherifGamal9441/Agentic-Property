@@ -77,30 +77,6 @@ class BasePropertyFilters(BaseModel):
         default=None,
         description="Latest year the building was or is expected to be completed (inclusive)."
     )
-    parking_spaces_minimum: Optional[int] = Field(
-        default=None,
-        description="Minimum number of dedicated parking spaces (inclusive)."
-    )
-    parking_spaces_maximum: Optional[int] = Field(
-        default=None,
-        description="Maximum number of dedicated parking spaces (inclusive)."
-    )
-    total_floors_minimum: Optional[int] = Field(
-        default=None,
-        description="Minimum number of floors in the building (inclusive)."
-    )
-    total_floors_maximum: Optional[int] = Field(
-        default=None,
-        description="Maximum number of floors in the building (inclusive)."
-    )
-    total_building_area_sqft_minimum: Optional[float] = Field(
-        default=None,
-        description="Minimum total area of the property in square feet (inclusive)."
-    )
-    total_building_area_sqft_maximum: Optional[float] = Field(
-        default=None,
-        description="Maximum total area of the property in square feet (inclusive)."
-    )
     limit: int = Field(
         default=20,
         ge=1,

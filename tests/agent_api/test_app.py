@@ -25,7 +25,7 @@ def test_property_payload_exposes_snapshot_evidence_and_safe_nulls():
         "data_intent": "recommend",
     })
 
-    assert payload[0]["data_status"] == "active_dataset_listing"
+    assert payload[0]["data_status"] == "listing_snapshot"
     assert payload[0]["observed_at"] == "2026-07-01"
     assert payload[0]["price"] is None
     assert payload[0]["location_status"] == "unavailable"
@@ -35,7 +35,7 @@ def test_property_payload_exposes_snapshot_evidence_and_safe_nulls():
 def test_safe_failure_hides_internal_exception_text():
     assert _safe_failure(RuntimeError("secret database host")) == {
         "code": "agent_unavailable",
-        "message": "Property research is temporarily unavailable. Please try again.",
+        "message": "Aizen could not complete this live run. Check the selected model provider and try again.",
         "retryable": True,
     }
 

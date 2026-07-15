@@ -49,6 +49,26 @@ def test_seed_updates_existing_active_listing(tmp_path, monkeypatch):
     assert listing.post_date == date(2026, 7, 3)
 
 
+def test_seed_maps_public_building_names_to_legacy_database_columns(tmp_path, monkeypatch):
+    database = create_engine(f"sqlite:///{tmp_path / 'listings.db'}")
+    Base.metadata.create_all(database)
+    monkeypatch.setattr(seed, "SessionLocal", sessionmaker(bind=database))
+    csv_path = tmp_path / "active.csv"
+    csv_path.write_text(
+        "property_id,building_total_parking_spaces,building_floors,building_total_area_sqft,building_elevators\n"
+        "listing-1,200,40,500000,6\n",
+        encoding="utf-8",
+    )
+
+    inserted, skipped = seed.seed_table(str(csv_path), ActiveListing)
+
+    assert (inserted, skipped) == (1, 0)
+    with sessionmaker(bind=database)() as session:
+        listing = session.query(ActiveListing).one()
+    assert listing.building_total_parking_spaces == 200
+    assert listing.building_total_area_sqft == 500000
+
+
 def test_active_audit_reports_csv_date_difference(tmp_path):
     from src.data_service.bootstrap import audit_active_rows
 

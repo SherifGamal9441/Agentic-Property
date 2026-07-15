@@ -118,7 +118,7 @@
     "id": "Q008",
     "query": "What is the average price per square foot in Dubai Marina?",
     "criteria": [
-      "Answer provides specific price per sqft data or range",
+      "Answer withholds unit-price statistics unless unit area is independently verified",
       "Answer cites the source of information",
       "Answer is concise and directly addresses the question",
       "If exact data unavailable answer explains why and offers alternatives"

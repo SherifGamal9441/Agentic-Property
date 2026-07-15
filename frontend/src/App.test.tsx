@@ -1,254 +1,121 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 
-import App, { type Property } from "./App";
+import App from "./App";
+import type { BuyerBrief, Property } from "./types";
 
-const mapMocks = vi.hoisted(() => ({ options: [] as Array<Record<string, unknown>>, failsToLoad: false }));
+const brief: BuyerBrief = {
+  version: 1,
+  mode: "property_search",
+  original_query: "Ready 2BR in Dubai Marina under AED 2M",
+  currency: "AED",
+  criteria: [
+    { id: "area", label: "Dubai Marina", priority: "must_have", field: "area", operator: "contains", value: "Dubai Marina", verifiable: true },
+    { id: "budget", label: "Under AED 2M", priority: "must_have", field: "price", operator: "lte", value: 2_000_000, verifiable: true },
+  ],
+};
 
-vi.mock("maplibre-gl", () => {
-  class Map {
-    constructor(options: Record<string, unknown>) { this.options = options; mapMocks.options.push(options); }
-    options: Record<string, unknown>;
-    addControl() { return this; }
-    on(event: string, callback: () => void) {
-      if (event === "load" && !mapMocks.failsToLoad) callback();
-      if (event === "error" && mapMocks.failsToLoad) callback();
-      return this;
-    }
-    fitBounds() { return this; }
-    flyTo() { return this; }
-    remove() { return this; }
-  }
-  class Marker {
-    constructor({ element }: { element: HTMLElement }) { this.element = element; }
-    element: HTMLElement;
-    setLngLat() { return this; }
-    addTo(map: { options?: { container?: HTMLElement } }) { (map.options?.container as HTMLElement | undefined)?.append(this.element); return this; }
-    remove() { this.element.remove(); return this; }
-  }
-  class NavigationControl {}
-  return { default: { Map, Marker, NavigationControl } };
-});
-
-const properties: Property[] = Array.from({ length: 5 }, (_, index) => ({
-  id: `property-${index + 1}`,
-  title: `Property ${index + 1}`,
+const properties: Property[] = Array.from({ length: 8 }, (_, index) => ({
+  id: `home-${index + 1}`,
+  title: `Marina Residence ${index + 1}`,
   area: "Dubai Marina",
-  price: 1_500_000 + index * 100_000,
+  price: 1_400_000 + index * 10_000,
   currency: "AED",
   beds: 2,
   baths: 2,
-  property_type: "Apartment",
-  size_sqft: 1_000,
+  property_type: "Apartments",
   furnishing: "Furnished",
   completion_status: "completed",
-  parking_spaces: 1,
-  year_of_completion: 2024,
-  latitude: index === 4 ? null : 25.08,
-  longitude: index === 4 ? null : 55.14 + index * 0.001,
-  location_status: index === 4 ? "unavailable" : "exact",
-  source_url: "https://example.test/listing",
-  source_name: "Listing source",
-  observed_at: "2026-07-01",
-  dataset_snapshot_at: "2026-07-01",
-  data_status: "active_dataset_listing",
-  fit_score: 0.9 - index * 0.01,
-  score_factors: ["Matches Dubai Marina"],
-  matched_criteria: ["Matches Dubai Marina"],
-  unmatched_criteria: [],
-  price_assessment: "fair",
-  data_intent: "recommend",
-  data_source: "active",
+  year_of_completion: 2022,
+  latitude: 25.08 + index * 0.001,
+  longitude: 55.14 + index * 0.001,
+  location_status: "exact",
+  source_url: `https://example.test/${index}`,
+  source_name: "Captured listing source",
+  observed_at: "2026-07-02",
+  snapshot_id: "active-2026-07-02-v1",
+  dataset_snapshot_at: "2026-07-02",
+  data_status: "listing_snapshot",
+  fit_score: 1,
+  evidence_coverage: 1,
+  suitability: "suitable",
+  evaluations: [],
+  matched_criteria: ["Dubai Marina", "Under AED 2M"],
+  conflicting_criteria: [],
+  unknown_criteria: [],
+  unsupported_criteria: [],
 }));
 
-afterEach(() => { localStorage.clear(); mapMocks.options.length = 0; mapMocks.failsToLoad = false; vi.unstubAllGlobals(); });
-
-test("uses a real OpenFreeMap basemap with accessible exact-coordinate pins", () => {
-  render(<App initialProperties={properties} />);
-
-  expect(mapMocks.options.at(-1)).toMatchObject({ style: "https://tiles.openfreemap.org/styles/liberty" });
-  expect(screen.getByText(/exact supplied listing coordinates/i)).toBeInTheDocument();
-  expect(within(screen.getByLabelText("Property location view")).getAllByRole("button", { name: /open property/i })).toHaveLength(4);
+afterEach(() => {
+  localStorage.clear();
+  location.hash = "";
+  vi.unstubAllGlobals();
 });
 
-test("keeps exact location evidence available when the basemap fails", () => {
-  mapMocks.failsToLoad = true;
-  render(<App initialProperties={properties.slice(0, 1)} />);
-
-  expect(screen.getByRole("status")).toHaveTextContent(/basemap unavailable/i);
-  expect(screen.getByText(/exact supplied listing coordinates/i)).toBeInTheDocument();
-});
-
-test("starts with an editorial empty workspace without ingestion jargon", () => {
+test("requires buyer confirmation before starting a run", async () => {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify(brief), { status: 200, headers: { "Content-Type": "application/json" } }))
+    .mockResolvedValueOnce(new Response([
+      `event: run_started\ndata: {"thread_id":"thread-1","snapshot_id":"active-2026-07-02-v1"}\n\n`,
+      `event: properties\ndata: {"total_matches":0,"shown_count":0,"properties":[]}\n\n`,
+      `event: sources\ndata: {"items":[]}\n\n`,
+      `event: run_completed\ndata: {"route":"query_routing","data_source":"active","evidence_quality":"insufficient"}\n\n`,
+    ].join(""), { status: 200, headers: { "Content-Type": "text/event-stream" } }));
+  vi.stubGlobal("fetch", fetchMock);
+  const user = userEvent.setup();
   render(<App />);
 
-  expect(screen.getByRole("link", { name: /start a property brief/i })).toHaveAttribute("href", "#workspace");
-  expect(screen.getByText(/guided starts/i)).toBeInTheDocument();
-  expect(screen.getByText(/start with a property brief/i)).toBeInTheDocument();
-  expect(screen.queryByText(/csv loaded into database/i)).not.toBeInTheDocument();
+  await user.type(screen.getByLabelText("Describe your ideal Dubai home"), brief.original_query);
+  await user.click(screen.getByRole("button", { name: "Interpret my brief" }));
+
+  expect(await screen.findByText("Confirm what Aizen understood")).toBeInTheDocument();
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  await user.click(screen.getByRole("button", { name: "Confirm & search" }));
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
 });
 
-test("adds and removes shortlist and comparison entries from property detail", async () => {
+test("shows six ranked homes first and reveals the rest on demand", async () => {
   const user = userEvent.setup();
-  render(<App initialProperties={properties.slice(0, 1)} />);
+  render(<App initialProperties={properties} initialBrief={brief} />);
 
-  await user.click(screen.getAllByRole("button", { name: "Open Property 1" })[0]);
-  const drawer = screen.getByRole("dialog", { name: /property intelligence/i });
-  await user.click(within(drawer).getByRole("button", { name: "Add to shortlist" }));
-  await user.click(within(drawer).getByRole("button", { name: "Add to comparison" }));
-
-  expect(within(drawer).getByRole("button", { name: "Remove from shortlist" })).toBeInTheDocument();
-  expect(within(drawer).getByRole("button", { name: "Remove from comparison" })).toBeInTheDocument();
-  expect(screen.getByRole("region", { name: /comparison shortlist/i })).toHaveTextContent("Property 1");
+  expect(screen.getAllByRole("article", { name: /Marina Residence/ })).toHaveLength(6);
+  await user.click(screen.getByRole("button", { name: "View 2 more homes" }));
+  expect(screen.getAllByRole("article", { name: /Marina Residence/ })).toHaveLength(8);
 });
 
-test("compares up to four properties and rejects a fifth", async () => {
+test("keeps shortlist, comparison, private notes, and dossier synchronized", async () => {
   const user = userEvent.setup();
-  render(<App initialProperties={properties} />);
+  render(<App initialProperties={properties.slice(0, 2)} initialBrief={brief} />);
 
-  for (const button of screen.getAllByRole("button", { name: "Add to comparison" })) await user.click(button);
-
-  expect(screen.getByRole("status")).toHaveTextContent("Compare up to four homes at a time.");
-  expect(screen.getByRole("region", { name: /comparison shortlist/i })).toHaveTextContent("Property 4");
-  expect(screen.getByRole("region", { name: /comparison shortlist/i })).not.toHaveTextContent("Property 5");
-});
-
-test("scopes map evidence and lets buyers choose homes in an overlap group", async () => {
-  const user = userEvent.setup();
-  const overlapping = [{ ...properties[0], id: "overlap", title: "Overlap home" }, { ...properties[1], id: "overlap-2", title: "Overlap home two", latitude: properties[0].latitude, longitude: properties[0].longitude }];
-  render(<App initialProperties={overlapping} />);
-
-  await user.click(screen.getByRole("button", { name: "Show shortlist locations" }));
-  expect(screen.getByText(/no exact shortlist locations/i)).toBeInTheDocument();
-  await user.click(screen.getAllByRole("button", { name: "Add to shortlist" })[0]);
+  await user.click(screen.getAllByRole("button", { name: "Review evidence" })[0]);
   await user.click(screen.getByRole("button", { name: "Add to shortlist" }));
-  await user.click(screen.getByRole("button", { name: "Show shortlist locations" }));
-  await user.click(screen.getByRole("button", { name: /open 2 homes in dubai marina/i }));
-  expect(screen.getByText(/choose a home at this location/i)).toBeInTheDocument();
-  await user.click(within(screen.getByRole("region", { name: "Location group" })).getByRole("button", { name: "Open Overlap home two" }));
-  expect(screen.getByRole("dialog", { name: /property intelligence/i })).toHaveTextContent("Overlap home two");
+  await user.click(screen.getByRole("button", { name: "Add to comparison" }));
+  await user.type(screen.getByLabelText("Private note"), "Ask about the building service history.");
+  await user.click(screen.getByRole("button", { name: "Close property evidence" }));
+
+  expect(screen.getByText("1 shortlisted")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Open buyer dossier" }));
+  expect(screen.getByText("Ask about the building service history.")).toBeInTheDocument();
+  expect(screen.getByText("Buyer dossier")).toBeInTheDocument();
 });
 
-test("saves and restores buyer criteria and shortlist on the same device", async () => {
+test("reset showcase clears all Aizen browser state", async () => {
+  localStorage.setItem("aizen-shortlist", JSON.stringify(["home-1"]));
+  localStorage.setItem("aizen-notes", JSON.stringify({ "home-1": "private" }));
   const user = userEvent.setup();
-  render(<App initialProperties={properties.slice(0, 1)} />);
+  render(<App initialProperties={properties.slice(0, 1)} initialBrief={brief} />);
 
-  await user.click(screen.getByRole("button", { name: "Add to shortlist" }));
-  await user.type(screen.getByRole("textbox", { name: "Property brief" }), "Two bedrooms in Dubai Marina");
-  await user.type(screen.getByRole("textbox", { name: "Must-have criteria" }), "waterfront");
-  await user.click(screen.getByRole("button", { name: /save this search/i }));
-  await user.click(screen.getByRole("button", { name: "Clear research brief" }));
-  await user.click(screen.getByRole("button", { name: "Restore saved brief" }));
+  await user.click(screen.getByRole("button", { name: "Reset showcase" }));
 
-  expect(screen.getByRole("textbox", { name: "Property brief" })).toHaveValue("Two bedrooms in Dubai Marina");
-  expect(screen.getByRole("textbox", { name: "Must-have criteria" })).toHaveValue("waterfront");
-  expect(screen.getByRole("status")).toHaveTextContent("Saved brief restored.");
+  await waitFor(() => expect(Object.keys(localStorage).filter((key) => key.startsWith("aizen-"))).toHaveLength(0));
 });
 
-test("shows only valid coordinate pins and keeps selection synchronized", async () => {
-  const user = userEvent.setup();
-  render(<App initialProperties={properties} />);
-
-  const map = screen.getByLabelText("Property location view");
-  expect(within(map).getAllByRole("button", { name: /open property/i })).toHaveLength(4);
-  expect(screen.getByText(/property 5 has area-only location evidence/i)).toBeInTheDocument();
-
-  await user.click(within(map).getByRole("button", { name: "Open Property 2" }));
-  expect(screen.getByRole("dialog", { name: /property intelligence/i })).toHaveTextContent("Property 2");
-});
-
-test("sorts visible results and keeps buyer decision evidence", async () => {
-  const user = userEvent.setup();
-  render(<App initialProperties={[properties[1], properties[0]]} />);
-
-  await user.selectOptions(screen.getByRole("combobox", { name: "Sort properties" }), "price-low");
-  expect(within(screen.getByRole("region", { name: "Property results" })).getAllByRole("button", { name: /open property/i })[0]).toHaveAccessibleName("Open Property 1");
-
-  await user.click(screen.getAllByRole("button", { name: "Add to comparison" })[0]);
-  await user.click(screen.getByRole("button", { name: "View decision sheet" }));
-  expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Historical market context");
-  await user.type(screen.getByRole("spinbutton", { name: "Transfer cost" }), "5000");
-  expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("AED 1,505,000");
-});
-
-test("restores a visible research conversation from the current browser session", async () => {
-  localStorage.setItem("aizen-thread-id", "8f9d67d9-61de-44d9-a95d-8d0c5c8a9d4f");
-  localStorage.setItem("aizen-research-sessions", JSON.stringify([{ threadId: "8f9d67d9-61de-44d9-a95d-8d0c5c8a9d4f", title: "Marina search", lastActivityAt: "2026-07-14T00:00:00.000Z" }]));
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ messages: [{ role: "user", content: "2BR in Dubai Marina" }, { role: "assistant", content: "Here are reported matches." }], properties: [properties[0]] }) }));
-
+test("offers the recruiter case study through hash navigation", () => {
+  location.hash = "#/case-study";
+  fireEvent(window, new HashChangeEvent("hashchange"));
   render(<App />);
 
-  expect(await screen.findByRole("region", { name: "Research conversation" })).toHaveTextContent("Here are reported matches.");
-  expect(screen.getByRole("region", { name: "Research sessions" })).toHaveTextContent("Marina search");
-  expect(screen.getByRole("region", { name: "Property results" })).toHaveTextContent("Property 1");
-  await userEvent.setup().click(screen.getAllByRole("button", { name: "Add to comparison" })[0]);
-  await userEvent.setup().click(screen.getByRole("button", { name: "View decision sheet" }));
-  expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Property 1");
-  expect(screen.queryByText(/guided starts/i)).not.toBeInTheDocument();
-});
-
-test("hides guided starts after a valid submit and restores them for a new conversation", async () => {
-  const user = userEvent.setup();
-  const encoder = new TextEncoder();
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, body: new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode("event: run_completed\ndata: {}\n\n"));
-      controller.close();
-    },
-  }) }));
-  render(<App />);
-
-  await user.click(screen.getByRole("button", { name: /ready 2br/i }));
-  expect(screen.getByRole("textbox", { name: "Property brief" })).toHaveValue("A ready 2BR in Dubai Marina under AED 2M");
-  expect(screen.getByText(/guided starts/i)).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Research properties" }));
-
-  await waitFor(() => expect(screen.queryByText(/guided starts/i)).not.toBeInTheDocument());
-  await user.click(screen.getByRole("button", { name: /new conversation/i }));
-  expect(screen.getByText(/guided starts/i)).toBeInTheDocument();
-});
-
-test("removes guided starts immediately when reduced motion is preferred", async () => {
-  const user = userEvent.setup();
-  const encoder = new TextEncoder();
-  vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, body: new ReadableStream({
-    start(controller) {
-      controller.enqueue(encoder.encode("event: run_completed\ndata: {}\n\n"));
-      controller.close();
-    },
-  }) }));
-  render(<App />);
-
-  await user.type(screen.getByRole("textbox", { name: "Property brief" }), "2BR in Dubai Marina");
-  await user.click(screen.getByRole("button", { name: "Research properties" }));
-
-  expect(screen.queryByText(/guided starts/i)).not.toBeInTheDocument();
-});
-
-test("shows reported historical context and keeps buyer decisions local", async () => {
-  const user = userEvent.setup();
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ area: "Dubai Marina", matching_basis: ["area", "property_type", "beds"], record_count: 12, period_start: "2025-01-01", period_end: "2026-01-01", price_min: 1_000_000, price_max: 2_000_000, price_per_sqft_min: 1000, price_per_sqft_max: 2000 }) }));
-  render(<App initialProperties={properties.slice(0, 1)} />);
-
-  await user.click(screen.getByRole("button", { name: "Save" }));
-  expect(screen.getByText("Buyer decision: saved")).toBeInTheDocument();
-  await user.click(screen.getAllByRole("button", { name: "Add to comparison" })[0]);
-  await user.click(screen.getByRole("button", { name: "View decision sheet" }));
-
-  expect(await screen.findByText(/12 reported transactions/i)).toBeInTheDocument();
-  expect(screen.getByRole("dialog", { name: /buyer decision sheet/i })).toHaveTextContent("Historical market context only—not active inventory or a valuation.");
-});
-
-test("uses shared drawer controls for historical context and feedback", async () => {
-  const user = userEvent.setup();
-  render(<App initialProperties={properties.slice(0, 1)} />);
-
-  await user.click(screen.getAllByRole("button", { name: "Open Property 1" })[0]);
-  const drawer = screen.getByRole("dialog", { name: /property intelligence/i });
-
-  expect(within(drawer).getByRole("button", { name: "Load historical context" })).toHaveClass("drawer-control");
-  expect(within(drawer).getByRole("button", { name: "Useful result" })).toHaveClass("drawer-control");
-  expect(within(drawer).getByRole("button", { name: "Missing or incorrect detail" })).toHaveClass("drawer-control");
+  expect(screen.getByRole("heading", { name: "From prompt to auditable buyer decision" })).toBeInTheDocument();
+  expect(screen.getByText("Eight nodes, one evidence contract")).toBeInTheDocument();
 });

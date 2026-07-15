@@ -10,6 +10,7 @@ from ddgs import DDGS
 from src.llm.factory import get_llm
 import logging
 import re
+from datetime import date
 from langgraph.graph import END, StateGraph
 
 from pathlib import Path as _Path2
@@ -58,7 +59,7 @@ def web_search(state: AgentState) -> dict:
         with DDGS() as ddgs:
             results = list(ddgs.text(state.web_search_query, max_results=5))
         web_results = [
-            {"title": r["title"], "url": r["href"], "snippet": r["body"]}
+            {"title": r["title"], "url": r["href"], "snippet": r["body"], "publication_date": r.get("date"), "retrieved_at": date.today().isoformat()}
             for r in results
         ]
         if not web_results:
@@ -74,7 +75,7 @@ def web_search(state: AgentState) -> dict:
                 tavily = TavilyClient(api_key=tavily_key)
                 response = tavily.search(query=state.web_search_query, max_results=5)
                 web_results = [
-                    {"title": r["title"], "url": r["url"], "snippet": r["content"]}
+                    {"title": r["title"], "url": r["url"], "snippet": r["content"], "publication_date": r.get("published_date"), "retrieved_at": date.today().isoformat()}
                     for r in response.get("results", [])
                 ]
             except Exception as tavily_e:

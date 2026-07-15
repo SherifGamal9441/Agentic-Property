@@ -41,14 +41,11 @@ def _make_stream_mock(tokens: list[str]):
 @patch("src.nodes.query_routing.search_active_sync")
 @patch("src.nodes.query_understanding.get_llm")
 @patch("src.nodes.query_relevancy.get_llm")
-@patch("src.nodes.memory.get_llm")
 def test_thread_isolation(
-    mock_mem_llm, mock_rel_llm, mock_und_llm,
+    mock_rel_llm, mock_und_llm,
     mock_search, mock_comp_llm, mock_refl_llm, mock_ans_llm,
 ):
     """Two different thread_ids produce independent conversation histories."""
-    # Memory node: classify as property_query (won't short-circuit)
-    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"category": "property_query", "reason": "valid"}))
     # Relevancy: accept
     mock_rel_llm.return_value = _make_invoke_mock(
         json.dumps({"relevant": True, "failed_rule": None, "reason": "valid"})
@@ -62,7 +59,8 @@ def test_thread_isolation(
     # Active search: return one property
     mock_search.return_value = [
         {"id": "prop-001", "title": "Marina Crest 2BR", "price": 1_750_000,
-         "area_sqm": 110, "location": "Dubai Marina", "bedrooms": 2}
+         "location": "Dubai Marina", "bedrooms": 2, "link": "https://example.test/1",
+         "post_date": "2026-07-02"}
     ]
     mock_comp_llm.return_value = _make_invoke_mock(json.dumps(COMPARISON_RESULT))
     mock_refl_llm.return_value = _make_invoke_mock(json.dumps(REFLECTION_OK))
@@ -92,8 +90,6 @@ def test_thread_isolation(
 
     # ── Turn 2 — Thread A (accumulates) ─────────────────────────────────────
     mock_ans_llm.return_value = _make_stream_mock(["Second ", "answer."])
-    # Memory node now has history → needs meta-detection response
-    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"category": "property_query", "reason": "follow-up"}))
 
     result_a2 = graph.invoke(
         {"query": "what about 3BR?"},
@@ -104,7 +100,6 @@ def test_thread_isolation(
     # ── Verify Thread B is still independent ────────────────────────────────
     # Re-invoke thread B to get its current state
     mock_ans_llm.return_value = _make_stream_mock(["Third ", "answer."])
-    mock_mem_llm.return_value = _make_invoke_mock(json.dumps({"category": "property_query", "reason": "follow-up"}))
 
     result_b2 = graph.invoke(
         {"query": "show me more villas"},

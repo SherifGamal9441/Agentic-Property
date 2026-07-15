@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.nodes.answer_generation import answer_generation_node, _format_comparison_for_prompt
+from src.nodes.answer_generation import answer_generation_node, _build_messages, _format_comparison_for_prompt
 from src.agents.state import AgentState
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -116,3 +116,25 @@ def test_format_none_comparison_returns_placeholder():
 
 def test_format_empty_properties_returns_placeholder():
     assert _format_comparison_for_prompt({"properties": []}) == "No properties were compared."
+
+
+def test_excluded_properties_never_enter_buyer_guidance():
+    comparison = {
+        "properties": [{
+            "id": "excluded",
+            "title": "Do not recommend",
+            "fit_score": 0.9,
+            "suitability": "excluded",
+        }]
+    }
+    state = AgentState(
+        query="Ready home",
+        retrieved_properties=[{"property_id": "excluded"}],
+        comparison_result=comparison,
+    )
+
+    formatted = _format_comparison_for_prompt(comparison)
+    messages = _build_messages(state)
+
+    assert "Do not recommend" not in formatted
+    assert "No property in the frozen listing snapshot" in messages[1].content

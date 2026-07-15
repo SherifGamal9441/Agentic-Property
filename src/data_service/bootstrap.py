@@ -25,9 +25,15 @@ SQLITE_URL = "sqlite:///data/dld_local.db"
 ACTIVE_COLUMNS = (
     "property_id", "price", "type", "beds", "baths", "address", "furnishing",
     "completion_status", "post_date", "building_name", "year_of_completion",
-    "total_parking_spaces", "total_floors", "total_building_area_sqft", "elevators",
+    "building_total_parking_spaces", "building_floors", "building_total_area_sqft", "building_elevators",
     "area_name", "latitude", "longitude", "link",
 )
+DATABASE_COLUMN = {
+    "building_total_parking_spaces": "total_parking_spaces",
+    "building_floors": "total_floors",
+    "building_total_area_sqft": "total_building_area_sqft",
+    "building_elevators": "elevators",
+}
 
 
 def _normalise(value):
@@ -55,7 +61,8 @@ def _active_database_rows(database_url: str) -> dict[str, dict]:
     engine = create_engine(database_url)
     try:
         with engine.connect() as connection:
-            rows = connection.execute(text(f"SELECT {', '.join(ACTIVE_COLUMNS)} FROM active_listings")).mappings()
+            select_columns = [f"{DATABASE_COLUMN.get(column, column)} AS {column}" for column in ACTIVE_COLUMNS]
+            rows = connection.execute(text(f"SELECT {', '.join(select_columns)} FROM active_listings")).mappings()
             return {
                 str(row["property_id"]): {column: _normalise(row[column]) for column in ACTIVE_COLUMNS}
                 for row in rows

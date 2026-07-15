@@ -1,17 +1,8 @@
 """
 Query Routing Node
 
-Two-tier tool strategy to fetch relevant properties via the DLD MCP server:
-
-  Tier 1 — Active tool:
-      Current live listings. If it returns >= 1 property the pipeline proceeds
-      with data_intent="recommend" -- properties are live and can be recommended.
-
-  Tier 2 — Historical tool:
-      Older DLD transactions. Used only when active returns nothing.
-      Sets data_intent="insights_only" -- the comparison engine and answer
-      generation nodes MUST NOT recommend these properties (may be sold/leased).
-      They should derive market insights only: price ranges, area trends, etc.
+Property runs search only the frozen active-listing snapshot. Historical records
+remain an explicitly separate context endpoint and are never fallback inventory.
 
 Writes to state:
     retrieved_properties: list[dict]
@@ -25,7 +16,6 @@ import json
 from src.agents.state import AgentState
 from src.mcp import (
     search_active_sync,
-    search_historical_sync,
     convert_currency_sync,
 )
 
@@ -81,27 +71,17 @@ def _call_active_tool(parsed_query: dict) -> tuple[list[dict], str | None]:
         return [], f"MCP active search failed: {e}"
 
 
-def _call_historical_tool(parsed_query: dict) -> tuple[list[dict], str | None]:
-    """Search historical DLD transactions via MCP server.
-    Returns (listings, error_msg). error_msg is None on success.
-    Empty list + no error = query matched 0 rows (not a failure)."""
-    logger.info("_call_historical_tool: searching historical with %s", parsed_query)
-    try:
-        return search_historical_sync(**parsed_query), None
-    except (RuntimeError, json.JSONDecodeError) as e:
-        logger.error("_call_historical_tool: MCP failure: %s", e)
-        return [], f"MCP historical search failed: {e}"
+def _call_historical_tool(_: dict) -> tuple[list[dict], str | None]:
+    """Compatibility seam; historical data is never fallback inventory."""
+    return [], None
 
 
 ##node itself
 def query_routing_node(state: AgentState) -> dict:
     """
     LangGraph node: fetch properties via active or historical tool.
-    Strategy:
-      1. Convert prices to AED if user specified a non-AED currency.
-      2. Try active tool -> if results: data_source="active", data_intent="recommend"
-      3. If active empty -> try historical tool -> data_source="historical", data_intent="insights_only"
-      4. If both empty -> empty list, data_intent="insights_only" (nothing to work with)
+    Search the active frozen snapshot once. Empty results stay empty so the API
+    can offer explicit, buyer-approved relaxation options.
     """
     parsed_query = dict(state.parsed_query)
     parsed_query, currency, exchange_rate = _convert_prices_to_aed(parsed_query)
@@ -114,50 +94,15 @@ def query_routing_node(state: AgentState) -> dict:
     logger.info("query_routing: trying active data")
     active_results, active_error = _call_active_tool(parsed_query)
 
-    if active_results:
-        logger.info(
-            "query_routing: active data returned %d properties -> route=recommend",
-            len(active_results),
-        )
-        return {
-            **base_result,
-            "retrieved_properties": active_results,
-            "data_source": "active",
-            "data_intent": "recommend",
-        }
-
-    logger.info("query_routing: active data returned nothing, trying historical data")
-    historical_results, historical_error = _call_historical_tool(parsed_query)
-
-    if historical_results:
-        logger.info(
-            "query_routing: historical data returned %d properties -> route=insights_only",
-            len(historical_results),
-        )
-        return {
-            **base_result,
-            "retrieved_properties": historical_results,
-            "data_source": "historical",
-            "data_intent": "insights_only",
-        }
-    else:
-        # Distinguish "no data matched" from "MCP failed" for debugging
-        errors = [e for e in (active_error, historical_error) if e]
-        if errors:
-            logger.warning(
-                "query_routing: both tools returned nothing (MCP errors: %s) -- proceeding with web search",
-                "; ".join(errors),
-            )
-        else:
-            logger.warning(
-                "query_routing: both tools returned 0 rows (no MCP errors) -- proceeding with web search"
-            )
-        return {
-            **base_result,
-            "retrieved_properties": [],
-            "data_source": "historical",
-            "data_intent": "insights_only",
-        }
+    if active_error:
+        raise RuntimeError("The frozen listing snapshot is temporarily unavailable.")
+    logger.info("query_routing: active snapshot returned %d candidates", len(active_results))
+    return {
+        **base_result,
+        "retrieved_properties": active_results,
+        "data_source": "active",
+        "data_intent": "recommend",
+    }
 
 
 # ── Conditional edge router ───────────────────────────────────────────────────
@@ -167,5 +112,5 @@ def route_after_routing(state: AgentState) -> str:
     """After query_routing: go to comparison_engine if we have properties,
     otherwise fall back to web_search."""
     if not state.retrieved_properties:
-        return "web_search"
+        return "answer_generation"
     return "comparison_engine"

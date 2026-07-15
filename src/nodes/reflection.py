@@ -1,122 +1,57 @@
-"""
-Reflection Node
+"""Deterministic evidence audit for scored listing candidates."""
 
-Audits the output of the Comparison Engine — NOT the retrieved data, NOT user intent.
-It asks: "Is this comparison result accurate, complete, and internally consistent?"
+from __future__ import annotations
 
-Reads from state:
-    comparison_result   — the dict produced by comparison_engine_node
-
-Writes to state:
-    reflection_output: {
-        ok: bool,               # True if comparison passes quality check
-        issues: list[str],      # Detected problems (empty when ok=True)
-        confidence: float,      # 0.0–1.0 overall confidence in the comparison
-    }
-    needs_retry: bool           # True when ok=False and retries remain
-    retry_tool: str | None      # Suggested tool to retry with (set by upstream router)
-    retry_count: int            # Incremented on each retry
-"""
-
-import json
-import logging
-
-from langchain_core.messages import HumanMessage, SystemMessage
+import math
+from typing import Any
 
 from src.agents.state import AgentState
-from config.pydantic.settings import settings
-from src.llm.factory import get_llm
-from src.utils import parse_llm_json
-
-logger = logging.getLogger(__name__)
-
-# ── Prompts ───────────────────────────────────────────────────────────────────
-
-from pathlib import Path as _Path
-import yaml as _yaml
-
-_PROMPTS_DIR = _Path(__file__).parent.parent / "prompts"
-
-_PROMPTS = _yaml.safe_load((_PROMPTS_DIR / "reflection.yaml").read_text(encoding="utf-8"))
-_SYSTEM_PROMPT = _PROMPTS["system_prompt"]
-_USER_PROMPT_TEMPLATE = _PROMPTS["user_prompt_template"]
+from src.llm.factory import get_llm  # compatibility seam; deterministic audit never calls it
 
 
-# ── Node function ─────────────────────────────────────────────────────────────
+def _valid_score(item: dict[str, Any]) -> bool:
+    evaluations = item.get("evaluations") or []
+    weighted = [(evaluation, 3 if evaluation.get("priority") == "must_have" else 1) for evaluation in evaluations if evaluation.get("priority") != "deal_breaker" and evaluation.get("status") != "unsupported"]
+    denominator = sum(weight for _, weight in weighted)
+    expected = sum(weight for evaluation, weight in weighted if evaluation.get("status") == "matched") / denominator if denominator else 0.0
+    return math.isclose(float(item.get("fit_score", -1)), expected, abs_tol=0.0001)
+
 
 def reflection_node(state: AgentState) -> dict:
-    """
-    LangGraph node: audit the comparison engine's output for quality.
-
-    Args:
-        state: Current AgentState. Reads `comparison_result` and `retry_count`.
-
-    Returns:
-        Partial state dict updating `reflection_output`, `needs_retry`,
-        `retry_tool`, and `retry_count`.
-    """
-    logger.info("reflection: auditing comparison result")
-
-    llm = get_llm(streaming=False)
-
-    user_message = _USER_PROMPT_TEMPLATE.format(
-        comparison_result=json.dumps(state.comparison_result, ensure_ascii=False, indent=2),
-    )
-
-    messages = [
-        SystemMessage(content=_SYSTEM_PROMPT),
-        HumanMessage(content=user_message),
-    ]
-
-    response = llm.invoke(messages)
-    raw = response.content.strip()
-
-    try:
-        reflection_output = parse_llm_json(raw)
-    except json.JSONDecodeError:
-        logger.error("reflection: LLM returned non-JSON output:\n%s", raw)
-        # Fail safe: treat as failed quality check so we can retry or escalate
-        reflection_output = {
-            "ok": False,
-            "issues": ["reflection node could not parse LLM response"],
-            "confidence": 0.0,
-        }
-
-    ok: bool = reflection_output.get("ok", False)
-    current_retry_count: int = state.retry_count
-    needs_retry = not ok and current_retry_count < settings.max_retries
-
-    if needs_retry:
-        logger.warning(
-            "reflection: comparison failed quality check (retry %d/%d). Issues: %s",
-            current_retry_count + 1,
-            settings.max_retries,
-            reflection_output.get("issues", []),
-        )
-    else:
-        logger.info(
-            "reflection: comparison passed (ok=%s, confidence=%.2f)",
-            ok,
-            reflection_output.get("confidence", 0.0),
-        )
+    """Withhold candidates whose identity, source, snapshot, or score cannot be audited."""
+    raw_by_id = {
+        str(item.get("property_id") or item.get("id") or index): item
+        for index, item in enumerate(state.retrieved_properties)
+    }
+    valid: list[dict[str, Any]] = []
+    issues: list[str] = []
+    for scored in (state.comparison_result or {}).get("properties", []):
+        property_id = str(scored.get("id", ""))
+        raw = raw_by_id.get(property_id)
+        property_issues = []
+        if raw is None:
+            property_issues.append("identity is absent from retrieved evidence")
+        elif state.data_source != "active":
+            property_issues.append("recommendations must come from the active snapshot")
+        else:
+            if not raw.get("link"):
+                property_issues.append("listing source is missing")
+            if not raw.get("post_date"):
+                property_issues.append("snapshot observation date is missing")
+        if not _valid_score(scored):
+            property_issues.append("fit arithmetic is invalid")
+        if property_issues:
+            issues.extend(f"{property_id}: {issue}" for issue in property_issues)
+        else:
+            valid.append(scored)
 
     return {
-        "reflection_output": reflection_output,
-        "needs_retry": needs_retry,
-        "retry_count": current_retry_count + (1 if needs_retry else 0),
+        "comparison_result": {"properties": valid},
+        "reflection_output": {"ok": not issues, "issues": issues, "withheld_count": len(issues)},
+        "needs_retry": False,
+        "retry_count": state.retry_count,
     }
 
 
-# ── Conditional edge router ───────────────────────────────────────────────────
-
-def route_after_reflection(state: AgentState) -> str:
-    """
-    Called by LangGraph's add_conditional_edges after the reflection node runs.
-
-    Returns:
-        "answer_generation" — comparison passed, proceed to final answer
-        "tool_router"       — comparison failed, signal upstream to retry
-    """
-    if state.needs_retry:
-        return "tool_router"
+def route_after_reflection(_: AgentState) -> str:
     return "answer_generation"

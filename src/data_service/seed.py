@@ -67,6 +67,21 @@ def clean_row(row):
             data[k] = str(v) if v is not None else None
     return data
 
+
+def _to_database_record(record, model_class):
+    """Translate public ORM attribute names to physical database column names."""
+    column_names = {
+        attribute.key: attribute.columns[0].name
+        for attribute in model_class.__mapper__.column_attrs
+    }
+    unknown_fields = sorted(set(record) - set(column_names))
+    if unknown_fields:
+        raise ValueError(
+            f"Unsupported columns for {model_class.__tablename__}: "
+            f"{', '.join(unknown_fields)}"
+        )
+    return {column_names[key]: value for key, value in record.items()}
+
 def seed_table(csv_path: str, model_class, truncate_first: bool = False):
     if not os.path.exists(csv_path):
         logger.warning(f"CSV file not found: {csv_path}, skipping.")
@@ -110,10 +125,13 @@ def seed_table(csv_path: str, model_class, truncate_first: bool = False):
             if has_unique:
                 # Use dialect-specific INSERT ... ON CONFLICT DO UPDATE.
                 dialect_name = session.bind.dialect.name
-                
+                database_records = [
+                    _to_database_record(record, model_class) for record in records
+                ]
+
                 chunk_size = 50
-                for i in range(0, len(records), chunk_size):
-                    chunk = records[i:i + chunk_size]
+                for i in range(0, len(database_records), chunk_size):
+                    chunk = database_records[i:i + chunk_size]
                     if dialect_name == "postgresql":
                         from sqlalchemy.dialects.postgresql import insert as pg_insert
                         stmt = pg_insert(model_class).values(chunk)
@@ -155,8 +173,9 @@ def seed_table(csv_path: str, model_class, truncate_first: bool = False):
             return inserted, skipped
         except Exception as e:
             session.rollback()
-            logger.error(f"Error during insert: {e}")
-            return 0, len(records)
+            raise RuntimeError(
+                f"Failed to seed {model_class.__tablename__} from {csv_path}"
+            ) from e
 
 def seed_all(reset_active: bool = False):
     logger.info("Starting database seeding...")
