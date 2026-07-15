@@ -1,10 +1,20 @@
 from collections.abc import AsyncIterator
+import json
 
 from fastapi.testclient import TestClient
+import pytest
 
 from src.agent_api import app as api_module
 from src.agent_api.app import RunRequest, _live_events, _property_payloads, app
 from src.buyer_brief import BuyerBrief, Criterion
+
+
+def _event_name(chunk: str) -> str:
+    return chunk.splitlines()[0].removeprefix("event: ")
+
+
+def _event_data(chunk: str) -> dict:
+    return json.loads(next(line.removeprefix("data: ") for line in chunk.splitlines() if line.startswith("data: ")))
 
 
 def _brief() -> dict:
@@ -74,3 +84,57 @@ def test_area_compare_requires_two_or_three_areas(monkeypatch):
     response = client.post("/api/areas/compare", json={"areas": ["Dubai Marina", "Business Bay"]})
     assert response.status_code == 200
     assert [item["area"] for item in response.json()["areas"]] == ["Dubai Marina", "Business Bay"]
+
+
+@pytest.mark.asyncio
+async def test_property_run_streams_audited_counts_then_structured_guidance(monkeypatch):
+    from src.agents import graph as graph_module
+    from src.memory import long_term_memory as memory_module
+
+    final_state = {
+        "route": "property_search",
+        "data_source": "active",
+        "candidate_count": 20,
+        "audited_count": 20,
+        "retrieved_properties": [{
+            "id": "p-1", "property_id": "p-1", "property_name": "Marina Residence",
+            "area_name": "Dubai Marina", "price": 1_500_000, "post_date": "2026-07-02",
+            "link": "https://example.test/p-1",
+        }],
+        "comparison_result": {"candidate_count": 20, "audited_count": 20, "properties": [{
+            "id": "p-1", "fit_score": 1, "evidence_coverage": 1, "suitability": "suitable",
+            "matched_criteria": ["area", "budget"], "conflicting_criteria": [],
+            "unknown_criteria": [], "unsupported_criteria": [], "evaluations": [],
+        }]},
+        "buyer_guidance": {
+            "version": 1, "outcome": "matches", "best_match_id": "p-1", "runner_up_id": None,
+            "reasons": [{"property_id": "p-1", "code": "all_verifiable_criteria_matched", "criterion_ids": ["area", "budget"]}],
+            "caveats": [], "next_action": "review_best_match",
+        },
+    }
+
+    class FakeGraph:
+        async def astream_events(self, *_args, **_kwargs):
+            yield {"name": "LangGraph", "event": "on_chain_end", "data": {"output": final_state}}
+
+    class FakeConnection:
+        async def close(self):
+            return None
+
+    class FakeCheckpointer:
+        conn = FakeConnection()
+
+    async def fake_checkpointer():
+        return FakeCheckpointer()
+
+    monkeypatch.setattr(graph_module, "build_graph", lambda checkpointer: FakeGraph())
+    monkeypatch.setattr(memory_module, "create_async_checkpointer", fake_checkpointer)
+
+    chunks = [chunk async for chunk in _live_events(RunRequest(brief=BuyerBrief.model_validate(_brief()), thread_id="contract-test"))]
+
+    assert [_event_name(chunk) for chunk in chunks] == ["run_started", "properties", "sources", "guidance", "run_completed"]
+    properties = _event_data(chunks[1])
+    assert properties["candidate_count"] == 20
+    assert properties["audited_count"] == 20
+    assert properties["total_matches"] == 1
+    assert _event_data(chunks[3])["guidance"]["best_match_id"] == "p-1"

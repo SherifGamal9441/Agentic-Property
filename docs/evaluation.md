@@ -6,10 +6,10 @@ Update this table only from a complete release-gate run.
 
 | Gate | Verified result |
 |---|---|
-| Python | 69 passed |
-| React/Vitest | 8 passed |
-| Production build | Passed; 223.17 kB initial JS, MapLibre isolated in a lazy 1,055.14 kB chunk, no Vite size warning |
-| Playwright presets | 6 passed in Chromium |
+| Python | 75 passed |
+| React/Vitest | 11 passed |
+| Production build | Passed; 238.17 kB initial JS, MapLibre isolated in a lazy 1,055.14 kB chunk, no Vite size warning |
+| Playwright journeys | 8 passed in Chromium |
 | Compose configuration and health | Passed; PostgreSQL, data service, agent API, and frontend healthy |
 | Frozen data preflight | Passed; provider, checksums, Compose, services, and ports verified |
 | Diff whitespace | Passed |
@@ -18,13 +18,13 @@ Update this table only from a complete release-gate run.
 
 Each preset was interpreted by the configured live model and executed through the real graph against snapshot `active-2026-07-02-v1`. No cached or replayed response was used.
 
-| Preset | Audited matches | First ranked home | Evidence |
-|---|---:|---|---|
-| Ready 2BR in Dubai Marina under AED 2M, no off-plan | 3 | MARINA DIAMOND 5 (A) | Strong |
-| Ready 3BR in Al Furjan under AED 3M | 5 | EQUITI HOME-A | Strong |
-| Furnished 1BR in Business Bay under AED 1.5M | 9 | Reva Residences | Strong |
+| Preset | Candidates audited | Released matches | First ranked home | Evidence |
+|---|---:|---:|---|---|
+| Ready 2BR in Dubai Marina under AED 2M, no off-plan | 3 | 3 | MARINA DIAMOND 5 (A), `15642277` | Strong |
+| Ready 3BR in Al Furjan under AED 3M | 5 | 5 | EQUITI HOME-A, `15646637` | Strong |
+| Furnished 1BR in Business Bay under AED 1.5M | 17 | 9 | Reva Residences, `15687720` | Strong |
 
-The Marina run completed in approximately 12 seconds after disabling hidden reasoning for the configured custom Qwen endpoint. Deterministic retrieval, comparison, and evidence-audit stages completed in under one second combined; model-backed scope classification and guidance account for most latency.
+The 2026-07-15 release rehearsal verified the production property-search sequence `run_started → agent_step* → properties → sources → guidance → run_completed` for the structured completion contract. Deterministic retrieval, comparison, and evidence audit account for candidate/match counts; model-backed scope classification and structured guidance account for most latency.
 
 ## Manual acceptance
 

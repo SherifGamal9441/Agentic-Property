@@ -25,6 +25,7 @@ def reflection_node(state: AgentState) -> dict:
     }
     valid: list[dict[str, Any]] = []
     issues: list[str] = []
+    withheld_count = 0
     for scored in (state.comparison_result or {}).get("properties", []):
         property_id = str(scored.get("id", ""))
         raw = raw_by_id.get(property_id)
@@ -41,13 +42,22 @@ def reflection_node(state: AgentState) -> dict:
         if not _valid_score(scored):
             property_issues.append("fit arithmetic is invalid")
         if property_issues:
+            withheld_count += 1
             issues.extend(f"{property_id}: {issue}" for issue in property_issues)
         else:
             valid.append(scored)
 
     return {
-        "comparison_result": {"properties": valid},
-        "reflection_output": {"ok": not issues, "issues": issues, "withheld_count": len(issues)},
+        "comparison_result": {
+            "properties": valid,
+            "candidate_count": state.candidate_count or min(20, len(state.retrieved_properties)),
+            "audited_count": state.audited_count or len((state.comparison_result or {}).get("properties", [])),
+            "withheld_count": withheld_count,
+        },
+        "reflection_output": {"ok": not issues, "issues": issues, "withheld_count": withheld_count},
+        "candidate_count": state.candidate_count or min(20, len(state.retrieved_properties)),
+        "audited_count": state.audited_count or len((state.comparison_result or {}).get("properties", [])),
+        "withheld_count": withheld_count,
         "needs_retry": False,
         "retry_count": state.retry_count,
     }

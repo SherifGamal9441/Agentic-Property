@@ -1,4 +1,4 @@
-import type { BuyerBrief, MarketContext, Property, Relaxation, SourceItem, TraceStep } from "./types";
+import type { BuyerBrief, MarketContext, PropertyEvent, PropertyGuidance, Relaxation, SourceItem, TraceStep } from "./types";
 
 const API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8002";
 
@@ -11,11 +11,12 @@ async function errorMessage(response: Response) {
   }
 }
 
-export async function interpretBrief(query: string, threadId?: string): Promise<BuyerBrief> {
+export async function interpretBrief(query: string, threadId?: string, signal?: AbortSignal): Promise<BuyerBrief> {
   const response = await fetch(`${API_URL}/api/briefs/interpret`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, thread_id: threadId }),
+    signal,
   });
   if (!response.ok) throw new Error(await errorMessage(response));
   return response.json() as Promise<BuyerBrief>;
@@ -24,18 +25,20 @@ export async function interpretBrief(query: string, threadId?: string): Promise<
 type RunHandlers = {
   onStarted: (payload: { thread_id: string; snapshot_id: string }) => void;
   onStep: (step: TraceStep) => void;
-  onProperties: (properties: Property[]) => void;
+  onProperties: (payload: PropertyEvent) => void;
   onSources: (sources: SourceItem[]) => void;
   onToken: (token: string) => void;
   onRelaxations: (items: Relaxation[]) => void;
+  onGuidance: (guidance: PropertyGuidance) => void;
   onCompleted: (payload: Record<string, unknown>) => void;
 };
 
-export async function runBrief(brief: BuyerBrief, threadId: string, handlers: RunHandlers) {
+export async function runBrief(brief: BuyerBrief, threadId: string, handlers: RunHandlers, signal?: AbortSignal) {
   const response = await fetch(`${API_URL}/api/runs`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ brief, thread_id: threadId }),
+    signal,
   });
   if (!response.ok || !response.body) throw new Error(await errorMessage(response));
   const reader = response.body.getReader();
@@ -48,10 +51,11 @@ export async function runBrief(brief: BuyerBrief, threadId: string, handlers: Ru
     const data = JSON.parse(dataLine) as Record<string, unknown>;
     if (event === "run_started") handlers.onStarted(data as { thread_id: string; snapshot_id: string });
     if (event === "agent_step") handlers.onStep(data as TraceStep);
-    if (event === "properties") handlers.onProperties(data.properties as Property[]);
+    if (event === "properties") handlers.onProperties(data as unknown as PropertyEvent);
     if (event === "sources") handlers.onSources(data.items as SourceItem[]);
     if (event === "answer_token") handlers.onToken(data.token as string);
     if (event === "relaxation_options") handlers.onRelaxations(data.criteria as Relaxation[]);
+    if (event === "guidance") handlers.onGuidance(data.guidance as PropertyGuidance);
     if (event === "run_completed") handlers.onCompleted(data);
     if (event === "run_failed") throw new Error(String(data.message || "Live run failed."));
   };

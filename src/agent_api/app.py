@@ -58,7 +58,7 @@ class AreaCompareRequest(BaseModel):
 _NODE_LABELS = {
     "memory": "Restoring this research session",
     "query_relevancy": "Checking Dubai property scope",
-    "query_understanding": "Validating your confirmed brief",
+    "query_understanding": "Validating your structured brief",
     "query_routing": "Searching the frozen listing snapshot",
     "web_search": "Checking cited market sources",
     "comparison_engine": "Evaluating criteria deterministically",
@@ -257,7 +257,11 @@ async def _live_events(request: RunRequest) -> AsyncIterator[str]:
                 elif kind == "on_chain_end" and name in _NODE_LABELS:
                     duration = round((time.perf_counter() - started.get(name, time.perf_counter())) * 1000)
                     yield _sse("agent_step", {"node": name, "label": _NODE_LABELS[name], "status": "completed", "duration_ms": duration})
-                elif kind == "on_chat_model_stream" and event.get("metadata", {}).get("langgraph_node") == "answer_generation":
+                elif (
+                    request.brief.mode != "property_search"
+                    and kind == "on_chat_model_stream"
+                    and event.get("metadata", {}).get("langgraph_node") == "answer_generation"
+                ):
                     token = event["data"]["chunk"].content
                     if token:
                         yield _sse("answer_token", {"token": token})
@@ -266,8 +270,20 @@ async def _live_events(request: RunRequest) -> AsyncIterator[str]:
                     final_state = output.model_dump() if hasattr(output, "model_dump") else output
 
         properties = _property_payloads(final_state)
-        yield _sse("properties", {"total_matches": len(properties), "shown_count": min(6, len(properties)), "properties": properties})
+        comparison = final_state.get("comparison_result") or {}
+        candidate_count = int(final_state.get("candidate_count") or comparison.get("candidate_count") or min(20, len(final_state.get("retrieved_properties") or [])))
+        audited_count = int(final_state.get("audited_count") or comparison.get("audited_count") or candidate_count)
+        yield _sse("properties", {
+            "candidate_count": candidate_count,
+            "audited_count": audited_count,
+            "total_matches": len(properties),
+            "shown_count": min(6, len(properties)),
+            "properties": properties,
+        })
         yield _sse("sources", {"items": _source_items(properties) + _web_source_items(final_state)})
+        if request.brief.mode == "property_search" and final_state.get("buyer_guidance"):
+            guidance = final_state["buyer_guidance"]
+            yield _sse("guidance", {"guidance": guidance.model_dump() if hasattr(guidance, "model_dump") else guidance})
         if request.brief.mode == "property_search" and not properties:
             yield _sse("relaxation_options", {"criteria": await _relaxation_options(request.brief)})
         coverages = [item.get("evidence_coverage", 0) or 0 for item in properties]

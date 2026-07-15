@@ -1,11 +1,13 @@
 # Implementation tasks
 
-- [x] Structured brief contract and confirm-first API.
+- [x] Structured brief contract and submit-as-confirmation orchestration.
 - [x] Deterministic scoring, hard-rule behavior, and evidence audit.
 - [x] Active-only listing search and explicit relaxation impact.
 - [x] Robust historical price bands and area comparison.
 - [x] Building/unit truth correction in API, schema, and snapshot headers.
-- [x] Editorial/cinematic React journey, lazy map, top-six reveal, decision state, affordability, dossier, and case study.
+- [x] Validated structured property guidance, audited counters, and ordered SSE contract.
+- [x] Cancellable cinematic trace, completion takeover, compact brief editor, restrained evidence metrics, and top-six reveal.
+- [x] Four-home comparison, shortlist filter, affordability selector, recent live reruns, clipboard summary, dossier, and case study.
 - [x] Provider-safe environment template and read-only preflight.
 - [x] Authoritative spec and deep documentation.
-- [x] Full release gate and three-preset live provider rehearsal recorded in `docs/evaluation.md`.
+- [x] Refresh the full release gate and three-preset live provider rehearsal in `docs/evaluation.md`.

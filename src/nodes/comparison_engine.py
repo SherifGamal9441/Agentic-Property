@@ -121,5 +121,15 @@ def comparison_engine_node(state: AgentState) -> dict:
             item["id"],
         )
     )
+    candidate_count = min(20, len(state.retrieved_properties))
     logger.info("comparison_engine: deterministically evaluated %d properties", len(results))
-    return {"comparison_result": {"properties": results}}
+    return {
+        "comparison_result": {
+            "properties": results,
+            "candidate_count": candidate_count,
+            "audited_count": len(results),
+            "withheld_count": 0,
+        },
+        "candidate_count": candidate_count,
+        "audited_count": len(results),
+    }

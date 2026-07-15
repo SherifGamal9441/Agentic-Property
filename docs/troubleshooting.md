@@ -18,7 +18,15 @@ The run is live-only. Check the endpoint from the host and container, selected m
 
 ## Empty preset
 
-Do not relax automatically. Confirm DVC identity and database record counts, inspect the structured brief, and replace the preset before release if the frozen snapshot genuinely changed.
+Do not relax automatically. Confirm DVC identity and database record counts, open **Edit brief**, and inspect the highlighted blocked criterion. **Apply & rerun** is the only way to commit a relaxation. Replace the preset before release if the frozen snapshot genuinely changed.
+
+## A run was cancelled
+
+The validated brief remains available. Select **Run again** to start a fresh live request or **Edit brief** to correct it. Cancelled, failed, and recent-search runs never replay a prior answer or result set.
+
+## Clipboard is unavailable
+
+The browser Clipboard API may require a secure context or explicit permission. The decision workspace remains usable; no toast or hidden fallback stores the summary.
 
 ## Map unavailable
 

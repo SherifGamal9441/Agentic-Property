@@ -23,7 +23,8 @@ def test_comparison_engine_uses_stable_sort_after_fit_and_coverage():
     result = comparison_engine_node(state)
 
     assert [item["id"] for item in result["comparison_result"]["properties"]] == ["a", "b"]
-    assert set(result) == {"comparison_result"}
+    assert result["candidate_count"] == 2
+    assert result["audited_count"] == 2
 
 
 def test_deal_breaker_conflict_excludes_without_affecting_fit_weight():

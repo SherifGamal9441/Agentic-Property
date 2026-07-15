@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 
@@ -47,13 +47,21 @@ const properties: Property[] = Array.from({ length: 8 }, (_, index) => ({
   unsupported_criteria: [],
 }));
 
+const completedRun = (items: Property[] = []) => new Response([
+  `event: run_started\ndata: {"thread_id":"thread-1","snapshot_id":"active-2026-07-02-v1"}\n\n`,
+  `event: properties\ndata: ${JSON.stringify({ candidate_count: items.length, audited_count: items.length, total_matches: items.length, shown_count: items.length, properties: items })}\n\n`,
+  `event: sources\ndata: {"items":[]}\n\n`,
+  `event: guidance\ndata: ${JSON.stringify({ guidance: { version: 1, outcome: items.length ? "matches" : "no_match", best_match_id: items[0]?.id || null, runner_up_id: items[1]?.id || null, reasons: [], caveats: [], next_action: items.length ? "review_best_match" : "edit_brief" } })}\n\n`,
+  `event: run_completed\ndata: {"route":"query_routing","data_source":"active","evidence_quality":"strong"}\n\n`,
+].join(""), { status: 200, headers: { "Content-Type": "text/event-stream" } });
+
 afterEach(() => {
   localStorage.clear();
   location.hash = "";
   vi.unstubAllGlobals();
 });
 
-test("requires buyer confirmation before starting a run", async () => {
+test("interprets and automatically starts the live run with one action", async () => {
   const fetchMock = vi.fn()
     .mockResolvedValueOnce(new Response(JSON.stringify(brief), { status: 200, headers: { "Content-Type": "application/json" } }))
     .mockResolvedValueOnce(new Response([
@@ -67,12 +75,12 @@ test("requires buyer confirmation before starting a run", async () => {
   render(<App />);
 
   await user.type(screen.getByLabelText("Describe your ideal Dubai home"), brief.original_query);
-  await user.click(screen.getByRole("button", { name: "Interpret my brief" }));
+  await user.click(screen.getByRole("button", { name: "Find matching homes" }));
 
-  expect(await screen.findByText("Confirm what Aizen understood")).toBeInTheDocument();
-  expect(fetchMock).toHaveBeenCalledTimes(1);
-  await user.click(screen.getByRole("button", { name: "Confirm & search" }));
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+  expect(screen.queryByText("Confirm what Aizen understood")).not.toBeInTheDocument();
+  expect(await screen.findByText("No exact snapshot match")).toBeInTheDocument();
+  expect(screen.getAllByRole("button", { name: "Edit brief" })).toHaveLength(2);
 });
 
 test("shows six ranked homes first and reveals the rest on demand", async () => {
@@ -118,4 +126,46 @@ test("offers the recruiter case study through hash navigation", () => {
 
   expect(screen.getByRole("heading", { name: "From prompt to auditable buyer decision" })).toBeInTheDocument();
   expect(screen.getByText("Eight nodes, one evidence contract")).toBeInTheDocument();
+});
+
+test("brief drawer applies edits and reruns the structured brief", async () => {
+  const fetchMock = vi.fn().mockResolvedValue(completedRun(properties.slice(0, 1)));
+  vi.stubGlobal("fetch", fetchMock);
+  const user = userEvent.setup();
+  render(<App initialProperties={properties.slice(0, 1)} initialBrief={brief} />);
+
+  await user.click(screen.getAllByRole("button", { name: "Edit brief" })[0]);
+  await user.clear(screen.getByLabelText("Value for Dubai Marina"));
+  await user.type(screen.getByLabelText("Value for Dubai Marina"), "Business Bay");
+  await user.click(screen.getByRole("button", { name: "Apply & rerun" }));
+
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+  expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body)).brief.criteria[0].value).toBe("Business Bay");
+});
+
+test("selected homes open a side-by-side evidence matrix", async () => {
+  const user = userEvent.setup();
+  render(<App initialProperties={properties.slice(0, 2)} initialBrief={brief} />);
+
+  await user.click(screen.getByRole("button", { name: "Compare top matches" }));
+
+  expect(screen.getByLabelText("Property comparison")).toBeInTheDocument();
+  expect(screen.getByRole("rowheader", { name: "Evidence coverage" })).toBeInTheDocument();
+  expect(within(screen.getByLabelText("Property comparison")).getAllByRole("button", { name: /Remove Marina Residence .* from comparison/ })).toHaveLength(2);
+});
+
+test("a running request can be cancelled without replaying results", async () => {
+  const fetchMock = vi.fn()
+    .mockResolvedValueOnce(new Response(JSON.stringify(brief), { status: 200, headers: { "Content-Type": "application/json" } }))
+    .mockImplementationOnce((_url, init: RequestInit) => new Promise((_resolve, reject) => init.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")))));
+  vi.stubGlobal("fetch", fetchMock);
+  const user = userEvent.setup();
+  render(<App />);
+
+  await user.type(screen.getByLabelText("Describe your ideal Dubai home"), brief.original_query);
+  await user.click(screen.getByRole("button", { name: "Find matching homes" }));
+  await user.click(await screen.findByRole("button", { name: "Cancel run" }));
+
+  expect(await screen.findByRole("heading", { name: "Your brief is ready when you are." })).toBeInTheDocument();
+  expect(screen.queryByRole("article", { name: /Marina Residence/ })).not.toBeInTheDocument();
 });

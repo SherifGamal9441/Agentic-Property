@@ -1,19 +1,20 @@
 # Aizen
 
-**Aizen is an evidence-first Dubai home-buying copilot: describe a home, confirm the interpreted criteria, and receive deterministic, source-audited matches from a frozen listing snapshot.**
+**Aizen is an evidence-first Dubai home-buying copilot: describe a home once, watch a live eight-node investigation, and receive deterministic, source-audited matches from a frozen listing snapshot.**
 
 ![Aizen flagship buyer workspace](docs/assets/aizen-home.png)
 
 ## The 60-second demo
 
 1. Choose “Ready 2BR in Dubai Marina under AED 2M, no off-plan.”
-2. Inspect and confirm editable must-have, nice-to-have, and deal-breaker criteria.
-3. Watch the live eight-node agent trace; open a ranked home's evidence profile.
-4. Shortlist homes, compare area context, enter an affordability scenario, and print the buyer dossier.
+2. Select **Find matching homes**; Aizen interprets and immediately runs the validated brief.
+3. Meet the completion takeover, review its evidence metrics, and open the best match's evidence profile.
+4. Edit and rerun the compact brief, compare up to four homes, enter an affordability scenario, and print the buyer dossier.
 
 ## Why it is technically credible
 
-- A validated `BuyerBrief` separates model interpretation from buyer authority.
+- A validated `BuyerBrief` separates model interpretation from search execution; submit authorizes the first run and later edits require **Apply & rerun**.
+- `PropertyGuidance` references audited properties and criteria instead of trusting free-form factual prose.
 - MCP isolates listing retrieval behind typed filters and preserves provider flexibility.
 - Deterministic code—not an LLM—evaluates criteria, weights fit, and audits invariants.
 - Active listing evidence and historical transaction context never substitute for one another.
@@ -24,7 +25,7 @@
 ```mermaid
 flowchart LR
   B["Natural-language brief"] --> I["Live LLM interpretation"]
-  I --> C["Buyer edits and confirms"]
+  I --> C["Validated brief runs immediately"]
   C --> G["Eight-node LangGraph"]
   G --> M["MCP active snapshot search"]
   M --> S["Deterministic score"]
@@ -61,7 +62,7 @@ Open [http://localhost:5173](http://localhost:5173). No model response is cached
 - Ready 3BR in Al Furjan under AED 3M.
 - Furnished 1BR in Business Bay under AED 1.5M.
 
-Presets populate the brief only. They still run the complete live agent.
+Presets populate the query, then the same one-action path interprets and runs the complete live agent.
 
 ## Tests and evaluation
 

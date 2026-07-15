@@ -34,6 +34,10 @@ def test_known_hard_conflict_excludes_and_unknown_must_have_is_conditional():
     assert result[1]["id"] == "excluded"
     assert result[1]["suitability"] == "excluded"
 
+    metadata = comparison_engine_node(state)
+    assert metadata["candidate_count"] == 2
+    assert metadata["audited_count"] == 2
+
 
 def test_scoring_is_weighted_and_unsupported_criteria_do_not_enter_arithmetic():
     brief = _brief(
@@ -108,4 +112,5 @@ def test_reflection_withholds_invalid_identity_or_source_without_retry():
 
     assert result["needs_retry"] is False
     assert result["reflection_output"]["ok"] is False
+    assert result["withheld_count"] == 1
     assert result["comparison_result"]["properties"] == []

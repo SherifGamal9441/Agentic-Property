@@ -19,6 +19,7 @@ Ownership map:
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.buyer_brief import BuyerBrief
+from src.buyer_guidance import PropertyGuidance
 
 
 class AgentState(BaseModel):
@@ -126,3 +127,10 @@ class AgentState(BaseModel):
     into LLM prompts. Built by the memory node at the start of each turn."""
     buyer_brief: BuyerBrief | None = None
     """Buyer-confirmed structured contract. Property runs require this value."""
+
+    buyer_guidance: PropertyGuidance | None = None
+    """Validated property references used by the decision UI."""
+
+    candidate_count: int = 0
+    audited_count: int = 0
+    withheld_count: int = 0

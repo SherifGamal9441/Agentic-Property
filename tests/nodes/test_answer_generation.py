@@ -14,6 +14,7 @@ import pytest
 
 from src.nodes.answer_generation import answer_generation_node, _build_messages, _format_comparison_for_prompt
 from src.agents.state import AgentState
+from src.buyer_brief import BuyerBrief, Criterion
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -138,3 +139,37 @@ def test_excluded_properties_never_enter_buyer_guidance():
 
     assert "Do not recommend" not in formatted
     assert "No property in the frozen listing snapshot" in messages[1].content
+
+
+@patch("src.nodes.answer_generation.get_llm")
+def test_property_guidance_is_structured_and_repaired_once(mock_get_llm):
+    brief = BuyerBrief(
+        original_query="Home in Dubai Marina",
+        criteria=[Criterion(id="area", label="Dubai Marina", priority="must_have", field="area", operator="contains", value="Dubai Marina")],
+    )
+    state = AgentState(
+        query=brief.original_query,
+        buyer_brief=brief,
+        route="query_routing",
+        data_intent="recommend",
+        comparison_result={"properties": [{
+            "id": "one",
+            "title": "Marina Home",
+            "suitability": "suitable",
+            "fit_score": 1,
+            "evidence_coverage": 1,
+            "evaluations": [{"criterion_id": "area", "status": "matched"}],
+        }]},
+    )
+    llm = MagicMock()
+    llm.invoke.side_effect = [
+        MagicMock(content="not json"),
+        MagicMock(content='{"version":1,"outcome":"matches","best_match_id":"one","runner_up_id":null,"reasons":[],"caveats":[],"next_action":"review_best_match"}'),
+    ]
+    mock_get_llm.return_value = llm
+
+    result = answer_generation_node(state)
+
+    assert result["buyer_guidance"].best_match_id == "one"
+    assert result["final_answer"] == "Best match: Marina Home. No known criterion gaps in the captured fields."
+    assert llm.invoke.call_count == 2

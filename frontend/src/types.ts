@@ -66,6 +66,24 @@ export type Property = {
 export type TraceStep = { node: string; label: string; status: "started" | "completed"; duration_ms?: number };
 export type SourceItem = { title: string; url: string; observed_at: string | null; kind: string };
 export type Relaxation = { criterion_id: string; resulting_match_count: number };
+export type RunStatus = "idle" | "interpreting" | "running" | "completed" | "failed" | "cancelled";
+export type RunStats = { candidate_count: number; audited_count: number; total_matches: number; shown_count: number };
+export type GuidanceReason = {
+  property_id: string;
+  code: "all_verifiable_criteria_matched" | "highest_fit" | "highest_evidence" | "lowest_price_tiebreak";
+  criterion_ids: string[];
+};
+export type GuidanceCaveat = { property_id: string | null; criterion_id: string; status: "conflict" | "unknown" | "unsupported" };
+export type PropertyGuidance = {
+  version: 1;
+  outcome: "matches" | "conditional" | "no_match";
+  best_match_id: string | null;
+  runner_up_id: string | null;
+  reasons: GuidanceReason[];
+  caveats: GuidanceCaveat[];
+  next_action: "review_best_match" | "compare_matches" | "edit_brief";
+};
+export type PropertyEvent = RunStats & { properties: Property[] };
 export type MarketContext = {
   area: string;
   matching_basis?: string[];
@@ -92,3 +110,4 @@ export type AffordabilityInput = {
   moving: number;
   annualService: number;
 };
+export type ScenarioForm = Record<"deposit" | "annualRate" | "years" | "transfer" | "finance" | "moving" | "annualService", string>;
