@@ -58,7 +58,7 @@ flowchart LR
   data -. service fallback .-> sqlite[(SQLite)]
   data --> snapshot[DVC data snapshot]
   browser --> local[(Browser-local briefs, shortlist, notes, scenarios)]
-  graph -. historical context .-> data
+  langgraph -. historical context .-> data
 ```
 
 The browser owns presentation and private workspace state. The agent API validates requests and streams progress. MCP keeps listing retrieval behind a typed boundary. PostgreSQL is primary, with SQLite as the local fallback.
@@ -71,18 +71,118 @@ See [data provenance](docs/data-provenance.md) for DVC pointers, checksums, fiel
 
 ## Run it locally
 
-You need Docker Desktop, Git, DVC access to the configured remote, and one live LLM provider.
+### Prerequisites
+
+- Docker Desktop with Compose
+- Git
+- Python 3.13 or later and [uv](https://docs.astral.sh/uv/getting-started/installation/)
+- Access to the DVC remote configured in `.dvc/config`
+- One live LLM provider
+
+### 1. Get the code
+
+```bash
+git clone https://github.com/SherifGamal9441/Agentic-Property.git
+cd Agentic-Property
+uv sync
+```
+
+### 2. Create the environment file
+
+PowerShell:
 
 ```powershell
 Copy-Item .env.example .env
-# Edit .env for exactly one provider.
-uv sync
-uv run dvc pull
-uv run python scripts/preflight.py
-docker compose up --build -d
 ```
 
-Open [http://localhost:5173](http://localhost:5173), then try one of these searches:
+macOS or Linux:
+
+```bash
+cp .env.example .env
+```
+
+### 3. Configure one LLM provider
+
+Edit `.env` and choose exactly one provider. The application validates the selected provider before startup.
+
+For the simplest hosted setup, use Groq:
+
+```dotenv
+LLM_PROVIDER=groq
+GROQ_MODEL=<model available in your Groq account>
+GROQ_API_KEY=<your Groq API key>
+```
+
+For a local model served by Ollama:
+
+```bash
+ollama serve
+ollama pull <your-model>
+```
+
+```dotenv
+LLM_PROVIDER=ollama
+OLLAMA_MODEL=<your-model>
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+```
+
+For vLLM:
+
+```dotenv
+LLM_PROVIDER=vllm
+VLLM_MODEL=<your-model>
+VLLM_BASE_URL=http://host.docker.internal:8888/v1
+VLLM_API_KEY=<your-vllm-key-or-not-needed>
+```
+
+For another OpenAI-compatible endpoint:
+
+```dotenv
+LLM_PROVIDER=custom_openai_compatible_endpoint
+CUSTOM_OPENAI_MODEL=<your-model>
+CUSTOM_OPENAI_BASE_URL=https://your-endpoint.example/v1
+OPENAI_API_KEY=<your-api-key>
+```
+
+`TAVILY_API_KEY` and `EXCHANGERATE_API_KEY` are optional. They enable web research and currency conversion. LangSmith tracing is also optional:
+
+```dotenv
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=<your LangSmith API key>
+LANGSMITH_PROJECT=agentic-property
+```
+
+### 4. Pull the data and run preflight
+
+```bash
+uv run dvc pull
+uv run python scripts/preflight.py
+```
+
+Preflight checks the selected provider, provider reachability, DVC checksums, Compose configuration, service health, and required ports. If the DVC remote requests credentials, configure them before running `dvc pull`.
+
+### 5. Start the application
+
+```bash
+docker compose up --build -d
+docker compose ps
+```
+
+The stack exposes the frontend at port `5173`, the data service at `8000`, and the agent API at `8002`. Open [http://localhost:5173](http://localhost:5173) when the services report healthy.
+
+To follow agent logs:
+
+```bash
+docker compose logs -f agent-api
+```
+
+To stop the stack:
+
+```bash
+docker compose down
+```
+
+Once the app is open, try one of these searches:
 
 - Ready 2BR in Dubai Marina under AED 2M, no off-plan.
 - Ready 3BR in Al Furjan under AED 3M.
