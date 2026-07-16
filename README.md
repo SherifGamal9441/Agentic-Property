@@ -8,7 +8,7 @@ Aizen is a buyer-first workspace for Dubai property search. Describe the home yo
 
 ![Aizen home-buying workspace](docs/assets/aizen-home.png)
 
-[▶️ Watch the Aizen demo](https://raw.githubusercontent.com/SherifGamal9441/Agentic-Property/main/assets/aizen-demo.mp4)
+<video src="https://raw.githubusercontent.com/SherifGamal9441/Agentic-Property/main/assets/aizen-demo.mp4" controls width="100%"></video>
 
 ## Property search gets messy after the first tab
 
