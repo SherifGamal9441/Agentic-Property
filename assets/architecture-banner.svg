@@ -1,170 +1,183 @@
-<svg viewBox="0 -40 1020 1050" xmlns="http://www.w3.org/2000/svg" font-family="Arial, Helvetica, sans-serif">
+<svg viewBox="0 0 1200 780" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Aizen decision architecture</title>
+  <desc id="desc">A clean architecture diagram showing the buyer experience, the eight-node LangGraph decision engine, its clearly separated conditional routes, and the property data boundary.</desc>
+
   <defs>
-    <!-- Background gradient -->
-    <radialGradient id="bgGrad" cx="50%" cy="10%" r="90%">
-      <stop offset="0%" stop-color="#0f1729"/>
-      <stop offset="100%" stop-color="#060a14"/>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10231d"/>
+      <stop offset="1" stop-color="#1d382f"/>
+    </linearGradient>
+    <radialGradient id="wash" cx="82%" cy="4%" r="70%">
+      <stop offset="0" stop-color="#c7a66a" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#c7a66a" stop-opacity="0"/>
     </radialGradient>
-
-    <!-- Glow filter for nodes -->
-    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Softer glow for edges -->
-    <filter id="edgeGlow" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="2.2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Dot grid pattern -->
-    <pattern id="dots" width="34" height="34" patternUnits="userSpaceOnUse">
-      <circle cx="1.2" cy="1.2" r="1.2" fill="#1c2740"/>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M36 0H0V36" fill="none" stroke="#eee5d7" stroke-opacity="0.028"/>
     </pattern>
-
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0,0 L10,5 L0,10 z" fill="#7dd3fc"/>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#07110e" flood-opacity="0.42"/>
+    </filter>
+    <marker id="gold-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#c7a66a"/>
+    </marker>
+    <marker id="ivory-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#ded3c2"/>
+    </marker>
+    <marker id="clay-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10Z" fill="#a65f44"/>
     </marker>
   </defs>
 
-  <!-- Background -->
-  <rect x="0" y="-40" width="1020" height="1050" fill="url(#bgGrad)"/>
-  <rect x="0" y="-40" width="1020" height="1050" fill="url(#dots)"/>
+  <rect width="1200" height="780" rx="24" fill="url(#canvas)"/>
+  <rect width="1200" height="780" rx="24" fill="url(#wash)"/>
+  <rect width="1200" height="780" rx="24" fill="url(#grid)"/>
 
-  <!-- Title -->
-  <text x="510" y="-6" text-anchor="middle" fill="#e2e8f0" font-size="22" font-weight="700" letter-spacing="1">
-    Property Search Agent — Architecture
-  </text>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <text x="52" y="46" fill="#a65f44" font-size="11" font-weight="700" letter-spacing="2.5">AIZEN / DECISION ARCHITECTURE</text>
+    <text x="52" y="84" fill="#eee5d7" font-family="Georgia, 'Times New Roman', serif" font-size="31" font-weight="600">From buyer brief to audited shortlist</text>
+    <text x="54" y="109" fill="#aebbb5" font-size="14">The model interprets. Deterministic code decides.</text>
 
-  <!-- ===================== EDGES ===================== -->
-  <g fill="none" stroke="#5aa9e6" stroke-width="2" filter="url(#edgeGlow)" opacity="0.85">
-    <path d="M500,92 L500,140" marker-end="url(#arrow)"/>
-    <path d="M500,198 L500,260" marker-end="url(#arrow)"/>
-    <path d="M570,170 C 900,175 900,858 662,858" marker-end="url(#arrow)"/>
-    <path d="M600,290 C 960,295 960,948 596,948" marker-end="url(#arrow)"/>
-    <path d="M500,318 L500,380" marker-end="url(#arrow)"/>
-    <path d="M418,438 C 350,470 300,472 268,500" marker-end="url(#arrow)"/>
-    <path d="M582,438 C 650,470 710,472 742,500" marker-end="url(#arrow)"/>
-    <path d="M260,558 L260,620" marker-end="url(#arrow)"/>
-    <path d="M342,528 C 500,600 600,600 678,528" marker-end="url(#arrow)"/>
-    <path d="M260,678 L260,740" marker-end="url(#arrow)"/>
-    <path d="M338,778 C 420,818 480,838 462,856" marker-end="url(#arrow)"/>
-    <path d="M188,750 C 78,682 78,578 190,538" marker-end="url(#arrow)"/>
-    <path d="M700,558 C 648,650 618,752 610,832" marker-end="url(#arrow)"/>
-    <path d="M560,888 L560,916" marker-end="url(#arrow)"/>
-  </g>
-
-  <!-- ===================== EDGE LABELS ===================== -->
-  <g font-size="12.5" font-weight="600">
-    <g>
-      <rect x="508" y="220" width="118" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="567" y="235" text-anchor="middle" fill="#93c5fd">property query</text>
+    <g transform="translate(860 49)">
+      <circle cx="0" cy="0" r="5" fill="#a65f44"/>
+      <text x="13" y="4" fill="#d8ded9" font-size="10" letter-spacing="1">MODEL-ASSISTED</text>
+      <circle cx="130" cy="0" r="5" fill="#c7a66a"/>
+      <text x="143" y="4" fill="#d8ded9" font-size="10" letter-spacing="1">DETERMINISTIC</text>
+      <rect x="0" y="24" width="10" height="10" rx="2" fill="#d4c6b3"/>
+      <text x="18" y="33" fill="#d8ded9" font-size="10" letter-spacing="1">DATA BOUNDARY</text>
     </g>
-    <g>
-      <rect x="600" y="90" width="120" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="660" y="105" text-anchor="middle" fill="#93c5fd">greeting / meta</text>
+
+    <!-- Buyer experience -->
+    <rect x="40" y="132" width="1120" height="108" rx="18" fill="#1d382f" fill-opacity="0.8" stroke="#c7a66a" stroke-opacity="0.24"/>
+    <text x="60" y="154" fill="#c7a66a" font-size="10" font-weight="700" letter-spacing="2">BUYER EXPERIENCE</text>
+
+    <path d="M240 192H300" fill="none" stroke="#ded3c2" stroke-width="1.6" marker-end="url(#ivory-arrow)"/>
+    <path d="M510 192H570" fill="none" stroke="#ded3c2" stroke-width="1.6" marker-end="url(#ivory-arrow)"/>
+
+    <g filter="url(#shadow)">
+      <rect x="60" y="164" width="180" height="56" rx="12" fill="#eee5d7"/>
+      <text x="150" y="188" text-anchor="middle" fill="#17231f" font-size="15" font-weight="700">Buyer request</text>
+      <text x="150" y="206" text-anchor="middle" fill="#68716b" font-size="10">plain-language priorities</text>
+
+      <rect x="300" y="164" width="210" height="56" rx="12" fill="#10231d" stroke="#c7a66a" stroke-width="1.5"/>
+      <text x="405" y="188" text-anchor="middle" fill="#eee5d7" font-size="15" font-weight="700">React decision workspace</text>
+      <text x="405" y="206" text-anchor="middle" fill="#aebbb5" font-size="10">validated BuyerBrief</text>
+
+      <rect x="570" y="164" width="190" height="56" rx="12" fill="#10231d" stroke="#c7a66a" stroke-width="1.5"/>
+      <text x="665" y="188" text-anchor="middle" fill="#eee5d7" font-size="15" font-weight="700">FastAPI agent API</text>
+      <text x="665" y="206" text-anchor="middle" fill="#aebbb5" font-size="10">validation + SSE streaming</text>
+
+      <rect x="950" y="164" width="190" height="56" rx="12" fill="#c7a66a"/>
+      <text x="1045" y="188" text-anchor="middle" fill="#17231f" font-size="15" font-weight="700">Audited shortlist</text>
+      <text x="1045" y="206" text-anchor="middle" fill="#35443e" font-size="10">properties, sources, guidance</text>
     </g>
-    <g>
-      <rect x="855" y="590" width="118" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="914" y="605" text-anchor="middle" fill="#fca5a5">out of scope ❌</text>
+
+    <!-- Decision engine -->
+    <rect x="40" y="262" width="1120" height="324" rx="20" fill="#0d1e19" fill-opacity="0.9" stroke="#c7a66a" stroke-opacity="0.3"/>
+    <text x="60" y="286" fill="#c7a66a" font-size="10" font-weight="700" letter-spacing="2">LANGGRAPH DECISION ENGINE</text>
+    <text x="1138" y="286" text-anchor="end" fill="#82938a" font-size="10">8 nodes / two routes / one validated response</text>
+
+    <!-- Entry and return -->
+    <path d="M665 220V296H120V310" fill="none" stroke="#c7a66a" stroke-width="1.7" marker-end="url(#gold-arrow)"/>
+    <path d="M1050 310V220" fill="none" stroke="#c7a66a" stroke-width="2" marker-end="url(#gold-arrow)"/>
+
+    <!-- Main property path -->
+    <g fill="none" stroke="#c7a66a" stroke-width="1.8" marker-end="url(#gold-arrow)">
+      <path d="M185 346H210"/>
+      <path d="M340 346H365"/>
+      <path d="M495 346H520"/>
+      <path d="M650 346H675"/>
+      <path d="M805 346H830"/>
+      <path d="M960 346H985"/>
     </g>
-    <g>
-      <rect x="510" y="340" width="80" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="550" y="355" text-anchor="middle" fill="#86efac">relevant ✓</text>
+
+    <!-- Out-of-scope lane -->
+    <path d="M275 382V420" fill="none" stroke="#a65f44" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#clay-arrow)"/>
+    <rect x="215" y="424" width="120" height="28" rx="14" fill="#291d19" stroke="#a65f44"/>
+    <text x="275" y="442" text-anchor="middle" fill="#d39a83" font-size="10" font-weight="700" letter-spacing="0.8">OUT OF SCOPE</text>
+    <path d="M275 452V476" fill="none" stroke="#a65f44" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#clay-arrow)"/>
+    <rect x="225" y="480" width="100" height="32" rx="16" fill="#10231d" stroke="#a65f44"/>
+    <text x="275" y="500" text-anchor="middle" fill="#d39a83" font-size="11" font-weight="700">END</text>
+
+    <!-- Informational route -->
+    <path d="M430 382V416" fill="none" stroke="#a65f44" stroke-width="1.5" marker-end="url(#clay-arrow)"/>
+    <rect x="350" y="420" width="160" height="28" rx="14" fill="#291d19" stroke="#a65f44"/>
+    <text x="430" y="438" text-anchor="middle" fill="#d39a83" font-size="9.5" font-weight="700" letter-spacing="0.55">INFORMATIONAL QUESTION</text>
+    <path d="M430 448V456" fill="none" stroke="#a65f44" stroke-width="1.5" marker-end="url(#clay-arrow)"/>
+    <rect x="350" y="460" width="160" height="54" rx="12" fill="#291d19" stroke="#a65f44" stroke-width="1.5"/>
+    <text x="430" y="484" text-anchor="middle" fill="#eee5d7" font-size="14" font-weight="700">Cited research</text>
+    <text x="430" y="502" text-anchor="middle" fill="#cba694" font-size="10">web_search</text>
+    <path d="M510 487H930C960 487 1050 457 1050 382" fill="none" stroke="#a65f44" stroke-width="1.6" marker-end="url(#clay-arrow)"/>
+
+    <!-- No-results route -->
+    <path d="M620 382V530H700" fill="none" stroke="#a65f44" stroke-width="1.4" stroke-dasharray="5 5" marker-end="url(#clay-arrow)"/>
+    <rect x="704" y="516" width="170" height="28" rx="14" fill="#291d19" stroke="#a65f44"/>
+    <text x="789" y="534" text-anchor="middle" fill="#d39a83" font-size="9.5" font-weight="700" letter-spacing="0.6">NO MATCHING LISTINGS</text>
+    <path d="M874 530H955C1015 530 1050 470 1050 382" fill="none" stroke="#a65f44" stroke-width="1.4" stroke-dasharray="5 5" marker-end="url(#clay-arrow)"/>
+
+    <!-- Graph nodes -->
+    <g filter="url(#shadow)">
+      <rect x="55" y="310" width="130" height="72" rx="13" fill="#1d382f" stroke="#c7a66a" stroke-width="1.4"/>
+      <text x="120" y="340" text-anchor="middle" fill="#eee5d7" font-size="15" font-weight="700">Memory</text>
+      <text x="120" y="362" text-anchor="middle" fill="#aebbb5" font-size="10">memory</text>
+
+      <rect x="210" y="310" width="130" height="72" rx="13" fill="#291d19" stroke="#a65f44" stroke-width="1.5"/>
+      <text x="275" y="340" text-anchor="middle" fill="#eee5d7" font-size="15" font-weight="700">Scope check</text>
+      <text x="275" y="362" text-anchor="middle" fill="#cba694" font-size="9.5">query_relevancy</text>
+
+      <rect x="365" y="310" width="130" height="72" rx="13" fill="#291d19" stroke="#a65f44" stroke-width="1.5"/>
+      <text x="430" y="335" text-anchor="middle" fill="#eee5d7" font-size="14" font-weight="700">Brief</text>
+      <text x="430" y="352" text-anchor="middle" fill="#eee5d7" font-size="14" font-weight="700">interpretation</text>
+      <text x="430" y="370" text-anchor="middle" fill="#cba694" font-size="9">query_understanding</text>
+
+      <rect x="520" y="310" width="130" height="72" rx="13" fill="#d4c6b3"/>
+      <text x="585" y="340" text-anchor="middle" fill="#17231f" font-size="15" font-weight="700">Retrieval</text>
+      <text x="585" y="362" text-anchor="middle" fill="#56615c" font-size="9.5">query_routing</text>
+
+      <rect x="675" y="310" width="130" height="72" rx="13" fill="#1d382f" stroke="#c7a66a" stroke-width="1.5"/>
+      <text x="740" y="340" text-anchor="middle" fill="#eee5d7" font-size="15" font-weight="700">Comparison</text>
+      <text x="740" y="362" text-anchor="middle" fill="#aebbb5" font-size="9">comparison_engine</text>
+
+      <rect x="830" y="310" width="130" height="72" rx="13" fill="#1d382f" stroke="#c7a66a" stroke-width="1.5"/>
+      <text x="895" y="340" text-anchor="middle" fill="#eee5d7" font-size="15" font-weight="700">Audit</text>
+      <text x="895" y="362" text-anchor="middle" fill="#aebbb5" font-size="10">reflection</text>
+
+      <rect x="985" y="310" width="130" height="72" rx="13" fill="#c7a66a"/>
+      <text x="1050" y="340" text-anchor="middle" fill="#17231f" font-size="15" font-weight="700">Guidance</text>
+      <text x="1050" y="362" text-anchor="middle" fill="#35443e" font-size="9">answer_generation</text>
     </g>
-    <g>
-      <rect x="270" y="450" width="118" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="329" y="465" text-anchor="middle" fill="#93c5fd">find properties</text>
+
+    <!-- Property data -->
+    <rect x="40" y="612" width="1120" height="116" rx="18" fill="#1d382f" fill-opacity="0.86" stroke="#ded3c2" stroke-opacity="0.22"/>
+    <text x="60" y="636" fill="#d4c6b3" font-size="10" font-weight="700" letter-spacing="2">PROPERTY DATA BOUNDARY</text>
+
+    <!-- Retrieval-to-data connector with crossing halo -->
+    <path d="M550 382V648H240" fill="none" stroke="#0d1e19" stroke-width="7"/>
+    <path d="M550 382V648H240" fill="none" stroke="#ded3c2" stroke-width="1.6" marker-end="url(#ivory-arrow)"/>
+
+    <path d="M335 674H390" fill="none" stroke="#ded3c2" stroke-width="1.6" marker-end="url(#ivory-arrow)"/>
+    <path d="M580 674H680" fill="none" stroke="#ded3c2" stroke-width="1.6" marker-end="url(#ivory-arrow)"/>
+    <path d="M580 692C690 721 835 720 940 692" fill="none" stroke="#a65f44" stroke-width="1.4" stroke-dasharray="5 6" marker-end="url(#clay-arrow)"/>
+
+    <g filter="url(#shadow)">
+      <rect x="145" y="648" width="190" height="52" rx="11" fill="#d4c6b3"/>
+      <text x="240" y="670" text-anchor="middle" fill="#17231f" font-size="14" font-weight="700">MCP listing boundary</text>
+      <text x="240" y="687" text-anchor="middle" fill="#56615c" font-size="10">typed client / server</text>
+
+      <rect x="390" y="648" width="190" height="52" rx="11" fill="#d4c6b3"/>
+      <text x="485" y="670" text-anchor="middle" fill="#17231f" font-size="14" font-weight="700">FastAPI data service</text>
+      <text x="485" y="687" text-anchor="middle" fill="#56615c" font-size="10">snapshot access</text>
+
+      <rect x="680" y="648" width="190" height="52" rx="11" fill="#eee5d7"/>
+      <text x="775" y="670" text-anchor="middle" fill="#17231f" font-size="14" font-weight="700">PostgreSQL primary</text>
+      <text x="775" y="687" text-anchor="middle" fill="#56615c" font-size="10">production store</text>
+
+      <rect x="940" y="648" width="190" height="52" rx="11" fill="#10231d" stroke="#a65f44" stroke-width="1.4"/>
+      <text x="1035" y="670" text-anchor="middle" fill="#eee5d7" font-size="14" font-weight="700">SQLite fallback</text>
+      <text x="1035" y="687" text-anchor="middle" fill="#cba694" font-size="10">explicit service fallback</text>
     </g>
-    <g>
-      <rect x="600" y="450" width="140" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="670" y="465" text-anchor="middle" fill="#93c5fd">general question</text>
-    </g>
-    <g>
-      <rect x="150" y="590" width="94" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="197" y="605" text-anchor="middle" fill="#86efac">has results</text>
-    </g>
-    <g>
-      <rect x="455" y="565" width="98" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="504" y="580" text-anchor="middle" fill="#fca5a5">no results</text>
-    </g>
-    <g>
-      <rect x="380" y="800" width="72" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="416" y="815" text-anchor="middle" fill="#86efac">passed ✓</text>
-    </g>
-    <g>
-      <rect x="30" y="630" width="120" height="22" rx="11" fill="#0f1729" stroke="#233150"/>
-      <text x="90" y="645" text-anchor="middle" fill="#fca5a5">needs retry 🔄</text>
-    </g>
+
+    <text x="52" y="758" fill="#87978f" font-size="9.5" letter-spacing="0.8">MODEL INTERPRETS PRIORITIES</text>
+    <text x="600" y="758" text-anchor="middle" fill="#c7a66a" font-size="10" font-weight="700" letter-spacing="1.1">DETERMINISTIC FIT + EVIDENCE AUDIT</text>
+    <text x="1148" y="758" text-anchor="end" fill="#87978f" font-size="9.5" letter-spacing="0.8">SOURCE-AWARE GUIDANCE</text>
   </g>
-
-  <!-- ===================== NODES ===================== -->
-
-  <!-- START -->
-  <g filter="url(#glow)">
-    <circle cx="500" cy="60" r="32" fill="#00e5ff" stroke="#00b8d4" stroke-width="2.5"/>
-  </g>
-  <text x="500" y="65" text-anchor="middle" fill="#04202b" font-size="13" font-weight="800">START</text>
-
-  <!-- memory -->
-  <g filter="url(#glow)">
-    <rect x="430" y="142" width="140" height="56" rx="14" fill="#131a2e" stroke="#536dfe" stroke-width="2.5"/>
-  </g>
-  <text x="500" y="176" text-anchor="middle" fill="#c7d2fe" font-size="15" font-weight="700">memory</text>
-
-  <!-- query_relevancy -->
-  <g filter="url(#glow)">
-    <rect x="400" y="262" width="200" height="56" rx="14" fill="#131a2e" stroke="#ffab40" stroke-width="2.5"/>
-  </g>
-  <text x="500" y="296" text-anchor="middle" fill="#ffd8a8" font-size="14.5" font-weight="700">query_relevancy</text>
-
-  <!-- query_understanding -->
-  <g filter="url(#glow)">
-    <rect x="390" y="382" width="220" height="56" rx="14" fill="#131a2e" stroke="#ffab40" stroke-width="2.5"/>
-  </g>
-  <text x="500" y="416" text-anchor="middle" fill="#ffd8a8" font-size="14.5" font-weight="700">query_understanding</text>
-
-  <!-- query_routing -->
-  <g filter="url(#glow)">
-    <rect x="170" y="502" width="180" height="56" rx="14" fill="#131a2e" stroke="#69f0ae" stroke-width="2.5"/>
-  </g>
-  <text x="260" y="536" text-anchor="middle" fill="#bbf7d0" font-size="14.5" font-weight="700">query_routing</text>
-
-  <!-- web_search -->
-  <g filter="url(#glow)">
-    <rect x="680" y="502" width="160" height="56" rx="14" fill="#131a2e" stroke="#e040fb" stroke-width="2.5"/>
-  </g>
-  <text x="760" y="536" text-anchor="middle" fill="#f3b8ff" font-size="14.5" font-weight="700">web_search</text>
-
-  <!-- comparison_engine -->
-  <g filter="url(#glow)">
-    <rect x="160" y="622" width="200" height="56" rx="14" fill="#131a2e" stroke="#69f0ae" stroke-width="2.5"/>
-  </g>
-  <text x="260" y="656" text-anchor="middle" fill="#bbf7d0" font-size="14" font-weight="700">comparison_engine</text>
-
-  <!-- reflection -->
-  <g filter="url(#glow)">
-    <rect x="180" y="742" width="160" height="56" rx="14" fill="#131a2e" stroke="#ff5252" stroke-width="2.5"/>
-  </g>
-  <text x="260" y="776" text-anchor="middle" fill="#ffc9c9" font-size="14.5" font-weight="700">reflection</text>
-
-  <!-- answer_generation -->
-  <g filter="url(#glow)">
-    <rect x="460" y="832" width="200" height="56" rx="14" fill="#131a2e" stroke="#536dfe" stroke-width="2.5"/>
-  </g>
-  <text x="560" y="866" text-anchor="middle" fill="#c7d2fe" font-size="14" font-weight="700">answer_generation</text>
-
-  <!-- END -->
-  <g filter="url(#glow)">
-    <circle cx="560" cy="950" r="32" fill="#ff4081" stroke="#f50057" stroke-width="2.5"/>
-  </g>
-  <text x="560" y="955" text-anchor="middle" fill="#2b0414" font-size="14" font-weight="800">END</text>
-
 </svg>

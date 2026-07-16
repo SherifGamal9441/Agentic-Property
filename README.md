@@ -42,26 +42,9 @@ That boundary matters because a persuasive answer is not the same thing as an au
 
 ## How a request moves through Aizen
 
-```mermaid
-flowchart TD
-  buyer[Buyer request] --> ui[React decision workspace]
-  ui -->|validated brief + SSE| api[FastAPI agent API]
-  api --> memory[memory]
-  memory --> relevancy[query_relevancy]
-  relevancy -->|property search| understanding[query_understanding]
-  relevancy -->|outside Dubai property scope| stop([END])
-  understanding -->|listing request| routing[query_routing]
-  understanding -->|law, area, or market question| web[web_search]
-  routing -->|typed filters| mcp[MCP listing boundary]
-  mcp --> data[FastAPI data service]
-  data --> postgres[(PostgreSQL primary)]
-  data -. service fallback .-> sqlite[(SQLite fallback)]
-  routing --> comparison[comparison_engine]
-  comparison --> reflection[reflection]
-  reflection --> answer[answer_generation]
-  web --> answer
-  answer -->|properties, sources, guidance| ui
-```
+<p align="center">
+  <img src="assets/architecture-banner.svg" alt="Aizen decision architecture from buyer brief to audited shortlist" width="100%">
+</p>
 
 Property searches use the eight-node LangGraph workflow shown above. Informational questions take a separate cited web-research branch. The React client owns presentation and browser-local workspace state; FastAPI owns request validation and streaming; MCP keeps property access behind a typed boundary.
 
