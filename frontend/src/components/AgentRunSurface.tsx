@@ -4,6 +4,26 @@ import { money, percent } from "../format";
 import PropertyVisual from "./PropertyVisual";
 import type { BuyerBrief, Property, PropertyGuidance, RunStats, RunStatus, TraceStep } from "../types";
 
+function CitationText({ text }: { text: string }) {
+  const parts = [];
+  let cursor = 0;
+  for (const match of text.matchAll(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g)) {
+    const index = match.index ?? 0;
+    const citation = /^\d+$/.test(match[1]);
+    parts.push(text.slice(cursor, index));
+    parts.push(<a className={citation ? "citation-link" : "answer-link"} href={match[2]} target="_blank" rel="noreferrer" aria-label={citation ? `Source ${match[1]}` : undefined} key={`${index}-${match[2]}`}>{citation ? `[${match[1]}]` : match[1]}</a>);
+    cursor = index + match[0].length;
+  }
+  parts.push(text.slice(cursor));
+  return parts;
+}
+
+function WebAnswer({ answer }: { answer: string }) {
+  return <article className="web-result" aria-label="Aizen research answer">
+    {answer.trim().split(/\n{2,}/).filter(Boolean).map((paragraph, index) => <p key={index}><CitationText text={paragraph} /></p>)}
+  </article>;
+}
+
 function Trace({ steps }: { steps: TraceStep[] }) {
   const unique = Object.entries(steps.reduce<Record<string, TraceStep>>((all, step) => ({ ...all, [step.node]: step }), {}));
   return <ol className="agent-trace">{unique.map(([node, step], index) => <li className={step.status === "completed" ? "is-complete" : "is-active"} key={node}><span>{String(index + 1).padStart(2, "0")}</span><div><b>{step.label}</b><small>{step.status}{step.duration_ms != null ? ` · ${step.duration_ms} ms` : ""}</small></div></li>)}</ol>;
@@ -51,7 +71,7 @@ export default function AgentRunSurface({ status, trace, properties, guidance, s
     : "No exact match emerged in this pass. Review the brief to shape the next search.";
 
   return <section className="result-takeover dark-surface" aria-live="polite"><div className="result-intro"><p className="eyebrow">Research complete</p><h2 ref={heading} tabIndex={-1}>{outcomeHeadline}</h2><p>{brief?.mode === "web_research" ? "Live cited research is ready below." : `Your shortlist is shaped from the Aizen data snapshot${best?.dataset_snapshot_at ? ` dated ${best.dataset_snapshot_at}` : ""}.`}</p></div>
-    {brief?.mode === "web_research" ? <div className="web-result"><p>{webAnswer}</p></div> : <>
+    {brief?.mode === "web_research" ? <WebAnswer answer={webAnswer} /> : <>
       <aside className="aizen-read" aria-label="Aizen's read"><p className="eyebrow">Aizen’s read</p><p>{generatedRead}</p></aside>
       <div className="result-metrics"><div><strong>{outcome === "matches" ? suitable.length : eligible.length}</strong><span>{outcome === "matches" ? "Homes meeting brief" : "Promising homes"}</span></div><div><strong>{stats.audited_count}</strong><span>Candidates audited</span></div><div><strong>{best ? percent(best.evidence_coverage) : "—"}</strong><span>Top-match evidence</span></div></div>
       {best && <article className="hero-match"><div><PropertyVisual property={best} rank={1} large /><p className="eyebrow">Top-ranked home</p><h3>{best.title}</h3><p>{best.area} · {best.beds ?? "?"} bed · {best.completion_status || "completion unknown"}</p><strong>{money(best.price)}</strong></div><dl><div><dt>Deterministic fit</dt><dd>{percent(best.fit_score)}</dd></div><div><dt>Evidence coverage</dt><dd>{percent(best.evidence_coverage)}</dd></div><div><dt>Criteria matched</dt><dd>{best.matched_criteria.length}</dd></div><div><dt>Unknown criteria</dt><dd>{best.unknown_criteria.length + best.unsupported_criteria.length}</dd></div></dl></article>}

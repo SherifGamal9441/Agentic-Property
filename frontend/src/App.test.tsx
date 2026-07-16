@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 
 import App from "./App";
+import AgentRunSurface from "./components/AgentRunSurface";
 import type { BuyerBrief, Property } from "./types";
 
 const brief: BuyerBrief = {
@@ -81,6 +82,31 @@ test("interprets and automatically starts the live run with one action", async (
   expect(screen.queryByText("Confirm what Aizen understood")).not.toBeInTheDocument();
   expect(await screen.findByText("No homes align with every priority")).toBeInTheDocument();
   expect(screen.getAllByRole("button", { name: "Edit brief" })).toHaveLength(2);
+});
+
+test("renders web research citations as readable links", () => {
+  render(<AgentRunSurface
+    status="completed"
+    trace={[]}
+    properties={[]}
+    guidance={null}
+    stats={{ candidate_count: 0, audited_count: 0, total_matches: 0, shown_count: 0 }}
+    brief={{ ...brief, mode: "web_research", original_query: "Can foreign buyers own freehold property in Dubai?" }}
+    webAnswer={"Foreign buyers can purchase in designated areas [1](https://example.test/rules). Read the [official guidance](https://example.test/guidance).\n\nConfirm the current process before buying."}
+    error=""
+    copied={false}
+    onCancel={() => undefined}
+    onRetry={() => undefined}
+    onEdit={() => undefined}
+    onSelect={() => undefined}
+    onCompare={() => undefined}
+    onCopy={() => undefined}
+  />);
+
+  expect(screen.getByRole("link", { name: "Source 1" })).toHaveAttribute("href", "https://example.test/rules");
+  expect(screen.getByRole("link", { name: "official guidance" })).toHaveAttribute("href", "https://example.test/guidance");
+  expect(screen.getByText("Confirm the current process before buying.")).toBeInTheDocument();
+  expect(screen.queryByText(/\[1\]\(https:/)).not.toBeInTheDocument();
 });
 
 test("shows six ranked homes first and reveals the rest on demand", async () => {
