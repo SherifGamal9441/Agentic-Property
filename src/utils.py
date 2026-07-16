@@ -33,7 +33,8 @@ def parse_llm_json(raw: str) -> dict:
         json.JSONDecodeError: If no valid JSON found.
     """
     try:
-        return parse_json_markdown(raw.strip())
+        clean = re.sub(r"<think>.*?</think>", "", raw, flags=re.DOTALL | re.IGNORECASE).strip()
+        return parse_json_markdown(clean)
     except Exception as e:
         # Re-raise as JSONDecodeError to match previous behavior and upstream expectations
         raise json.JSONDecodeError(f"Failed to parse JSON: {e}", raw, 0)

@@ -142,7 +142,7 @@ def test_excluded_properties_never_enter_buyer_guidance():
 
 
 @patch("src.nodes.answer_generation.get_llm")
-def test_property_guidance_is_structured_and_repaired_once(mock_get_llm):
+def test_property_guidance_uses_audited_order_without_model(mock_get_llm):
     brief = BuyerBrief(
         original_query="Home in Dubai Marina",
         criteria=[Criterion(id="area", label="Dubai Marina", priority="must_have", field="area", operator="contains", value="Dubai Marina")],
@@ -161,15 +161,8 @@ def test_property_guidance_is_structured_and_repaired_once(mock_get_llm):
             "evaluations": [{"criterion_id": "area", "status": "matched"}],
         }]},
     )
-    llm = MagicMock()
-    llm.invoke.side_effect = [
-        MagicMock(content="not json"),
-        MagicMock(content='{"version":1,"outcome":"matches","best_match_id":"one","runner_up_id":null,"reasons":[],"caveats":[],"next_action":"review_best_match"}'),
-    ]
-    mock_get_llm.return_value = llm
-
     result = answer_generation_node(state)
 
     assert result["buyer_guidance"].best_match_id == "one"
     assert result["final_answer"] == "Best match: Marina Home. No known criterion gaps in the captured fields."
-    assert llm.invoke.call_count == 2
+    mock_get_llm.assert_not_called()

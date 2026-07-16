@@ -8,6 +8,8 @@ Aizen is a buyer-first workspace for Dubai property search. Describe the home yo
 
 ![Aizen home-buying workspace](docs/assets/aizen-home.png)
 
+<video src="assets/aizen-demo.mp4" controls width="100%"></video>
+
 ## Property search gets messy after the first tab
 
 A buyer rarely has one filter. They have a budget, preferred areas, timing, deal breakers, and several details they care about but may trade away. Listing portals can return matches, but they do not explain which requirements each home satisfies or where the evidence is thin.

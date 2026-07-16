@@ -31,16 +31,13 @@ Writes to state:
     final_answer: str
 """
 
-import json
 import logging
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from pydantic import ValidationError
 
 from src.agents.state import AgentState
 from src.buyer_guidance import PropertyGuidance, validate_guidance
 from src.llm.factory import get_llm
-from src.utils import parse_llm_json
 
 logger = logging.getLogger(__name__)
 
@@ -111,52 +108,20 @@ def answer_generation_node(state: AgentState) -> dict:
 
 
 def _structured_property_answer(state: AgentState) -> dict:
-    """Ask the live model for references only, then validate every reference."""
+    """Build guidance from the already-audited property order and evidence."""
     properties = (state.comparison_result or {}).get("properties", [])
-    schema = json.dumps(PropertyGuidance.model_json_schema(), ensure_ascii=False)
-    evidence = json.dumps(
-        {
-            "brief": state.buyer_brief.model_dump(),
-            "audited_properties": [
-                {
-                    "id": item.get("id"),
-                    "suitability": item.get("suitability"),
-                    "fit_score": item.get("fit_score"),
-                    "evidence_coverage": item.get("evidence_coverage"),
-                    "evaluations": item.get("evaluations", []),
-                }
-                for item in properties
-                if item.get("suitability") != "excluded"
-            ],
-        },
-        ensure_ascii=False,
+    eligible = [item for item in properties if item.get("suitability") != "excluded"]
+    suitable = [item for item in eligible if item.get("suitability") == "suitable"]
+    guidance = validate_guidance(
+        PropertyGuidance(
+            outcome="matches" if suitable else ("conditional" if eligible else "no_match"),
+            best_match_id=str(eligible[0]["id"]) if eligible else None,
+            runner_up_id=str(eligible[1]["id"]) if len(eligible) > 1 else None,
+            next_action="review_best_match" if eligible else "edit_brief",
+        ),
+        state.buyer_brief,
+        properties,
     )
-    system = SystemMessage(content=(
-        "Return one PropertyGuidance JSON object only. Use only supplied property and criterion IDs. "
-        "The first audited property is best and the second is runner-up. Do not write prose, facts, "
-        "scores, prices, or reasoning outside the schema. Schema: " + schema
-    ))
-    llm = get_llm(streaming=False)
-    raw = str(llm.invoke([system, HumanMessage(content=evidence)]).content).strip()
-    guidance: PropertyGuidance | None = None
-    for attempt in range(2):
-        try:
-            guidance = validate_guidance(
-                PropertyGuidance.model_validate(parse_llm_json(raw)),
-                state.buyer_brief,
-                properties,
-            )
-            break
-        except (ValidationError, json.JSONDecodeError, TypeError, ValueError):
-            if attempt == 1:
-                raise ValueError("The selected model could not produce valid property guidance.")
-            repair = llm.invoke([
-                system,
-                HumanMessage(content=(
-                    "Correct the previous response using the evidence below. Return JSON only.\n\n" + evidence
-                )),
-            ])
-            raw = str(repair.content).strip()
 
     final_answer = _guidance_history_text(guidance, properties, state)
     updated_history = state.conversation_history + [

@@ -65,17 +65,14 @@ def get_llm(streaming: bool = True) -> BaseChatModel:
                 extra_body={"chat_template_kwargs": {"enable_thinking": False}},
             )
         case "groq":
-            # Only hide reasoning tokens during streaming (answer_generation).
-            # Non-streaming nodes (query_understanding, memory, etc.) need
-            # the full response — the thinking model can otherwise put all
-            # output into the hidden reasoning block and return empty content.
             groq_kwargs = dict(
                 model=settings.groq_model,
                 api_key=settings.groq_api_key,
                 streaming=streaming,
             )
-            if streaming:
-                groq_kwargs["reasoning_format"] = "hidden"
+            # Qwen can spend its whole response budget on hidden reasoning.
+            if settings.groq_model.lower().startswith("qwen/qwen3"):
+                groq_kwargs["reasoning_effort"] = "none"
             return ChatGroq(**groq_kwargs)
 
         case _:
