@@ -100,18 +100,9 @@ Ollama, vLLM, and other OpenAI-compatible endpoints are also supported. Their va
 
 After startup, `docker compose logs -f agent-api` follows an agent run and `docker compose down` stops the stack.
 
-## Verified release record
+## Release check
 
-The 2026-07-15 release gate records:
-
-- 75 passing Python tests
-- 13 passing React/Vitest tests
-- 9 passing Chromium journeys
-- a passing production build
-- a healthy four-service Compose stack
-- a passing snapshot and provider preflight
-
-Three live-provider rehearsals ran through the real graph against snapshot `active-2026-07-02-v1`; none replayed a cached answer. The full commands, outputs, browser checks, and LangSmith metrics are in the [evaluation record](docs/evaluation.md).
+The 2026-07-15 release passed 75 Python tests, 13 React/Vitest tests, 9 Chromium journeys, the production build, the four-service Compose health check, and snapshot/provider preflight. Three live-provider rehearsals ran against `active-2026-07-02-v1` without replaying cached answers. See the [evaluation record](docs/evaluation.md) for the evidence.
 
 ## Read the deeper case study
 
