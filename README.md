@@ -85,7 +85,7 @@ After startup, `docker compose logs -f agent-api` follows an agent run and `dock
 
 ## Release check
 
-The 2026-07-15 release passed 75 Python tests, 13 React/Vitest tests, 9 Chromium journeys, the production build, the four-service Compose health check, and snapshot/provider preflight. Three live-provider rehearsals ran against `active-2026-07-02-v1` without replaying cached answers. See the [evaluation record](docs/evaluation.md) for the evidence.
+The 2026-07-15 release passed 75 Python tests, 13 React/Vitest tests, 9 Chromium journeys, the production build, the four-service Compose health check, and snapshot/provider preflight. The agent runs on a locally served Qwen3.6-35B-A3B model, with vLLM and llama.cpp used as serving runtimes; LangSmith evaluations exercised that same setup. Three live-provider rehearsals ran against `active-2026-07-02-v1` without replaying cached answers. See the [evaluation record](docs/evaluation.md) for the evidence.
 
 ## Read the deeper case study
 
