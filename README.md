@@ -73,8 +73,8 @@ git clone https://github.com/SherifGamal9441/Agentic-Property.git
 Set-Location Agentic-Property
 uv sync
 uv run dvc pull
-uv run python scripts/preflight.py
 docker compose up --build -d
+uv run python scripts/preflight.py
 docker compose ps
 Start-Process "http://localhost:5173"
 ```
@@ -88,6 +88,19 @@ After startup, `docker compose logs -f agent-api` follows an agent run and `dock
 ## Release check
 
 The 2026-07-15 release passed 75 Python tests, 13 React/Vitest tests, 9 Chromium journeys, the production build, the four-service Compose health check, and snapshot/provider preflight. The agent runs on a locally served Qwen3.6-35B-A3B model, with vLLM and llama.cpp used as serving runtimes; LangSmith evaluations exercised that same setup. Three live-provider rehearsals ran against `active-2026-07-02-v1` without replaying cached answers. See the [evaluation record](docs/evaluation.md) for the evidence.
+
+### LangSmith structural evaluation
+
+The agent averaged **0.92** across five structural evaluators in LangSmith:
+
+| Evaluator | Average score |
+| --- | ---: |
+| `data_intent` | 0.92 |
+| `data_source` | 0.92 |
+| `is_relevant` | 1.00 |
+| `parsed_query` | 0.91 |
+| `rejection` | 0.85 |
+| **Overall average** | **0.92** |
 
 ## Read the deeper case study
 
